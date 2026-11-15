@@ -1,0 +1,8 @@
+{
+  "_note": "MINIMAL placeholder by Asitha with only the profit keys of VOICE_AND_NOTICE section 7 (Claude-drafted Tamil). Charulatha owns this file: replace it with the full reviewed ta.json.",
+  "profit_answer": "இன்னைக்கு கடை வியாபாரம் {sales}. செலவு {expenses}. மீதம் {profit}.",
+  "profit_answer_loss": "இன்னைக்கு கடை வியாபாரம் {sales}. செலவு {expenses}. இதுவரைக்கும் நஷ்டம் {loss}.",
+  "profit_family_suffix": "வீட்டு பணம் {family} இதுல சேர்க்கல.",
+  "profit_pending_suffix": "இன்னும் {pending_count} பணம் கடையா வீடா-ன்னு சொல்லல.",
+  "profit_upi_only": "UPI பணம் மட்டும். கையில வாங்கின காசு இதுல இல்ல."
+}

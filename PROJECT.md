@@ -46,13 +46,13 @@ Naanayam turns a small merchant's incoming UPI payments and voice-logged expense
 | P1 | Classification with confidence, AUTO vs ASK | Asitha |
 | P1 | Merchant confirmation (tap and voice) | Asitha (API), Nagasai Sree (UI), Charulatha (Tamil voice) |
 | P1 | Voice expense logging in Tamil | Charulatha |
-| P1 | Daily profit calculated by backend, answered in Tamil | Asitha (numbers), Charulatha (voice) |
+| P1 | Daily profit calculated by backend, answered in Tamil | Asitha (numbers; answer composer + slot check + TTS call since 2026-11-14), Charulatha (Tamil templates, voice) |
 | P1 | Ledger view where every number links to its source entries | Asitha (API), Nagasai Sree (UI) |
 | **P2 must demonstrate** | Feedback layer + held-out evaluation (precision AND coverage, before vs after) | Asitha |
 | P2 | Evaluation / learning screen for judges | Nagasai Sree |
 | **P3 strong additions** | Hash-chained audit trail + verify | Asitha |
-| P3 | Notice mode (one predefined sample notice) | Charulatha (reading, Tamil, evidence endpoint using Asitha's finance functions), Nagasai Sree (screen) |
-| P3 | CA export (CSV, then PDF) | Charulatha (uses the same finance functions) |
+| P3 | Notice mode (one predefined sample notice) | Charulatha (reading the notice: analyse(), Tamil explanation), Asitha (evidence endpoint, since 2026-11-14), Nagasai Sree (screen) |
+| P3 | CA export (CSV, then PDF) | Asitha (since 2026-11-14, taken over from Charulatha with her agreement) |
 | P3 | Telugu voice flow for the second merchant | Nagasai Sree |
 | **P4 show only** | Credit passport screen | Asitha (API), Nagasai Sree (UI) |
 
@@ -97,11 +97,11 @@ naanayam/
 │   │   ├── main.py, config.py, db.py, schemas.py     (Asitha)
 │   │   ├── routers/            (Asitha; voice + notice routers call Charulatha's modules)
 │   │   ├── ledger/, finance/, classifier/, feedback/, demo/   (Asitha)
-│   │   ├── export/             (Charulatha: CSV + PDF, reads finance/ functions only)
+│   │   ├── export/             (Asitha since 2026-11-14: CSV + PDF, reads finance/ functions only)
 │   │   ├── sarvam/             (client + cache: Asitha writes the client wrapper; Charulatha owns prompts/models used)
-│   │   ├── voice/              (Charulatha: interpret, template answer composer, slot check)
+│   │   ├── voice/              (Charulatha: interpret, templates; answer.py: Asitha since 2026-11-14)
 │   │   │   └── templates/ta.json (Charulatha), templates/te.json (Nagasai Sree)
-│   │   └── notice/             (Charulatha: extraction, Tamil explanation, evidence)
+│   │   └── notice/             (Charulatha: extraction (analyse), Tamil explanation; evidence.py, store.py: Asitha since 2026-11-14)
 │   └── tests/                  (Asitha; Charulatha adds voice tests)
 ├── data/
 │   ├── generator/              (Asitha)

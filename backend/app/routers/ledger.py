@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 
 from .. import clock, errors, money, periods, repo
 from ..deps import get_conn
-from ..finance.summary import compute
+from ..finance.summary import ATTRIBUTION_NOTE, SCOPE_NOTE, compute
 from ..ledger import writer as ledger
 from ..ledger.hashing import verify_chain
 from ..schemas import Classification, EntryType
@@ -14,10 +14,6 @@ from ..services.payments import payment_detail
 
 router = APIRouter(tags=["ledger"])
 
-SCOPE_NOTE = ("UPI payments only. Profit = business sales minus expenses you entered. "
-              "Cash sales, unrecorded expenses and stock changes are not included.")
-ATTRIBUTION_NOTE = ("Refunds and reversals are counted on the date of the original payment, "
-                    "so past days can change when a later refund happens.")
 
 
 @router.get("/merchants/{merchant_id}/summary")

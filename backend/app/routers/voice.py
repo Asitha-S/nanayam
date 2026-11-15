@@ -1,13 +1,18 @@
 """Voice endpoints (contract section 6). Routers are Asitha's; the logic behind them is
 Charulatha's backend/app/voice/ module.
 
-STUB: fixtures. The demo-clip hash check is already real: a demo_key with the wrong bytes is a 422.
+REAL: /voice/answer (Asitha). STUB (fixtures) until Charulatha's modules land: transcribe, interpret, speak.
+The demo-clip hash check is already real: a demo_key with the wrong bytes is a 422.
 """
-from fastapi import APIRouter, File, Form, UploadFile
+import sqlite3
+
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import FileResponse
 
 from .. import errors
+from ..deps import get_conn
 from ..sarvam import client as sarvam
+from ..voice.answer import daily_profit
 from ..schemas import AnswerIn, InterpretIn, SpeakIn, VoiceLanguage
 from ..stubs import fixture, require_merchant_422
 
@@ -48,11 +53,11 @@ def interpret(body: InterpretIn):
 
 
 @router.post("/voice/answer")
-def answer(body: AnswerIn):
-    require_merchant_422(body.merchant_id)
+def answer(body: AnswerIn, conn: sqlite3.Connection = Depends(get_conn)):
+    """REAL (Asitha): fixed templates + positional slot check + TTS; facts from finance.summary."""
     if body.intent != "ASK_DAILY_PROFIT":
         raise errors.validation_error("Only ASK_DAILY_PROFIT has a spoken answer", field="intent")
-    return fixture("voice_answer_profit")
+    return daily_profit(conn, merchant_id=body.merchant_id, language=body.language, day=body.date)
 
 
 @router.post("/voice/speak")

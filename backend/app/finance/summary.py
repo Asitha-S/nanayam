@@ -10,6 +10,11 @@ import sqlite3
 from dataclasses import dataclass, field
 from datetime import date
 
+SCOPE_NOTE = ("UPI payments only. Profit = business sales minus expenses you entered. "
+              "Cash sales, unrecorded expenses and stock changes are not included.")
+ATTRIBUTION_NOTE = ("Refunds and reversals are counted on the date of the original payment, "
+                    "so past days can change when a later refund happens.")
+
 PAYMENTS_SQL = """
 SELECT p.transaction_id, p.amount_paise AS g,
        (SELECT COALESCE(SUM(r.amount_paise), 0) FROM refunds r WHERE r.transaction_id = p.transaction_id) AS r,

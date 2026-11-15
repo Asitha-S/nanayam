@@ -1,6 +1,6 @@
 """Learning, evaluation, tax summary, notices, passport (contract sections 8-10).
 
-REAL: learning, evaluation, tax summary, passport. STUB (fixtures): notices (Charulatha's backend/app/notice/).
+REAL: learning, evaluation, tax summary, passport, notice evidence. STUB (fixtures): notice analyse (Charulatha).
 """
 import sqlite3
 import json
@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from .. import errors
 from ..config import REPO_ROOT
 from ..deps import get_conn
+from ..notice.evidence import evidence
 from ..services import insights as svc
 from ..stubs import fixture, require_merchant, require_merchant_422
 
@@ -50,12 +51,9 @@ async def analyse_notice(
 
 
 @router.get("/merchants/{merchant_id}/notices/{notice_id}/evidence")
-def notice_evidence(merchant_id: str, notice_id: str):
-    require_merchant(merchant_id)
-    out = fixture("notice_evidence")
-    if notice_id != out["notice_id"]:
-        raise errors.not_found(f"Unknown notice {notice_id}", notice_id=notice_id)
-    return out
+def notice_evidence(merchant_id: str, notice_id: str, conn: sqlite3.Connection = Depends(get_conn)):
+    """REAL (Asitha): DATA 9 from the stored notice (saved by analyse() via notice.store.save_notice)."""
+    return evidence(conn, merchant_id=merchant_id, notice_id=notice_id)
 
 
 @router.get("/merchants/{merchant_id}/passport")

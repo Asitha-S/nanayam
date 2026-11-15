@@ -18,7 +18,9 @@ Plan and checkpoints: [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md). Contract change 
 
 **Classifier:** trained LightGBM + out-of-fold isotonic calibration (`ml/artifacts/`, `python -m ml.train`), with the DATA §5.6 decision procedure: q_model first, then your instructions (family / customer lists, each with a guardrail), payer memory (k chosen on the calibration set) and rules 5a–5c. `/health` shows the model version. Baseline: tag `model-freeze-1`.
 
-**Still fixture stubs** (return `contract/fixtures/`, always M001-shaped), owned by Charulatha: voice, notices, export.
+**Real since 2026-11-14 (Asitha):** `/voice/answer` (templates + slot check + TTS), `/export/csv`, `/export/pdf`, notice evidence.
+
+**Still fixture stubs**, owned by Charulatha: `/voice/transcribe`, `/voice/interpret`, `/voice/speak`, `/notices/analyse`.
 
 `GET /evaluation` serves `data/eval/latest.json` from the final holdout run (conditions A–E, never hand-edited). Robustness results: `data/eval/robustness.json`. Every evaluation execution is logged in `data/eval/experiment_log.jsonl`.
 

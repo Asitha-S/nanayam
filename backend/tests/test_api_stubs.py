@@ -1,5 +1,5 @@
-"""Endpoints still on fixtures return them; contract error shape and request validation.
-Real P1 endpoints are covered in test_p1_flows.py."""
+"""Endpoints still on fixtures (Charulatha's voice interpret/transcribe/speak, notice analyse) and the
+contract error shape and request validation. Real endpoints are covered in the other test files."""
 import json
 
 import pytest
@@ -11,24 +11,11 @@ def fx(name):
     return json.loads((FIXTURES_DIR / f"{name}.json").read_text(encoding="utf-8"))
 
 
-GET_CASES = [
-    ("/api/merchants/M001/notices/NTC-M001-001/evidence", "notice_evidence"),
-]
-
-
-@pytest.mark.parametrize("path, name", GET_CASES)
-def test_get_returns_fixture(client, path, name):
-    r = client.get(path)
-    assert r.status_code == 200, r.text
-    assert r.json() == fx(name)
-
-
 def test_voice_stubs(client):
     body = {"merchant_id": "M001", "language": "ta", "voice_log_id": None, "open_question_id": None}
     assert client.post("/api/voice/interpret", json={**body, "text": "Koyambedu-la 3,100 rupees-ku kaaikari vaanginen"}).json()["intent"] == "LOG_EXPENSE"
     assert client.post("/api/voice/interpret", json={**body, "text": "இன்னைக்கு எவ்வளவு லாபம்"}).json()["intent"] == "ASK_DAILY_PROFIT"
     assert client.post("/api/voice/interpret", json={**body, "text": "veettu panam", "open_question_id": "Q-M001-000213"}).json()["intent"] == "CONFIRM_TRANSACTION"
-    assert client.post("/api/voice/answer", json={"merchant_id": "M001", "language": "ta", "intent": "ASK_DAILY_PROFIT", "date": "2026-11-15"}).json() == fx("voice_answer_profit")
     assert client.post("/api/voice/speak", json={"merchant_id": "M001", "language": "ta", "text": "சரி"}).json() == fx("voice_speak")
     live = client.post("/api/voice/transcribe", data={"language": "ta", "merchant_id": "M001"}, files={"audio": ("a.webm", b"bytes")})
     assert live.json()["recognition_mode"] == "LIVE"
@@ -41,15 +28,6 @@ def test_transcribe_demo_key_wrong_bytes_is_422(client):
         files={"audio": ("a.wav", b"not the clip")},
     )
     assert r.status_code == 422 and r.json()["error"]["code"] == "VALIDATION_ERROR"
-
-
-def test_exports(client):
-    csv = client.get("/api/merchants/M001/export/csv")
-    assert csv.status_code == 200 and csv.headers["content-type"].startswith("text/csv")
-    header = [line for line in csv.text.splitlines() if not line.startswith("#")][0]
-    assert header.split(",")[0] == "ledger_entry_id" and header.split(",")[-1] == "hash"
-    pdf = client.get("/api/merchants/M001/export/pdf")
-    assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
 
 
 # --- health and demo tools ----------------------------------------------------

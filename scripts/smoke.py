@@ -30,9 +30,11 @@ def free_port() -> int:
 
 
 class Smoke:
-    def __init__(self, http):
-        """http: any httpx-compatible client whose base URL ends in /api (a live server or a TestClient)."""
+    def __init__(self, http, db_path: Path):
+        """http: any httpx-compatible client whose base URL ends in /api (a live server or a TestClient).
+        db_path: the server's database (the sample notice is stored there, as analyse() will do)."""
         self.http = http
+        self.db_path = Path(db_path)
         self.rows: list[tuple[str, bool, str]] = []
 
     def check(self, name: str, ok: bool, detail: str = "") -> bool:
@@ -90,9 +92,49 @@ class Smoke:
                    f"{ev.get('run_id')} n_test_evaluations {ev.get('n_test_evaluations')}")
         tax = self.http.get("/merchants/M003/tax-summary").json()
         self.check("M003 GST UNKNOWN", tax["gst_treatment"] == "UNKNOWN", ", ".join(tax["flags"]))
+        va = self.http.post("/voice/answer", json={"merchant_id": "M001", "language": "ta", "intent": "ASK_DAILY_PROFIT",
+                                                   "date": "2026-11-15"}).json()
+        spoken = all(n in va.get("text", "") for n in ("4,820", "3,100", "1,720", "2,000"))
+        self.check("voice answer (template + slot check)", spoken and va["number_check"]["passed"]
+                   and va["facts"]["profit"]["amount_paise"] == 172000, va.get("text", "")[:40] + "...")
+        csv_text = self.http.get("/merchants/M001/export/csv", params={"start_date": "2026-11-15", "end_date": "2026-11-15"}).text
+        data = [l for l in csv_text.splitlines() if not l.startswith("#")][1:]
+        paid = sum(round(float(l.split(",")[7]) * 100) for l in data if l.split(",")[2] == "PAYMENT_IN")
+        self.check("CSV export", len(data) == 17 and paid == 682000 and "# ledger verify: VALID" in csv_text,
+                   f"{len(data)} rows, PAYMENT_IN Rs {paid // 100}")
+        pdf = self.http.get("/merchants/M001/export/pdf", params={"start_date": "2026-11-15", "end_date": "2026-11-15"}).content
+        self.check("PDF CA pack", pdf.startswith(b"%PDF") and b"Rs 1,720" in pdf and b"Recorded profit" in pdf,
+                   f"{len(pdf)} bytes")
+        notice = json.loads((REPO / "data" / "demo" / "notice_numbers.json").read_text(encoding="utf-8"))
+        nid = store_sample_notice(self.db_path, notice)
+        ev = self.http.get(f"/merchants/M001/notices/{nid}/evidence").json()
+        self.check("notice evidence", ev.get("difference_vs_notice", {}).get("amount_paise") == 0
+                   and ev["ledger_view"]["unresolved"]["entry_count"] == 3
+                   and any(x["payer_name"] == "Karthik" for x in ev["family_transfer_examples"]),
+                   f"{notice['amount_questioned_display']}, difference 0, unresolved 3")
         vi = self.http.post("/voice/interpret", json={"merchant_id": "M001", "language": "ta", "text": "இன்னைக்கு எவ்வளவு லாபம்",
                                                       "voice_log_id": None, "open_question_id": None})
         self.check("voice interpret (stub)", vi.status_code == 200, vi.json().get("intent", ""))
+
+
+def store_sample_notice(db_path: Path, notice: dict) -> str:
+    """Store the sample notice's fields as analyse() will (SMOKE TEST DATA: the values come from
+    notice_numbers.json, not from reading the image)."""
+    import sqlite3
+
+    if str(REPO / "backend") not in sys.path:
+        sys.path.insert(0, str(REPO / "backend"))
+    from app.notice.store import save_notice
+
+    f = lambda v: {"value": v, "origin": "EXTRACTED_FROM_NOTICE", "confidence": 0.95}  # noqa: E731
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        return save_notice(conn, merchant_id="M001", file_sha256="smoke-test", fields={
+            "period_start": f(notice["period_start"]), "period_end": f(notice["period_end"]),
+            "amount_questioned_paise": f(notice["amount_questioned_paise"])})
+    finally:
+        conn.close()
 
 
 def main() -> int:
@@ -102,7 +144,7 @@ def main() -> int:
            "LOGS_DIR": str(tmp / "logs"), "DEMO_TIME": DEMO_TIME, "PYTHONIOENCODING": "utf-8"}
     server = subprocess.Popen([sys.executable, "-m", "uvicorn", "app.main:app", "--port", str(port)],
                               cwd=REPO / "backend", env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    smoke = Smoke(httpx.Client(base_url=f"http://127.0.0.1:{port}/api", timeout=30))
+    smoke = Smoke(httpx.Client(base_url=f"http://127.0.0.1:{port}/api", timeout=30), tmp / "smoke.db")
     started = time.monotonic()
     try:
         for _ in range(120):

@@ -31,5 +31,6 @@
   },
   "scope_note": "UPI payments only. Profit = business sales minus expenses you entered.",
   "audio_id": "AUD-91c2d0aa7e5b3f12",
-  "from_cache": true
+  "from_cache": true,
+  "audio_error": null
 }

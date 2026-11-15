@@ -118,3 +118,34 @@ def wall_clock(monkeypatch):
         monkeypatch.setattr(clock, "_wall_now", lambda: datetime.combine(datetime(2030, 1, 1).date(), t, tzinfo=clock.IST))
 
     return _set
+
+
+@pytest.fixture
+def real(make_client, wall_clock):
+    """Client on the committed demo seed (data/demo/seed.db) after /demo/reset. Wall clock 21:00."""
+    from app.config import DEMO_DATA_DIR
+
+    seed = DEMO_DATA_DIR / "seed.db"
+    if not seed.exists():
+        pytest.skip("run the release gate first")
+    wall_clock("21:00:00")
+    with make_client(DEMO_SEED_DB=str(seed)) as c:
+        assert c.post("/api/demo/reset", json={}).status_code == 200
+        yield c
+
+
+def run_m001_demo(c, *, answer=True):
+    """Expense + the 15 scripted payments (+ Lakshmi answered FAMILY with remember). Returns the ASK payment."""
+    import json
+
+    from app.config import DEMO_DATA_DIR
+
+    script = json.loads((DEMO_DATA_DIR / "M001_demo_day.json").read_text(encoding="utf-8"))
+    assert c.post("/api/expenses", json=script["expense"]).status_code == 201
+    pays = [c.post("/api/demo/next-payment", json={"merchant_id": "M001"}).json() for _ in range(15)]
+    if answer:
+        r = c.post(f"/api/payments/{pays[14]['transaction_id']}/confirm", json={
+            "merchant_id": "M001", "question_id": pays[14]["question_id"], "confirmed_category": "FAMILY",
+            "channel": "VOICE", "utterance_text": None, "remember_payer": True})
+        assert r.status_code == 201
+    return pays[14]

@@ -14,8 +14,10 @@ def _smoke(env, wall_clock, demo_time: str) -> Smoke:
     env(DEMO_SEED_DB=str(SEED), DEMO_TIME=demo_time)
     from app.main import create_app
 
+    from app.config import get_settings
+
     with TestClient(create_app(), base_url="http://testserver/api") as http:
-        smoke = Smoke(http)
+        smoke = Smoke(http, get_settings().db_path)
         smoke.run()
     return smoke
 
@@ -24,7 +26,7 @@ def test_smoke_passes_at_any_time_of_day_with_demo_time(env, wall_clock):
     smoke = _smoke(env, wall_clock, DEMO_TIME)
     failed = [r for r in smoke.rows if not r[1]]
     assert DEMO_TIME == "21:30" and not failed, failed
-    assert len(smoke.rows) == 17
+    assert len(smoke.rows) == 21
 
 
 def test_without_demo_time_the_morning_expense_is_in_the_future(env, wall_clock):

@@ -22,9 +22,11 @@ python -m scripts.smoke                       # starts its own server, runs the 
 | Payments, questions, confirm (incl. remember family / customer), expenses, refund, reversal, void, preview | Real | Asitha |
 | Summary with sources, ledger, ledger entry, verify, tamper, demo reset / next-payment / script | Real | Asitha |
 | Merchants GET/PUT, learning, evaluation, tax summary, passport, health | Real | Asitha |
-| `/voice/transcribe`, `/voice/interpret`, `/voice/answer`, `/voice/speak`, `/audio/{id}` | **Stub** (fixtures; demo-clip hash check is real) | Charulatha |
-| `/notices/analyse`, `/notices/{id}/evidence` | **Stub** (fixtures) | Charulatha |
-| `/export/csv`, `/export/pdf` | **Stub** (CSV from the ledger fixture, one-line PDF) | Charulatha |
+| `/voice/answer` (templates + positional slot check + TTS), `/audio/{id}` | Real | Asitha (since 2026-11-14) |
+| `/voice/transcribe`, `/voice/interpret`, `/voice/speak` | **Stub** (fixtures; demo-clip hash check is real) | Charulatha |
+| `/notices/{id}/evidence` | Real (reads the stored notice) | Asitha (since 2026-11-14) |
+| `/notices/analyse` | **Stub** (fixtures; does not store a notice yet) | Charulatha |
+| `/export/csv`, `/export/pdf` | Real | Asitha (since 2026-11-14) |
 
 ## 3. Checklist for Charulatha
 
@@ -36,22 +38,23 @@ router to your function as soon as it exists (tell him in the PR). Never compute
       (model IDs, paths, auth header, language codes, TTS speaker). Vision path is `None` until confirmed.
 - [ ] **Demo clips**: record `assets/demo_audio/ta/*.wav` (VOICE_AND_NOTICE §10), then
       `python -m backend.app.sarvam.register_demo_clips`. Demo keys include the language: `ta/expense_koyambedu`.
-- [ ] **Templates**: `backend/app/voice/templates/ta.json` with every key in VOICE_AND_NOTICE §7. The backend already
-      reads `question_payment` from it for question cards (`app/questions_text.py`); until the file exists it uses the drafts.
+- [ ] **Templates**: replace the minimal `backend/app/voice/templates/ta.json` (Asitha added only the profit keys, as
+      drafted in VOICE_AND_NOTICE §7, so `/voice/answer` works) with the full reviewed file. Keep the profit keys' slot
+      names and order (`{sales}`, `{expenses}`, `{profit}` / `{loss}`, `{family}`, `{pending_count}`): the slot check
+      in `voice/answer.py` fails loudly (500, no speech) if they change. `question_payment` is read for question cards.
 - [ ] **`app/voice/interpret.py`**: `interpret(conn, *, merchant_id, language, text, voice_log_id, open_question_id) -> dict`
       returning exactly the `/voice/interpret` response (contract §6), with the deterministic validation of §5.2.
-- [ ] **`app/voice/answer.py`**: `daily_profit(conn, *, merchant_id, language, date) -> dict` returning the `/voice/answer`
-      response. Take `facts` from `app.finance.summary.compute(conn, merchant_id, date, date)` (fields `business_sales`,
-      `expenses`, `profit`, `family_transfers`, `pending_count`); template only; positional slot check (§6.3); raise on failure.
-- [ ] **TTS**: use `app.sarvam.client.tts(text, lang)`; it returns `audio_id` and stores the WAV for `GET /audio/{id}`.
-- [ ] **`app/notice/`**: `analyse(conn, *, merchant_id, file_bytes, demo_key) -> dict` and
-      `evidence(conn, *, merchant_id, notice_id) -> dict` (contract §9). Use `app.sarvam.client.vision` and `chat`; ledger
-      figures from `compute(...)` over the notice period; verify status from `app.services.insights.verify_status(conn, merchant_id)`.
+- [x] ~~`app/voice/answer.py`~~ (taken over by Asitha, done). If Bulbul reads "4,820 ரூபாய்" badly (§6.4), tell Asitha:
+      the digits-to-words conversion goes into the TTS input only.
+- [ ] **`app/notice/analyse`**: `analyse(conn, *, merchant_id, file_bytes, demo_key) -> dict` (contract §9 analyse
+      response) using `app.sarvam.client.vision` and `chat`, the §11.3 validation and deterministic field confidence.
+      **Store the result** with `app.notice.store.save_notice(conn, merchant_id=..., file_sha256=..., fields=<the response's
+      "fields" object>, explanation_text=...)`; it returns the `notice_id` to put in the response. Evidence
+      (`app/notice/evidence.py`, Asitha) reads exactly that row. Tamil explanation: figures from the evidence object.
 - [ ] **Sample notice image**: amount **₹8,42,162** (= M001 gross UPI receipts 2026-08-01..2026-10-31, in
       `data/demo/notice_numbers.json`; regenerate the image if that file ever changes). Expected evidence on the
       committed seed: difference vs notice 0, unresolved 3 (Mani, Jaya, Prabhu, 29–31 Oct).
-- [ ] **`app/export/`**: `csv_export(conn, *, merchant_id, start, end) -> bytes` and `pdf_export(...) -> bytes` with the
-      columns and sections of contract §11; scope and attribution notes as in `/summary`.
+- [x] ~~`app/export/`~~ (taken over by Asitha, done).
 - [ ] **Voice tests**: `data/voice_tests/ta_dev.jsonl`, `ta.jsonl`; `eval_voice` results committed.
 - [ ] **Demo cache**: warm `cache/sarvam_demo/` in `DEMO_MODE=live` with `SARVAM_CACHE_DIR=demo` and commit it, so the
       demo runs with Wi-Fi off (`cache_only`).
