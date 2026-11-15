@@ -4,7 +4,9 @@ Replays the generated history of M001-M003 (2026-08-01 to 2026-11-14) through th
 services (classifier, questions, feedback, ledger) in time order, with a simulated merchant who
 answers every question correctly (0% error, DATA_AND_LOGIC 3.6), except the 3 fixed payments of
 29-31 Oct, which stay unanswered. Like evaluation condition E, after a FAMILY answer, or a SALE answer
-on a P2P payment, the merchant chooses "remember" with probability 0.5 (seeded RNG). Writes:
+on a P2P payment, the merchant chooses "remember" with probability 0.5 (seeded RNG), except for the named
+demo payers of DATA_AND_LOGIC 3.2 (Karthik, Selvi, Anbu Mess, Lakshmi, Mani/Jaya/Prabhu, Hotel Sri Sai,
+Srinivas): they are fixtures, not simulated. Writes:
 
   data/demo/seed.db             the database /demo/reset restores
   data/demo/seed_meta.json      generator seed, model, threshold, git commit, label mix, counts, sha256
@@ -34,6 +36,7 @@ from app.classifier.decide import active_model_version, threshold  # noqa: E402
 from app.schemas import ConfirmIn, ExpenseIn, PaymentIn, RefundIn, ReversalIn  # noqa: E402
 from app.services import expenses as expense_svc  # noqa: E402
 from app.services import payments as payment_svc  # noqa: E402
+from data.generator.generate import NAMED_PAYERS  # noqa: E402
 
 GENERATED = REPO_ROOT / "data" / "generated"
 DEMO_DIR = REPO_ROOT / "data" / "demo"
@@ -111,11 +114,15 @@ def build(out_path: Path) -> dict:
                         else:
                             answer = {"merchant_id": req.merchant_id, "transaction_id": req.transaction_id,
                                       "question_id": res["question_id"], "payment_type": req.payment_type,
+                                      "payer_id": req.payer_id,
                                       "confirmed_category": labels.loc[req.transaction_id, "true_label"]}
                             heapq.heappush(events, (ts + ANSWER_DELAY, P_ANSWER, req.transaction_id, "answer", answer))
                 elif kind == "answer":
                     offered = row["confirmed_category"] == "FAMILY" or row["payment_type"] == "P2P"
-                    remember = bool(offered and remember_rng.random() < REMEMBER_PROBABILITY)
+                    coin = bool(offered and remember_rng.random() < REMEMBER_PROBABILITY)
+                    # named demo payers are fixtures, not simulated: the coin is still drawn, so other payers'
+                    # outcomes do not depend on this exclusion
+                    remember = coin and row["payer_id"] not in NAMED_PAYERS
                     try:
                         payment_svc.confirm(conn, row["transaction_id"], ConfirmIn(
                             merchant_id=row["merchant_id"], question_id=row["question_id"],
@@ -228,7 +235,8 @@ def main() -> None:
         "replay": {k: stats[k] for k in ("answered", "left_unanswered", "answer_skipped_reversed",
                                          "remembered_family", "remembered_customer")},
         "remember": {"probability": REMEMBER_PROBABILITY, "seed": list(REMEMBER_SEED),
-                     "offered_after": "FAMILY answers, and SALE answers on P2P payments"},
+                     "offered_after": "FAMILY answers, and SALE answers on P2P payments",
+                     "never_for": sorted(NAMED_PAYERS)},
         "counts": stats["counts"],
     }
     (DEMO_DIR / "seed_meta.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")

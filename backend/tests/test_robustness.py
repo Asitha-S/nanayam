@@ -3,6 +3,7 @@ import pytest
 
 from data.generator.generate import generate
 from scripts import robustness
+pytestmark = pytest.mark.timeout(900)  # builds generator data / walks the seed
 
 
 def test_robustness_refuses_the_final_holdout_seed():

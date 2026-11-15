@@ -22,7 +22,7 @@ ml = [
     "pandas>=2.2",
     "pyarrow>=15",
 ]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "pytest-timeout>=2.3"]
 
 # Dependencies only: install with `pip install -e ".[dev,ml]"`. The code is run from the repo
 # (uvicorn from backend/, scripts with `python -m` from the root), not installed as a package.
@@ -31,4 +31,5 @@ py-modules = []
 
 [tool.pytest.ini_options]
 testpaths = ["backend/tests"]
+timeout = 300  # per test; seed / evaluation / generator tests set 900 with pytestmark (a hang fails loudly)
 pythonpath = ["backend", "."]

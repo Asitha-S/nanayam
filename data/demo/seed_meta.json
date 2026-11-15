@@ -3,11 +3,11 @@
   "model_version": "clf-20261114-e8dfc2",
   "placeholder_classifier": false,
   "threshold": 0.99,
-  "git_commit": "7a2443922eea8ad35c105a1a40019bd8701fde9e",
+  "git_commit": "f8f40e59efee12cc028a69a8d0d2defb535b6bbb",
   "git_dirty": true,
-  "created_at": "2026-11-14T12:56:09+05:30",
+  "created_at": "2026-11-14T15:42:10+05:30",
   "demo_date": "2026-11-15",
-  "seed_db_sha256": "e6fcf00900c50307e2d8bdc968cdc5648535b857c5b91ee1a3ba6985ba213f60",
+  "seed_db_sha256": "289b35bccd6b52e98c990a9187b5bafe214109a89ce89c52a30866b4e56df62a",
   "label_mix": {
     "count_share": {
       "overall": 0.004213,
@@ -25,40 +25,168 @@
     }
   },
   "replay": {
-    "answered": 163,
+    "answered": 145,
     "left_unanswered": 3,
-    "answer_skipped_reversed": 0
+    "answer_skipped_reversed": 0,
+    "remembered_family": 9,
+    "remembered_customer": 30
+  },
+  "remember": {
+    "probability": 0.5,
+    "seed": [
+      42,
+      3003
+    ],
+    "offered_after": "FAMILY answers, and SALE answers on P2P payments",
+    "never_for": [
+      "P20001",
+      "P20011",
+      "P90001",
+      "P90002",
+      "P90003",
+      "P90004",
+      "P90005",
+      "P90006",
+      "P90011"
+    ]
   },
   "counts": {
     "M001": {
       "payments": 3898,
       "questions_open": 3,
-      "questions_answered": 54,
-      "feedback": 54,
+      "questions_answered": 51,
+      "feedback": 51,
       "refunds": 9,
       "reversals": 1,
       "expenses": 132,
-      "ledger_entries": 4094
+      "ledger_entries": 4091,
+      "family_payers": [
+        "Karthik",
+        "Sirisha A"
+      ],
+      "customer_payers": [
+        "Dinesh M",
+        "Vignesh T",
+        "Naveen",
+        "Mohan R",
+        "Sravani R",
+        "Ramesh P",
+        "Raju R",
+        "Sekhar T",
+        "Ashok A",
+        "Dinesh K",
+        "Sravani S",
+        "Gopal",
+        "Kumar T"
+      ]
     },
     "M002": {
       "payments": 3420,
       "questions_open": 0,
-      "questions_answered": 38,
-      "feedback": 38,
+      "questions_answered": 35,
+      "feedback": 35,
       "refunds": 14,
       "reversals": 3,
       "expenses": 132,
-      "ledger_entries": 3607
+      "ledger_entries": 3604,
+      "family_payers": [
+        "Lalitha S",
+        "Rajesh R"
+      ],
+      "customer_payers": [
+        "Revathi R",
+        "Malathi",
+        "Hari T",
+        "Prakash V",
+        "Revathi Reddy",
+        "Sravani P",
+        "Kavitha V"
+      ]
     },
     "M003": {
       "payments": 5132,
       "questions_open": 0,
-      "questions_answered": 71,
-      "feedback": 71,
+      "questions_answered": 59,
+      "feedback": 59,
       "refunds": 18,
       "reversals": 7,
       "expenses": 56,
-      "ledger_entries": 5284
+      "ledger_entries": 5272,
+      "family_payers": [
+        "Priya S",
+        "Nandhini",
+        "Mahesh M",
+        "Madhavi N",
+        "Sumathi K",
+        "Bhavani M"
+      ],
+      "customer_payers": [
+        "Senthil N",
+        "Anusha P",
+        "Karthikeyan K",
+        "Naresh Reddy",
+        "Bala V",
+        "Hari V",
+        "Malathi S",
+        "Tamil K",
+        "Geetha T",
+        "Hari"
+      ]
     }
+  },
+  "release_gate": {
+    "started": "2026-11-14T15:25:49+05:30",
+    "passed": true,
+    "total_seconds": 1044.0,
+    "steps": [
+      {
+        "step": "clean",
+        "status": "ok",
+        "seconds": 0.0,
+        "detail": "removed ['data/demo/seed.db', 'data/demo/seed_meta.json']"
+      },
+      {
+        "step": "generator",
+        "status": "ok",
+        "seconds": 28.5,
+        "detail": "seed 42"
+      },
+      {
+        "step": "generator_identity",
+        "status": "ok",
+        "seconds": 0.2,
+        "detail": "8 parquet files and both demo scripts byte-identical to model-freeze-1"
+      },
+      {
+        "step": "train",
+        "status": "ok",
+        "seconds": 45.4,
+        "detail": "clf-20261114-e8dfc2 (tau 0.99, k 0.5) reused"
+      },
+      {
+        "step": "seed",
+        "status": "ok",
+        "seconds": 907.4,
+        "detail": "11.5 MB"
+      },
+      {
+        "step": "notice_amount",
+        "status": "ok",
+        "seconds": 0.0,
+        "detail": "\u20b98,42,162"
+      },
+      {
+        "step": "seed_checks",
+        "status": "ok",
+        "seconds": 0.0,
+        "detail": "3 OPEN questions on 29-31 Oct; Selvi MIXED (3 family / 2 sale answers)"
+      },
+      {
+        "step": "tests",
+        "status": "ok",
+        "seconds": 62.5,
+        "detail": "203 passed, 1 warning in 60.66s (0:01:00)"
+      }
+    ]
   }
 }

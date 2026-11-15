@@ -12,6 +12,7 @@ from data.generator.generate import FIXED_UNANSWERED, M001_DEMO_CUSTOMERS, gener
 from data.generator.run import label_mix
 
 REPO = Path(__file__).resolve().parents[2]
+pytestmark = pytest.mark.timeout(900)  # builds generator data / walks the seed
 
 
 @pytest.fixture(scope="session")

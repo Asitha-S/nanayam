@@ -13,7 +13,8 @@ from app.ledger.hashing import verify_chain
 
 SEED = DEMO_DATA_DIR / "seed.db"
 META = DEMO_DATA_DIR / "seed_meta.json"
-pytestmark = pytest.mark.skipif(not SEED.exists(), reason="run python -m data.seed_demo first")
+pytestmark = [pytest.mark.skipif(not SEED.exists(), reason="run python -m data.seed_demo first"),
+              pytest.mark.timeout(900)]
 
 
 @pytest.fixture(scope="module")
@@ -112,3 +113,22 @@ def test_notice_numbers_match_seed(conn, meta):
 
 def test_demo_state_starts_at_one(conn):
     assert dict(conn.execute("SELECT merchant_id, next_demo_index FROM demo_state").fetchall()) == {"M001": 1, "M002": 1}
+
+
+def test_named_demo_payers_are_fixtures_not_simulated(conn, meta):
+    from data.generator.generate import NAMED_PAYERS
+
+    remembered = conn.execute("SELECT payer_id FROM merchant_family_payers WHERE added_via = 'CONFIRMATION'"
+                              " UNION SELECT payer_id FROM merchant_customer_payers").fetchall()
+    assert not {r[0] for r in remembered} & set(NAMED_PAYERS)
+    assert meta["remember"]["never_for"] == sorted(NAMED_PAYERS)
+
+
+def test_selvi_stays_mixed(conn):
+    from app.feedback.memory import payer_counts
+
+    conn.row_factory = sqlite3.Row
+    n_family, n_sale = payer_counts(conn, "M001", "P90003")
+    assert (n_family, n_sale) == (3, 2)  # MIXED: rule 5a, always asked
+    assert not conn.execute("SELECT 1 FROM merchant_family_payers WHERE payer_id = 'P90003'").fetchone()
+    assert not conn.execute("SELECT 1 FROM merchant_customer_payers WHERE payer_id = 'P90003'").fetchone()

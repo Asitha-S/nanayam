@@ -5,5 +5,5 @@
   "amount_questioned_paise": 84216200,
   "amount_questioned_display": "₹8,42,162",
   "definition": "M001 gross UPI receipts in the notice period: sum of all PAYMENT_IN amounts, before refunds and reversals (DATA_AND_LOGIC 3.7).",
-  "seed_db_sha256": "e6fcf00900c50307e2d8bdc968cdc5648535b857c5b91ee1a3ba6985ba213f60"
+  "seed_db_sha256": "289b35bccd6b52e98c990a9187b5bafe214109a89ce89c52a30866b4e56df62a"
 }

@@ -14,7 +14,8 @@ from app.config import DEMO_DATA_DIR, get_settings
 from app.finance.summary import compute
 
 SEED = DEMO_DATA_DIR / "seed.db"
-pytestmark = pytest.mark.skipif(not SEED.exists(), reason="run python -m data.seed_demo first")
+pytestmark = [pytest.mark.skipif(not SEED.exists(), reason="run python -m data.seed_demo first"),
+              pytest.mark.timeout(900)]
 M001 = json.loads((DEMO_DATA_DIR / "M001_demo_day.json").read_text(encoding="utf-8"))
 M002 = json.loads((DEMO_DATA_DIR / "M002_demo_day.json").read_text(encoding="utf-8"))
 META = json.loads((DEMO_DATA_DIR / "seed_meta.json").read_text(encoding="utf-8")) if SEED.exists() else {}

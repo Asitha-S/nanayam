@@ -12,6 +12,7 @@ from app.classifier.features import (FEATURES, MIN_WINDOW_PAYMENTS, MerchantHist
 from app.config import DEMO_DATA_DIR
 
 IST = clock.IST
+pytestmark = pytest.mark.timeout(900)  # builds generator data / walks the seed
 
 
 # --- payer memory worked examples (DATA 6), tau 0.90 -------------------------------------

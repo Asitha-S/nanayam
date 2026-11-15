@@ -4,7 +4,13 @@ import pytest
 from app.config import DEMO_DATA_DIR
 
 SEED = DEMO_DATA_DIR / "seed.db"
-pytestmark = pytest.mark.skipif(not SEED.exists(), reason="run python -m data.seed_demo first")
+pytestmark = [pytest.mark.skipif(not SEED.exists(), reason="run python -m data.seed_demo first"),
+              pytest.mark.timeout(900)]
+
+
+# Expected M001 configuration in the seed (seed_demo with simulated remember; named demo payers excluded).
+SEED_M001_FAMILY = ["Karthik", "Sirisha A"]
+SEED_M001_CUSTOMERS = 13
 
 
 @pytest.fixture
@@ -23,7 +29,12 @@ def test_merchants_list_and_detail(demo):
                      "business_category": "VEGETABLES", "preferred_language": "ta"}
     m = demo.get("/api/merchants/M001").json()
     assert m["city"] == "Chennai" and m["created_at"] == "2026-08-01T05:00:00+05:30"
-    assert m["family_payers"] == [{"payer_id": "P90002", "payer_name": "Karthik", "relation_label": "Thambi (brother)"}]
+    # The seed now simulates "remember" (condition E behaviour, named demo payers excluded): Karthik (SETUP) first,
+    # then payers the simulated merchant remembered, without relation labels; and a customer list.
+    assert m["family_payers"][0] == {"payer_id": "P90002", "payer_name": "Karthik", "relation_label": "Thambi (brother)"}
+    assert [p["payer_name"] for p in m["family_payers"]] == SEED_M001_FAMILY
+    assert all(p["relation_label"] is None for p in m["family_payers"][1:])
+    assert len(m["customer_payers"]) == SEED_M001_CUSTOMERS
     assert demo.get("/api/merchants/M999").status_code == 404
 
 
@@ -47,7 +58,9 @@ def test_put_merchant_partial_update(demo):
 # --- learning ---------------------------------------------------------------------------------
 def test_learning_activity_and_payers(demo):
     r = demo.get("/api/merchants/M001/learning").json()
-    assert r["family_payers_configured"] == 1 and r["known_payers"] > 1000
+    # was 1 (Karthik only); remembered payers now come from the simulated merchant
+    assert r["family_payers_configured"] == len(SEED_M001_FAMILY) and r["known_payers"] > 1000
+    assert r["customer_payers_configured"] == SEED_M001_CUSTOMERS
     assert r["corrections_total"] >= r["payers_with_memory"] > 0
     assert set(r["questions_asked"]) == {"today", "last_7_days", "first_7_days"} and r["questions_asked"]["today"] == 0
     payers = {p["payer_name"]: p for p in r["payers"]}
@@ -64,7 +77,7 @@ def test_learning_today_after_demo(demo):
         "utterance_text": None, "remember_payer": True})
     r = demo.get("/api/merchants/M001/learning").json()
     assert r["questions_asked"]["today"] == 1 and r["auto_classified_today"] == 14
-    assert r["family_payers_configured"] == 2
+    assert r["family_payers_configured"] == len(SEED_M001_FAMILY) + 1  # was 2: seed list + Lakshmi
     assert r["recent_feedback"][0]["payer_name"] == "Lakshmi R" and r["recent_feedback"][0]["confirmed_category"] == "FAMILY"
     lakshmi = {p["payer_name"]: p for p in r["payers"]}["Lakshmi R"]
     assert (lakshmi["kind"], lakshmi["source"]) == ("FAMILY_INSTRUCTION", "CONFIRMATION")
