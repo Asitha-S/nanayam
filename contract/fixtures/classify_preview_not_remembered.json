@@ -1,0 +1,13 @@
+{
+  "suggested_classification": "FAMILY",
+  "confidence": 0.81,
+  "confidence_kind": "MODEL",
+  "action": "ASK_MERCHANT",
+  "classification_source": "PAYER_MEMORY",
+  "reasons": [
+    "Merchant confirmed this person's money as family before",
+    "P2P transfer",
+    "Round amount"
+  ],
+  "written": false
+}

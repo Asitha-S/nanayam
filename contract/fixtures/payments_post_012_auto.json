@@ -1,0 +1,19 @@
+{
+  "transaction_id": "TXN-M001-20261115-012",
+  "merchant_id": "M001",
+  "amount_paise": 120000,
+  "amount_display": "₹1,200",
+  "classification": "SALE",
+  "suggested_classification": "SALE",
+  "confidence": 0.97,
+  "confidence_kind": "MODEL",
+  "action": "AUTO_CLASSIFY",
+  "classification_source": "MODEL",
+  "reasons": [
+    "Business UPI ID",
+    "Regular customer"
+  ],
+  "question_id": null,
+  "ledger_entry_id": "LE-M001-004725",
+  "idempotent_replay": false
+}

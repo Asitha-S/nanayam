@@ -1,0 +1,16 @@
+{
+  "transaction_id": "TXN-M001-20261115-015",
+  "previous_classification": "PENDING",
+  "confirmed_category": "FAMILY",
+  "ledger_entry_id": "LE-M001-004729",
+  "feedback_id": "FB-M001-000208",
+  "question_id": "Q-M001-000213",
+  "question_status": "ANSWERED",
+  "payer_memory": {
+    "payer_id": "P90001",
+    "confirmed_family": 1,
+    "confirmed_sale": 0,
+    "family_payer_configured": true
+  },
+  "idempotent_replay": false
+}

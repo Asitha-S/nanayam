@@ -1,0 +1,78 @@
+{
+  "notice_id": "NTC-M001-001",
+  "period": {
+    "start_date": "2026-08-01",
+    "end_date": "2026-10-31"
+  },
+  "amount_questioned": {
+    "amount_paise": 46080000,
+    "amount_display": "₹4,60,800",
+    "origin": "EXTRACTED_FROM_NOTICE"
+  },
+  "ledger_view": {
+    "total_collections": {
+      "amount_paise": 46080000,
+      "amount_display": "₹4,60,800",
+      "origin": "DERIVED_FROM_LEDGER"
+    },
+    "business_sales": {
+      "amount_paise": 42725000,
+      "amount_display": "₹4,27,250",
+      "origin": "DERIVED_FROM_LEDGER",
+      "entry_count": 3291
+    },
+    "family_transfers": {
+      "amount_paise": 2650000,
+      "amount_display": "₹26,500",
+      "origin": "DERIVED_FROM_LEDGER",
+      "entry_count": 17
+    },
+    "refunds_and_reversals": {
+      "amount_paise": 55000,
+      "amount_display": "₹550",
+      "origin": "DERIVED_FROM_LEDGER"
+    },
+    "unresolved": {
+      "amount_paise": 650000,
+      "amount_display": "₹6,500",
+      "origin": "DERIVED_FROM_LEDGER",
+      "entry_count": 3
+    },
+    "expenses_recorded": {
+      "amount_paise": 32180000,
+      "amount_display": "₹3,21,800",
+      "origin": "DERIVED_FROM_LEDGER",
+      "entry_count": 104
+    }
+  },
+  "difference_vs_notice": {
+    "amount_paise": 0,
+    "amount_display": "₹0",
+    "explanation": "The notice amount matches total UPI collections in the ledger. The breakdown below shows how much of it was business sales."
+  },
+  "gst_treatment": "EXEMPT_LIKELY",
+  "as_of": "2026-11-15T19:45:00+05:30",
+  "family_transfer_examples": [
+    {
+      "transaction_id": "TXN-M001-20260903-052",
+      "date": "2026-09-03",
+      "payer_name": "Karthik",
+      "amount_display": "₹2,000",
+      "confirmed_by": "MERCHANT_CONFIG"
+    },
+    {
+      "transaction_id": "TXN-M001-20261012-047",
+      "date": "2026-10-12",
+      "payer_name": "Selvi",
+      "amount_display": "₹3,000",
+      "confirmed_by": "MERCHANT_CONFIRMED"
+    }
+  ],
+  "ca_review_warnings": [
+    "GST treatment is based on the merchant's declared category, not on individual sales.",
+    "Family transfer labels are the merchant's own confirmations.",
+    "Cash sales and payments through other apps are not in this ledger.",
+    "3 payments in this period are still unconfirmed."
+  ],
+  "ledger_verify_status": "VALID"
+}

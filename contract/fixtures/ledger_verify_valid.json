@@ -1,0 +1,7 @@
+{
+  "merchant_id": "M001",
+  "status": "VALID",
+  "entries_checked": 4729,
+  "first_invalid_entry_id": null,
+  "message": "All 4,729 entries verified. No changes detected."
+}

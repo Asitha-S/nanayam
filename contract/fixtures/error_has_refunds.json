@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "INVALID_STATE",
+    "message": "Payment has refunds and cannot be reversed",
+    "details": {
+      "reason": "HAS_REFUNDS"
+    }
+  }
+}

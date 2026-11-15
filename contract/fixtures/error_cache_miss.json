@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "CACHE_MISS",
+    "message": "No cached Sarvam response for this audio and DEMO_MODE=cache_only",
+    "details": {
+      "service": "stt"
+    }
+  }
+}

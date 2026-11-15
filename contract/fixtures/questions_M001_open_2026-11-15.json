@@ -1,0 +1,19 @@
+{
+  "merchant_id": "M001",
+  "items": [
+    {
+      "question_id": "Q-M001-000213",
+      "transaction_id": "TXN-M001-20261115-015",
+      "payer_name": "Lakshmi R",
+      "amount_paise": 200000,
+      "amount_display": "₹2,000",
+      "timestamp": "2026-11-15T19:42:10+05:30",
+      "suggested_classification": "FAMILY",
+      "confidence": 0.71,
+      "question_text": "லக்ஷ்மி கிட்ட இருந்து 2,000 ரூபாய் வந்திருக்கு. இது கடை வியாபாரமா, வீட்டு பணமா?",
+      "question_text_en": "₹2,000 received from Lakshmi R. Is this a shop sale or family money?",
+      "question_audio_id": "AUD-3f9a1c0be27d4411",
+      "status": "OPEN"
+    }
+  ]
+}

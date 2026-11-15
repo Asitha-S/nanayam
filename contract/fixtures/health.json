@@ -1,0 +1,10 @@
+{
+  "status": "ok",
+  "demo_mode": "cache_only",
+  "demo_date": "2026-11-15",
+  "db": "ok",
+  "model_version": "clf-2026-11-14-01",
+  "threshold": 0.9,
+  "demo_tools": true,
+  "tampered": false
+}

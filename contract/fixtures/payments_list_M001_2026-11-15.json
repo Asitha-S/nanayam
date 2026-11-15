@@ -1,0 +1,156 @@
+{
+  "merchant_id": "M001",
+  "count": 15,
+  "items": [
+    {
+      "transaction_id": "TXN-M001-20261115-001",
+      "timestamp": "2026-11-15T06:12:10+05:30",
+      "payer_name": "Senthil K",
+      "amount_paise": 4000,
+      "amount_display": "₹40",
+      "current_classification": "SALE",
+      "confidence": 0.98,
+      "classification_source": "MODEL"
+    },
+    {
+      "transaction_id": "TXN-M001-20261115-002",
+      "timestamp": "2026-11-15T06:30:10+05:30",
+      "payer_name": "Revathi",
+      "amount_paise": 6000,
+      "amount_display": "₹60",
+      "current_classification": "SALE",
+      "confidence": 0.98,
+      "classification_source": "MODEL"
+    },
+    {
+      "transaction_id": "TXN-M001-20261115-003",
+      "timestamp": "2026-11-15T06:58:10+05:30",
+      "payer_name": "Arun Kumar",
+      "amount_paise": 12000,
+      "amount_display": "₹120",
+      "current_classification": "SALE",
+      "confidence": 0.97,
+      "classification_source": "MODEL"
+    },
+    {
+      "transaction_id": "TXN-M001-20261115-004",
+      "timestamp": "2026-11-15T07:25:10+05:30",
+      "payer_name": "Meena S",
+      "amount_paise": 8500,
+      "amount_display": "₹85",
+      "current_classification": "SALE",
+      "confidence": 0.98,
+      "classification_source": "MODEL"
+    },
+    {
+      "transaction_id": "TXN-M001-20261115-005",
+      "timestamp": "2026-11-15T07:50:10+05:30",
+      "payer_name": "Prakash",
+      "amount_paise": 20000,
+      "amount_display": "₹200",
+      "current_classification": "SALE",
+      "confidence": 0.97,
+      "classification_source": "MODEL"
+    },
+    {
+      "transaction_id": "TXN-M001-20261115-006",
+      "timestamp": "2026-11-15T08:40:10+05:30",
+      "payer_name": "Divya R",
+      "amount_paise": 15000,
+      "amount_display": "₹150",
+      "current_classification": "SALE",
+      "confidence": 0.98,
+      "classification_source": "MODEL"
+    },
+    {
+      "transaction_id": "TXN-M001-20261115-007",
+      "timestamp": "2026-11-15T09:15:10+05:30",
+      "payer_name": "Gopal",
+      "amount_paise": 7500,
+      "amount_display": "₹75",
+      "current_classification": "SALE",
+      "confidence": 0.98,
+      "classification_source": "MODEL"
+    },
+    {
+      "transaction_id": "TXN-M001-20261115-008",
+      "timestamp": "2026-11-15T10:05:10+05:30",
+      "payer_name": "Kavitha",
+      "amount_paise": 31000,
+      "amount_display": "₹310",
+      "current_classification": "SALE",
+      "confidence": 0.96,
+      "classification_source": "MODEL"
+    },
+    {
+      "transaction_id": "TXN-M001-20261115-009",
+      "timestamp": "2026-11-15T11:20:10+05:30",
+      "payer_name": "Ramesh",
+      "amount_paise": 4500,
+      "amount_display": "₹45",
+      "current_classification": "SALE",
+      "confidence": 0.98,
+      "classification_source": "MODEL"
+    },
+    {
+      "transaction_id": "TXN-M001-20261115-010",
+      "timestamp": "2026-11-15T12:40:10+05:30",
+      "payer_name": "Saranya",
+      "amount_paise": 50000,
+      "amount_display": "₹500",
+      "current_classification": "SALE",
+      "confidence": 0.95,
+      "classification_source": "MODEL"
+    },
+    {
+      "transaction_id": "TXN-M001-20261115-011",
+      "timestamp": "2026-11-15T16:05:10+05:30",
+      "payer_name": "Vijay",
+      "amount_paise": 23000,
+      "amount_display": "₹230",
+      "current_classification": "SALE",
+      "confidence": 0.97,
+      "classification_source": "MODEL"
+    },
+    {
+      "transaction_id": "TXN-M001-20261115-012",
+      "timestamp": "2026-11-15T17:10:10+05:30",
+      "payer_name": "Anbu Mess",
+      "amount_paise": 120000,
+      "amount_display": "₹1,200",
+      "current_classification": "SALE",
+      "confidence": 0.97,
+      "classification_source": "MODEL"
+    },
+    {
+      "transaction_id": "TXN-M001-20261115-013",
+      "timestamp": "2026-11-15T18:20:10+05:30",
+      "payer_name": "Bala",
+      "amount_paise": 90500,
+      "amount_display": "₹905",
+      "current_classification": "SALE",
+      "confidence": 0.94,
+      "classification_source": "MODEL"
+    },
+    {
+      "transaction_id": "TXN-M001-20261115-014",
+      "timestamp": "2026-11-15T19:05:10+05:30",
+      "payer_name": "Anbu Mess",
+      "amount_paise": 90000,
+      "amount_display": "₹900",
+      "current_classification": "SALE",
+      "confidence": 0.97,
+      "classification_source": "MODEL"
+    },
+    {
+      "transaction_id": "TXN-M001-20261115-015",
+      "timestamp": "2026-11-15T19:42:10+05:30",
+      "payer_name": "Lakshmi R",
+      "amount_paise": 200000,
+      "amount_display": "₹2,000",
+      "current_classification": "FAMILY",
+      "confidence": 0.71,
+      "classification_source": "MERCHANT_CONFIRMED"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "merchant_id": "M001",
+  "status": "TAMPERED",
+  "entries_checked": 4725,
+  "first_invalid_entry_id": "LE-M001-004725",
+  "message": "Entry LE-M001-004725 was changed after it was written (hash_mismatch)."
+}

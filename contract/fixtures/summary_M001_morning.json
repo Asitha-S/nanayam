@@ -1,0 +1,55 @@
+{
+  "merchant_id": "M001",
+  "period": {
+    "start_date": "2026-11-15",
+    "end_date": "2026-11-15"
+  },
+  "total_collections": {
+    "amount_paise": 0,
+    "amount_display": "₹0"
+  },
+  "business_sales": {
+    "amount_paise": 0,
+    "amount_display": "₹0"
+  },
+  "family_transfers": {
+    "amount_paise": 0,
+    "amount_display": "₹0"
+  },
+  "pending": {
+    "amount_paise": 0,
+    "amount_display": "₹0",
+    "count": 0
+  },
+  "refunds": {
+    "amount_paise": 0,
+    "amount_display": "₹0"
+  },
+  "reversals": {
+    "amount_paise": 0,
+    "amount_display": "₹0"
+  },
+  "expenses": {
+    "amount_paise": 310000,
+    "amount_display": "₹3,100"
+  },
+  "profit": {
+    "amount_paise": -310000,
+    "amount_display": "−₹3,100",
+    "label": "Recorded profit"
+  },
+  "scope_note": "UPI payments only. Profit = business sales minus expenses you entered. Cash sales, unrecorded expenses and stock changes are not included.",
+  "attribution_note": "Refunds and reversals are counted on the date of the original payment, so past days can change when a later refund happens.",
+  "as_of": "2026-11-15T05:41:00+05:30",
+  "reconciliation_ok": true,
+  "sources": {
+    "business_sales": [],
+    "family_transfers": [],
+    "expenses": [
+      "LE-M001-004713"
+    ],
+    "refunds": [],
+    "reversals": [],
+    "pending": []
+  }
+}

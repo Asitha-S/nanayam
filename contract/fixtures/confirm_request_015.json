@@ -1,0 +1,8 @@
+{
+  "merchant_id": "M001",
+  "question_id": "Q-M001-000213",
+  "confirmed_category": "FAMILY",
+  "channel": "VOICE",
+  "utterance_text": "வீட்டு பணம், அக்கா அனுப்பினாங்க. ஆமா, எப்பவும்",
+  "remember_payer": true
+}

@@ -1,0 +1,17 @@
+{
+  "merchant_id": "M001",
+  "count": 1,
+  "items": [
+    {
+      "expense_id": "EXP-M001-000318",
+      "timestamp": "2026-11-15T05:40:00+05:30",
+      "amount_paise": 310000,
+      "amount_display": "₹3,100",
+      "category": "STOCK_PURCHASE",
+      "description": "Kaaikari, Koyambedu",
+      "input_source": "VOICE",
+      "voided": false,
+      "ledger_entry_id": "LE-M001-004713"
+    }
+  ]
+}

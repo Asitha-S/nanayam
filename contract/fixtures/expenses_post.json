@@ -1,0 +1,9 @@
+{
+  "expense_id": "EXP-M001-000318",
+  "ledger_entry_id": "LE-M001-004713",
+  "amount_paise": 310000,
+  "amount_display": "₹3,100",
+  "category": "STOCK_PURCHASE",
+  "status": "RECORDED",
+  "idempotent_replay": false
+}

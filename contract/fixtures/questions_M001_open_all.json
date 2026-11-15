@@ -1,0 +1,61 @@
+{
+  "merchant_id": "M001",
+  "items": [
+    {
+      "question_id": "Q-M001-000213",
+      "transaction_id": "TXN-M001-20261115-015",
+      "payer_name": "Lakshmi R",
+      "amount_paise": 200000,
+      "amount_display": "₹2,000",
+      "timestamp": "2026-11-15T19:42:10+05:30",
+      "suggested_classification": "FAMILY",
+      "confidence": 0.71,
+      "question_text": "லக்ஷ்மி கிட்ட இருந்து 2,000 ரூபாய் வந்திருக்கு. இது கடை வியாபாரமா, வீட்டு பணமா?",
+      "question_text_en": "₹2,000 received from Lakshmi R. Is this a shop sale or family money?",
+      "question_audio_id": "AUD-3f9a1c0be27d4411",
+      "status": "OPEN"
+    },
+    {
+      "question_id": "Q-M001-000210",
+      "transaction_id": "TXN-M001-20261031-040",
+      "payer_name": "Prabhu",
+      "amount_paise": 150000,
+      "amount_display": "₹1,500",
+      "timestamp": "2026-10-31T20:05:00+05:30",
+      "suggested_classification": "FAMILY",
+      "confidence": 0.66,
+      "question_text": "Prabhu கிட்ட இருந்து 1,500 ரூபாய் வந்திருக்கு. இது கடை வியாபாரமா, வீட்டு பணமா?",
+      "question_text_en": "₹1,500 received from Prabhu. Is this a shop sale or family money?",
+      "question_audio_id": null,
+      "status": "OPEN"
+    },
+    {
+      "question_id": "Q-M001-000209",
+      "transaction_id": "TXN-M001-20261030-041",
+      "payer_name": "Jaya",
+      "amount_paise": 100000,
+      "amount_display": "₹1,000",
+      "timestamp": "2026-10-30T20:05:00+05:30",
+      "suggested_classification": "FAMILY",
+      "confidence": 0.66,
+      "question_text": "Jaya கிட்ட இருந்து 1,000 ரூபாய் வந்திருக்கு. இது கடை வியாபாரமா, வீட்டு பணமா?",
+      "question_text_en": "₹1,000 received from Jaya. Is this a shop sale or family money?",
+      "question_audio_id": null,
+      "status": "OPEN"
+    },
+    {
+      "question_id": "Q-M001-000208",
+      "transaction_id": "TXN-M001-20261029-042",
+      "payer_name": "Mani",
+      "amount_paise": 300000,
+      "amount_display": "₹3,000",
+      "timestamp": "2026-10-29T20:05:00+05:30",
+      "suggested_classification": "FAMILY",
+      "confidence": 0.66,
+      "question_text": "Mani கிட்ட இருந்து 3,000 ரூபாய் வந்திருக்கு. இது கடை வியாபாரமா, வீட்டு பணமா?",
+      "question_text_en": "₹3,000 received from Mani. Is this a shop sale or family money?",
+      "question_audio_id": null,
+      "status": "OPEN"
+    }
+  ]
+}

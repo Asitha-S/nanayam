@@ -1,0 +1,55 @@
+{
+  "ledger_entry_id": "LE-M001-004729",
+  "seq": 4729,
+  "entry_type": "RECLASSIFICATION",
+  "source_type": "PAYMENT",
+  "source_id": "TXN-M001-20261115-015",
+  "supersedes_entry_id": "LE-M001-004728",
+  "amount_paise": 200000,
+  "amount_display": "₹2,000",
+  "classification": "FAMILY",
+  "classification_source": "MERCHANT_CONFIRMED",
+  "confidence": null,
+  "expense_category": null,
+  "effective_at": "2026-11-15T19:42:10+05:30",
+  "created_at": "2026-11-15T19:43:02+05:30",
+  "prev_hash": "d5e2de676e440c5adc23288c932d657eab82c27b8f8b02dc3d3810aaa02914a9",
+  "hash": "b7148c58bf598724687a896042e1d20e3b5844c365fc408f4873e72ead31f59b",
+  "source": {
+    "transaction_id": "TXN-M001-20261115-015",
+    "merchant_id": "M001",
+    "payer_id": "P90001",
+    "payer_name": "Lakshmi R",
+    "payer_vpa_kind": "PERSONAL",
+    "payment_type": "P2P",
+    "amount_paise": 200000,
+    "amount_display": "₹2,000",
+    "timestamp": "2026-11-15T19:42:10+05:30",
+    "description": null,
+    "current_classification": "FAMILY",
+    "initial_prediction": {
+      "suggested_classification": "FAMILY",
+      "confidence": 0.71,
+      "action": "ASK_MERCHANT",
+      "classification_source": "RULE"
+    },
+    "classification_history": [
+      {
+        "ledger_entry_id": "LE-M001-004728",
+        "entry_type": "PAYMENT_IN",
+        "classification": "PENDING",
+        "source": "RULE",
+        "at": "2026-11-15T19:42:10+05:30"
+      },
+      {
+        "ledger_entry_id": "LE-M001-004729",
+        "entry_type": "RECLASSIFICATION",
+        "classification": "FAMILY",
+        "source": "MERCHANT_CONFIRMED",
+        "at": "2026-11-15T19:43:02+05:30"
+      }
+    ],
+    "refunded_paise": 0,
+    "reversed": false
+  }
+}

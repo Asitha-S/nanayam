@@ -1,0 +1,20 @@
+{
+  "intent": "LOG_EXPENSE",
+  "entities": {
+    "amount_paise": 310000,
+    "amount_display": "₹3,100",
+    "category": "STOCK_PURCHASE",
+    "description": "Kaaikari, Koyambedu",
+    "date": "2026-11-15",
+    "confirmed_category": null,
+    "remember_payer": null
+  },
+  "needs_clarification": false,
+  "clarification_text": null,
+  "confirmation_text": "3,100 ரூபாய் சரக்கு செலவு (காய்கறி, கோயம்பேடு). சரியா?",
+  "validation": {
+    "amount_found_in_text": true,
+    "category_valid": true
+  },
+  "from_cache": true
+}

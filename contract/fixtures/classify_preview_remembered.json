@@ -1,0 +1,11 @@
+{
+  "suggested_classification": "FAMILY",
+  "confidence": null,
+  "confidence_kind": "NONE",
+  "action": "AUTO_CLASSIFY",
+  "classification_source": "MERCHANT_CONFIG",
+  "reasons": [
+    "Marked as family by merchant"
+  ],
+  "written": false
+}

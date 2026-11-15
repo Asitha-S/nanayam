@@ -1,0 +1,9 @@
+* text=auto eol=lf
+*.wav binary
+*.mp3 binary
+*.png binary
+*.jpg binary
+*.pdf binary
+*.db binary
+*.joblib binary
+*.parquet binary

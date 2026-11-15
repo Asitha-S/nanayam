@@ -1,0 +1,21 @@
+{
+  "transaction_id": "TXN-M001-20261115-015",
+  "merchant_id": "M001",
+  "amount_paise": 200000,
+  "amount_display": "₹2,000",
+  "classification": "PENDING",
+  "suggested_classification": "FAMILY",
+  "confidence": 0.71,
+  "confidence_kind": "MODEL",
+  "action": "ASK_MERCHANT",
+  "classification_source": "RULE",
+  "reasons": [
+    "Family money is only excluded after the merchant confirms",
+    "New payer",
+    "P2P transfer",
+    "Round amount"
+  ],
+  "question_id": "Q-M001-000213",
+  "ledger_entry_id": "LE-M001-004728",
+  "idempotent_replay": false
+}

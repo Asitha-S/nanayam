@@ -1,0 +1,20 @@
+{
+  "intent": "CONFIRM_TRANSACTION",
+  "entities": {
+    "amount_paise": null,
+    "amount_display": null,
+    "category": null,
+    "description": null,
+    "date": null,
+    "confirmed_category": "FAMILY",
+    "remember_payer": false
+  },
+  "needs_clarification": false,
+  "clarification_text": null,
+  "confirmation_text": null,
+  "validation": {
+    "amount_found_in_text": null,
+    "category_valid": true
+  },
+  "from_cache": true
+}

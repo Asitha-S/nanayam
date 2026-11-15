@@ -1,0 +1,67 @@
+{
+  "merchant_id": "M001",
+  "months": [
+    {
+      "month": "2026-08",
+      "raw_collections_paise": 15020000,
+      "raw_collections_display": "₹1,50,200",
+      "family_transfers_paise": 900000,
+      "family_transfers_display": "₹9,000",
+      "refunds_reversals_paise": 20000,
+      "refunds_reversals_display": "₹200",
+      "business_sales_paise": 14100000,
+      "business_sales_display": "₹1,41,000",
+      "expenses_paise": 10450000,
+      "expenses_display": "₹1,04,500",
+      "recorded_income_paise": 14100000,
+      "recorded_income_display": "₹1,41,000",
+      "unresolved_count": 0
+    },
+    {
+      "month": "2026-09",
+      "raw_collections_paise": 15480000,
+      "raw_collections_display": "₹1,54,800",
+      "family_transfers_paise": 850000,
+      "family_transfers_display": "₹8,500",
+      "refunds_reversals_paise": 15000,
+      "refunds_reversals_display": "₹150",
+      "business_sales_paise": 14615000,
+      "business_sales_display": "₹1,46,150",
+      "expenses_paise": 10820000,
+      "expenses_display": "₹1,08,200",
+      "recorded_income_paise": 14615000,
+      "recorded_income_display": "₹1,46,150",
+      "unresolved_count": 0
+    },
+    {
+      "month": "2026-10",
+      "raw_collections_paise": 15580000,
+      "raw_collections_display": "₹1,55,800",
+      "family_transfers_paise": 900000,
+      "family_transfers_display": "₹9,000",
+      "refunds_reversals_paise": 20000,
+      "refunds_reversals_display": "₹200",
+      "business_sales_paise": 14010000,
+      "business_sales_display": "₹1,40,100",
+      "expenses_paise": 10910000,
+      "expenses_display": "₹1,09,100",
+      "recorded_income_paise": 14010000,
+      "recorded_income_display": "₹1,40,100",
+      "unresolved_count": 3
+    }
+  ],
+  "totals": {
+    "raw_collections": {
+      "amount_paise": 46080000,
+      "amount_display": "₹4,60,800"
+    },
+    "recorded_business_income": {
+      "amount_paise": 42725000,
+      "amount_display": "₹4,27,250"
+    }
+  },
+  "share_of_collections_that_were_business_sales": 0.927,
+  "ledger_verify_status": "VALID",
+  "label": "Recorded business income summary. Not verified income. Not a credit decision.",
+  "consent_note": "Shared only with the merchant's consent."
+}

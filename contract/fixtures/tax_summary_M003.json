@@ -1,0 +1,37 @@
+{
+  "merchant_id": "M003",
+  "period": {
+    "start_date": "2026-08-01",
+    "end_date": "2026-11-15"
+  },
+  "business_category": "MIXED_KIRANA",
+  "gst_treatment": "UNKNOWN",
+  "gst_treatment_basis": "Mixed goods. The split between exempt and taxable sales cannot be known from UPI payments.",
+  "ca_review_required": true,
+  "total_collections": {
+    "amount_paise": 72210000,
+    "amount_display": "₹7,22,100"
+  },
+  "business_sales": {
+    "amount_paise": 69850000,
+    "amount_display": "₹6,98,500"
+  },
+  "family_transfers": {
+    "amount_paise": 1800000,
+    "amount_display": "₹18,000"
+  },
+  "pending": {
+    "amount_paise": 0,
+    "amount_display": "₹0",
+    "count": 0
+  },
+  "expenses_recorded": {
+    "amount_paise": 51200000,
+    "amount_display": "₹5,12,000",
+    "count": 64
+  },
+  "flags": [
+    "MIXED_CATEGORY_SPLIT_UNKNOWN",
+    "CA_REVIEW_REQUIRED"
+  ]
+}

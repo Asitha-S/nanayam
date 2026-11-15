@@ -1,0 +1,36 @@
+{
+  "merchant_id": "M001",
+  "period": {
+    "start_date": "2026-08-01",
+    "end_date": "2026-11-15"
+  },
+  "business_category": "VEGETABLES",
+  "gst_treatment": "EXEMPT_LIKELY",
+  "gst_treatment_basis": "Merchant configured category VEGETABLES (fresh vegetables are generally GST-exempt). Not inferred from payments.",
+  "ca_review_required": true,
+  "total_collections": {
+    "amount_paise": 55634500,
+    "amount_display": "₹5,56,345"
+  },
+  "business_sales": {
+    "amount_paise": 51749500,
+    "amount_display": "₹5,17,495"
+  },
+  "family_transfers": {
+    "amount_paise": 3170000,
+    "amount_display": "₹31,700"
+  },
+  "pending": {
+    "amount_paise": 650000,
+    "amount_display": "₹6,500",
+    "count": 3
+  },
+  "expenses_recorded": {
+    "amount_paise": 37210000,
+    "amount_display": "₹3,72,100",
+    "count": 121
+  },
+  "flags": [
+    "CA_REVIEW_REQUIRED"
+  ]
+}

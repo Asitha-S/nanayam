@@ -1,0 +1,21 @@
+{
+  "merchant_id": "M001",
+  "corrections_total": 208,
+  "known_payers": 412,
+  "payers_with_memory": 9,
+  "family_payers_configured": 2,
+  "questions_asked": {
+    "today": 1,
+    "last_7_days": 6,
+    "first_7_days": 23
+  },
+  "auto_classified_today": 14,
+  "recent_feedback": [
+    {
+      "feedback_id": "FB-M001-000208",
+      "payer_name": "Lakshmi R",
+      "confirmed_category": "FAMILY",
+      "at": "2026-11-15T19:43:02+05:30"
+    }
+  ]
+}

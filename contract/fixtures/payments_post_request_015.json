@@ -1,0 +1,11 @@
+{
+  "transaction_id": "TXN-M001-20261115-015",
+  "merchant_id": "M001",
+  "payer_id": "P90001",
+  "payer_name": "Lakshmi R",
+  "payer_vpa_kind": "PERSONAL",
+  "amount_paise": 200000,
+  "payment_type": "P2P",
+  "timestamp": "2026-11-15T19:42:10+05:30",
+  "description": null
+}

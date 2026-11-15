@@ -1,0 +1,10 @@
+{
+  "error": {
+    "code": "DUPLICATE_CONFLICT",
+    "message": "transaction_id TXN-M001-20261115-015 already exists with a different amount",
+    "details": {
+      "transaction_id": "TXN-M001-20261115-015",
+      "field": "amount_paise"
+    }
+  }
+}

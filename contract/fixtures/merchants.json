@@ -1,0 +1,25 @@
+{
+  "merchants": [
+    {
+      "merchant_id": "M001",
+      "display_name": "Murugan Kaaikari Kadai",
+      "owner_name": "Murugan",
+      "business_category": "VEGETABLES",
+      "preferred_language": "ta"
+    },
+    {
+      "merchant_id": "M002",
+      "display_name": "Venkatesh Pandla Dukanam",
+      "owner_name": "Venkatesh",
+      "business_category": "FRUITS",
+      "preferred_language": "te"
+    },
+    {
+      "merchant_id": "M003",
+      "display_name": "Ravi Stores",
+      "owner_name": "Ravi",
+      "business_category": "MIXED_KIRANA",
+      "preferred_language": "ta"
+    }
+  ]
+}

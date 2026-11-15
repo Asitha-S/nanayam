@@ -1,0 +1,12 @@
+{
+  "client_request_id": "6f1c2a8e-1d7b-4c2e-9b9a-0c3d2e1f4a5b",
+  "merchant_id": "M001",
+  "amount_paise": 310000,
+  "category": "STOCK_PURCHASE",
+  "description": "Kaaikari, Koyambedu",
+  "timestamp": "2026-11-15T05:40:00+05:30",
+  "input_source": "VOICE",
+  "language": "ta",
+  "utterance_text": "Koyambedu-la 3,100 rupees-ku kaaikari vaanginen",
+  "voice_log_id": "VL-M001-000112"
+}

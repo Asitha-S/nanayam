@@ -1,0 +1,20 @@
+{
+  "intent": "LOG_EXPENSE",
+  "entities": {
+    "amount_paise": null,
+    "amount_display": null,
+    "category": "STOCK_PURCHASE",
+    "description": "Kaaikari",
+    "date": "2026-11-15",
+    "confirmed_category": null,
+    "remember_payer": null
+  },
+  "needs_clarification": true,
+  "clarification_text": "எவ்வளவு ரூபாய்னு இன்னொரு தடவை சொல்லுங்க.",
+  "confirmation_text": null,
+  "validation": {
+    "amount_found_in_text": false,
+    "category_valid": true
+  },
+  "from_cache": false
+}

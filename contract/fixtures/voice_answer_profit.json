@@ -1,0 +1,35 @@
+{
+  "text": "இன்னைக்கு கடை வியாபாரம் 4,820 ரூபாய். செலவு 3,100 ரூபாய். மீதம் 1,720 ரூபாய். வீட்டு பணம் 2,000 ரூபாய் இதுல சேர்க்கல.",
+  "language": "ta",
+  "facts": {
+    "business_sales": {
+      "amount_paise": 482000,
+      "amount_display": "₹4,820"
+    },
+    "expenses": {
+      "amount_paise": 310000,
+      "amount_display": "₹3,100"
+    },
+    "profit": {
+      "amount_paise": 172000,
+      "amount_display": "₹1,720"
+    },
+    "family_transfers": {
+      "amount_paise": 200000,
+      "amount_display": "₹2,000"
+    },
+    "pending_count": 0
+  },
+  "number_check": {
+    "passed": true,
+    "slots": {
+      "sales": 482000,
+      "expenses": 310000,
+      "profit": 172000,
+      "family": 200000
+    }
+  },
+  "scope_note": "UPI payments only. Profit = business sales minus expenses you entered.",
+  "audio_id": "AUD-91c2d0aa7e5b3f12",
+  "from_cache": true
+}
