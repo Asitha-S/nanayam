@@ -107,6 +107,9 @@ def metrics(d: pd.DataFrame, t: pd.DataFrame, cond: str) -> dict:
         "questions_per_merchant_per_day": round(float(ask.sum()) / (n_merchants * n_days), 2),
         "overall_accuracy": round(float((final == truth).mean()), 4),
         "family_recall_final": _counted(((final == "FAMILY") & is_fam).sum(), is_fam.sum()),
+        "income_wrongly_removed": {**_counted(((final == "FAMILY") & is_sale).sum(), is_sale.sum()),
+                                   "silent": int((auto & is_sale & (sug == "FAMILY")).sum()),
+                                   "merchant_answer_errors": int((ask & is_sale & (final == "FAMILY")).sum())},
         "silent_family_errors": _counted((auto & is_sale & (sug == "FAMILY")).sum(), is_sale.sum()),
         "silent_sale_errors": _counted((auto & is_fam & (sug == "SALE")).sum(), is_fam.sum()),
         "config_errors": _counted((cfg & (sug != truth)).sum(), cfg.sum()),
@@ -163,6 +166,12 @@ def main() -> None:
     label_mix = json.loads((GENERATED / "label_mix.json").read_text(encoding="utf-8"))
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, capture_output=True, text=True).stdout.strip()
     now = datetime.now().astimezone()
+    headline = lambda c: {  # noqa: E731
+        "family_money_found": conditions[c]["family_recall_final"],
+        "income_wrongly_removed": conditions[c]["income_wrongly_removed"],
+        "questions_per_merchant_per_day": conditions[c]["questions_per_merchant_per_day"],
+    }
+    selection = art["threshold_selection"]
     pick = lambda c: {k: conditions[c][k] for k in ("precision_auto", "coverage", "questions_per_merchant_per_day",  # noqa: E731
                                                     "overall_accuracy")}
     result = {
@@ -173,6 +182,18 @@ def main() -> None:
         "threshold": tau,
         "split": {"train_merchants": 70, "test_merchants": len(TEST_MERCHANTS),
                   "test_period": f"{TEST_PERIOD[0]} to {TEST_PERIOD[1]}", "test_transactions": len(t)},
+        "headline": {
+            "note": "Show these first. precision_auto and precision by source are secondary and always shown next "
+                    "to the always-SALE baseline (condition A).",
+            "always_sale": headline("A"), "baseline": headline("C"), "with_feedback": headline("E"),
+        },
+        "threshold_selection": {k: selection[k] for k in ("set", "objective", "constraints", "tie_break",
+                                                          "met_constraints", "chosen", "table")},
+        "threshold_curve_calibration": [
+            {"threshold": r["threshold"], "family_recall": r["family_recall"],
+             "questions_per_merchant_per_day": r["questions_per_merchant_per_day"],
+             "silent_errors": r["silent_errors"]["total"]}
+            for r in selection["table"]],
         "baseline": pick("C"),
         "with_feedback": pick("E"),
         "questions_per_day_by_week": {"labels": [w[0] for w in WEEKS], "baseline": conditions["C"]["questions_per_day_by_week"],
@@ -186,7 +207,9 @@ def main() -> None:
         "notes": {
             "family_metric_denominators": "family_recall_final: of all true FAMILY payments; silent_family_errors: of all "
                                           "true SALE payments; silent_sale_errors: of all true FAMILY payments; "
-                                          "config_errors: of all MERCHANT_CONFIG decisions.",
+                                          "config_errors: of all MERCHANT_CONFIG decisions; income_wrongly_removed: "
+                                          "true SALE payments whose final label is FAMILY (silent + merchant answer "
+                                          "errors), of all true SALE payments.",
             "confusion_matrix_auto": "Top-level matrix is condition E (the full system); each condition has its own.",
             "reversals": "Ignored in the evaluation replay (0.1% of payments).",
         },

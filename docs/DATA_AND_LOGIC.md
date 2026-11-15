@@ -331,13 +331,13 @@ One function `features.build(payment, history_df)` is used in training, evaluati
 - Saved to `ml/artifacts/{model_version}.joblib` with feature list, calibrator, threshold and training metadata. Committed (it is small).
 
 ### 5.3 Calibration
-- Calibration set: M101–M170, 2026-10-02 to 2026-10-15 (not used in fitting).
-- Isotonic regression on raw model scores → `q_model` = calibrated p(FAMILY).
+- Calibration: isotonic regression fitted on **out-of-fold** raw scores over the whole train + calibration period (M101–M170, 2026-08-01 to 2026-10-15). 5 folds grouped by merchant; each fold model is trained like the final model (train period, other merchants) and scores the held-out merchants. → `q_model` = calibrated p(FAMILY).
+- Calibration set (for choosing τ): M101–M170, 2026-10-02 to 2026-10-15.
 - Report ECE (10 equal-width bins) before and after calibration.
 
 ### 5.4 Threshold selection
-- Grid τ ∈ {0.80, 0.81, …, 0.99}. On the calibration set only, compute precision_auto(τ) and coverage(τ) using the full decision procedure (5.6) **without** feedback.
-- Chosen τ = the smallest τ with precision_auto ≥ 0.95, and never below `CONF_THRESHOLD` (default 0.90). Stored in the model artifact. `/health` reports it.
+- Grid τ ∈ {0.80, 0.81, …, 0.99, 0.995, 0.998, 0.999}. On the calibration set only, run the full decision procedure (5.6) **without** feedback (condition C), merchant answers taken as correct.
+- Chosen τ **minimises silent errors** (family counted as sale + sale removed as family) subject to: questions ≤ 1.0 per merchant per day, precision_auto ≥ 0.95, τ ≥ `CONF_THRESHOLD` (default 0.90). Ties: the lower τ. Stored in the model artifact with the full calibration-set table (τ, coverage, precision_auto, questions/day, silent errors, family recall), which is also copied into `latest.json`. `/health` reports the effective τ.
 - Changing `CONF_THRESHOLD` in `.env` lets us show the trade-off live (higher τ → more questions, higher precision). The evaluation file includes the whole curve so the trade-off is shown, not just one point.
 
 ### 5.5 Reasons (fixed list, max 4 shown, in this priority order)
@@ -574,6 +574,8 @@ Every condition starts test merchants with empty memory and no configured family
 | pr_coverage_curve | condition C precision_auto and coverage for τ 0.50–0.99 |
 | confusion_matrix_auto | AUTO decisions only |
 | calibration | ECE + 10 bins of q_model on test |
+
+**Headline metrics** (shown first): "family money found X of N" (family_recall_final), "income wrongly removed Y of M" (true SALE payments whose final label is FAMILY, split into silent and merchant-answer errors), and questions per merchant per day. precision_auto and precision by source are secondary and always shown next to the always-SALE baseline.
 
 **Family-specific metrics are reported as counts with their denominators, not only rates**, because the FAMILY class is small: e.g. `"family_recall_final": {"count": 503, "of": 512, "rate": 0.9824}` and `"silent_family_errors": {"count": 6, "of": 152525}`. Denominators: family_recall_final and silent_sale_errors = all true FAMILY payments; silent_family_errors = all true SALE payments; config_errors = all MERCHANT_CONFIG decisions. This applies to family_recall_final, silent_family_errors, silent_sale_errors and config_errors. The screen shows "9 of 31,200", never a bare rate.
 

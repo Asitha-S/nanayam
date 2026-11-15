@@ -106,12 +106,12 @@ Never cut: confirmation step, question binding, template answers with slot check
 | 1:30 | Learning | Preview: next Lakshmi payment → "Family, your instruction" | "He told Naanayam to remember, so next time it doesn't ask. He can change that any time. For everyone else, his answers gradually reduce the questions." |
 | 1:40 | Talk | `ask_profit` → Tamil answer plays, numbers highlight | "Sales 4,820. Expenses 3,100. Recorded profit 1,720. The AI never touches the maths: the ledger calculates it and the answer is a fixed template. UPI only, and only the expenses he entered: we say that on screen." |
 | 2:00 | Today → tap ₹4,820 | source entries | "Every number opens the payments behind it." |
-| 2:10 | Evaluation | | "On synthetic data from merchants the model never saw: always guessing 'sale' looks W% accurate but finds zero family money. Our full system decides X% on its own at Y% precision, and questions per day fall from A to B as merchants answer." |
+| 2:10 | Evaluation | | "On synthetic data from 110 merchants the model never saw: always guessing 'sale' finds zero family money. Our full system finds X of N family transfers, wrongly removes income in Y of M sales, and asks about A questions per merchant per day, falling to B as merchants answer." (Precision by source is on screen next to the always-SALE baseline if asked.) |
 | 2:25 | Notice | sample notice → fields with badges → evidence | "If a notice ever comes, the same ledger shows his CA what was business and what was family." |
 | 2:45 | Ledger verify | | "Every record is hash-chained. If anyone edits one, we can tell." |
 | 2:55 | Close | | "Others built assistants that talk. We built records that prove." |
 
-Put the real W, X, Y, A, B from `latest.json` into the script on Saturday night. Never round up.
+Put the real X, N, Y, M, A, B from `latest.json` (`headline`, `questions_per_day_by_week`) into the script on Saturday night. Never round up.
 
 5-minute version adds: tamper demo, Telugu M002 in 30 s, passport screen, mixed kirana GST = UNKNOWN.
 
@@ -131,7 +131,7 @@ Put the real W, X, Y, A, B from `latest.json` into the script on Saturday night.
 | question | answer |
 |---|---|
 | Isn't this just Paytm's existing Munim / a chatbot? | Those record what the merchant tells them. Naanayam starts from the payments themselves, separates business from family money, and produces records a CA or lender can trace to each payment. Voice is how he uses it, not what it is. |
-| How accurate is it? | Precision X% on payments it decides on its own, at Y% coverage, on held-out synthetic merchants. Everything else it asks. We report both because accuracy alone hides the questions. |
+| How accurate is it? | On held-out synthetic merchants it finds X of N family transfers and wrongly removes income in Y of M sales, asking about A questions per merchant per day. Precision on the payments it decides alone is on screen next to the always-sale baseline. |
 | Synthetic data? | Yes, clearly labelled. Real UPI data needs a partner. The evaluation method (unseen merchants, later period, precision with coverage) is what we'd run on real data. |
 | What if the model is wrong? | It only auto-decides above a threshold tuned for 95% precision, and we measured the full system's precision separately, including the "remember" shortcut. It never removes money from income for a payer the merchant hasn't confirmed. Every decision can be corrected; the correction is a new ledger entry. |
 | Is 0.99 / "remember" a model probability? | No. It's the merchant's own instruction, shown as "your instruction", with its own error count in the evaluation. |

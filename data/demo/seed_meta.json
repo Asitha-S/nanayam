@@ -1,13 +1,13 @@
 {
   "generator_seed": 42,
-  "model_version": "clf-20261114-ef61f9",
+  "model_version": "clf-20261114-e37803",
   "placeholder_classifier": false,
-  "threshold": 0.9,
-  "git_commit": "74439107bc0eb6455ad215ad7741464bf81580b7",
+  "threshold": 0.99,
+  "git_commit": "006b75292109a6b6ebeda043ca6f48ae3e695776",
   "git_dirty": true,
-  "created_at": "2026-11-14T01:24:10+05:30",
+  "created_at": "2026-11-14T01:38:47+05:30",
   "demo_date": "2026-11-15",
-  "seed_db_sha256": "432cd939f9be4b6f97621ef4da975dcf79105f6065d951a4ab2bb06265000cf1",
+  "seed_db_sha256": "3bbe28c6516f442ff2d228691b237f081084563df3729bbb7e361b2bed9af3b6",
   "label_mix": {
     "count_share": {
       "overall": 0.004213,
@@ -25,7 +25,7 @@
     }
   },
   "replay": {
-    "answered": 67,
+    "answered": 163,
     "left_unanswered": 3,
     "answer_skipped_reversed": 0
   },
@@ -33,32 +33,32 @@
     "M001": {
       "payments": 3898,
       "questions_open": 3,
-      "questions_answered": 18,
-      "feedback": 18,
+      "questions_answered": 54,
+      "feedback": 54,
       "refunds": 9,
       "reversals": 1,
       "expenses": 132,
-      "ledger_entries": 4058
+      "ledger_entries": 4094
     },
     "M002": {
       "payments": 3420,
       "questions_open": 0,
-      "questions_answered": 14,
-      "feedback": 14,
+      "questions_answered": 38,
+      "feedback": 38,
       "refunds": 14,
       "reversals": 3,
       "expenses": 132,
-      "ledger_entries": 3583
+      "ledger_entries": 3607
     },
     "M003": {
       "payments": 5132,
       "questions_open": 0,
-      "questions_answered": 35,
-      "feedback": 35,
+      "questions_answered": 71,
+      "feedback": 71,
       "refunds": 18,
       "reversals": 7,
       "expenses": 56,
-      "ledger_entries": 5248
+      "ledger_entries": 5284
     }
   }
 }
