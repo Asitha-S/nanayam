@@ -99,7 +99,8 @@ naanayam/
 │   │   ├── ledger/, finance/, classifier/, feedback/, demo/   (Asitha)
 │   │   ├── export/             (Asitha since 2026-11-14: CSV + PDF, reads finance/ functions only)
 │   │   ├── sarvam/             (client + cache: Asitha writes the client wrapper; Charulatha owns prompts/models used)
-│   │   ├── voice/              (Charulatha: interpret, templates; answer.py: Asitha since 2026-11-14)
+│   │   ├── voice/              (Charulatha: interpret.py (LLM), templates; answer.py, interpreter.py, rules.py: Asitha;
+│   │   │                        rules.py KEYWORDS: Tamil rows Charulatha, Telugu rows Nagasai Sree)
 │   │   │   └── templates/ta.json (Charulatha), templates/te.json (Nagasai Sree)
 │   │   └── notice/             (Charulatha: extraction (analyse), Tamil explanation; evidence.py, store.py: Asitha since 2026-11-14)
 │   └── tests/                  (Asitha; Charulatha adds voice tests)

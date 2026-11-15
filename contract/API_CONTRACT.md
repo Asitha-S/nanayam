@@ -411,9 +411,14 @@ Turns text into a structured intent. The LLM proposes; deterministic validation 
   "clarification_text": null,
   "confirmation_text": "₹3,100 kaaikari selavu (Koyambedu). Sari-yaa?",
   "validation": { "amount_found_in_text": true, "category_valid": true },
-  "from_cache": true
+  "from_cache": true,
+  "interpreter": "LLM"
 }
 ```
+`interpreter`: `LLM` when the LLM's proposal was used (Sarvam answered and it passed the deterministic checks),
+`RULES` when the rule-based interpreter decided (LLM unavailable, cache miss in `cache_only`, or junk output). The
+endpoint never returns a canned response: the result is always read from `text`. `from_cache` is `false` for `RULES`.
+
 Per intent, `entities` uses:
 - `LOG_EXPENSE`: `amount_paise`, `amount_display`, `category`, `description`, `date`
 - `ASK_DAILY_PROFIT`: `date` (today, or yesterday for "nethu" / "ninna")

@@ -124,8 +124,14 @@ class Smoke:
                    and any(x["payer_name"] == "Karthik" for x in ev["family_transfer_examples"]),
                    f"{notice['amount_questioned_display']}, difference 0, unresolved 3")
         vi = self.http.post("/voice/interpret", json={"merchant_id": "M001", "language": "ta", "text": "இன்னைக்கு எவ்வளவு லாபம்",
-                                                      "voice_log_id": None, "open_question_id": None})
-        self.check("voice interpret (stub)", vi.status_code == 200, vi.json().get("intent", ""))
+                                                      "voice_log_id": None, "open_question_id": None}).json()
+        ve = self.http.post("/voice/interpret", json={"merchant_id": "M001", "language": "ta",
+                                                      "text": "Koyambedu-la 3,100 rupees-ku kaaikari vaanginen",
+                                                      "voice_log_id": None, "open_question_id": None}).json()
+        self.check("voice interpret reads the text",
+                   vi.get("intent") == "ASK_DAILY_PROFIT" and ve.get("intent") == "LOG_EXPENSE"
+                   and ve["entities"]["amount_display"] == "₹3,100" and ve["entities"]["category"] == "STOCK_PURCHASE",
+                   f'{ve.get("interpreter")}: {ve["entities"].get("amount_display")} {ve["entities"].get("category")}')
 
 
 def main() -> int:

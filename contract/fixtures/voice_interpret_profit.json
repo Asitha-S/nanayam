@@ -16,5 +16,6 @@
     "amount_found_in_text": null,
     "category_valid": null
   },
-  "from_cache": true
+  "from_cache": true,
+  "interpreter": "LLM"
 }

@@ -1,7 +1,9 @@
 """Voice endpoints (contract section 6). Routers are Asitha's; the logic behind them is
 Charulatha's backend/app/voice/ module.
 
-REAL: /voice/answer (Asitha). STUB (fixtures) until Charulatha's modules land: transcribe, interpret, speak.
+REAL: /voice/answer (Asitha), /voice/interpret (Asitha: Charulatha's LLM interpreter when Sarvam answers, else the
+rule-based interpreter in voice/rules.py; never a fixture). STUB (fixtures) until Charulatha's modules land:
+transcribe, speak.
 The demo-clip hash check is already real: a demo_key with the wrong bytes is a 422.
 """
 import sqlite3
@@ -12,6 +14,7 @@ from fastapi.responses import FileResponse
 from .. import errors
 from ..deps import get_conn
 from ..sarvam import client as sarvam
+from ..voice import interpreter
 from ..voice.answer import daily_profit
 from ..schemas import AnswerIn, InterpretIn, SpeakIn, VoiceLanguage
 from ..stubs import fixture, require_merchant_422
@@ -19,7 +22,6 @@ from ..stubs import fixture, require_merchant_422
 router = APIRouter(tags=["voice"])
 
 MAX_AUDIO_BYTES = 5 * 1024 * 1024  # ~30 s of 16 kHz WAV is ~1 MB; anything this big is too long
-PROFIT_WORDS = ("லாபம்", "மீதம்", "labham", "laabam", "meedham", "లాభం", "profit")
 
 
 @router.post("/voice/transcribe")
@@ -42,14 +44,11 @@ async def transcribe(
 
 
 @router.post("/voice/interpret")
-def interpret(body: InterpretIn):
+def interpret(body: InterpretIn, conn: sqlite3.Connection = Depends(get_conn)):
+    """REAL (Asitha): reads the actual text. LLM (Charulatha's interpreter) when available, else rules."""
     require_merchant_422(body.merchant_id)
-    text = body.text.lower()
-    if body.open_question_id:
-        return fixture("voice_interpret_confirm")
-    if any(w in text for w in PROFIT_WORDS):
-        return fixture("voice_interpret_profit")
-    return fixture("voice_interpret_expense")
+    return interpreter.interpret(conn, merchant_id=body.merchant_id, language=body.language, text=body.text,
+                                 open_question_id=body.open_question_id)
 
 
 @router.post("/voice/answer")

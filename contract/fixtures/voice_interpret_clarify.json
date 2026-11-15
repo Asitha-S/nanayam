@@ -16,5 +16,6 @@
     "amount_found_in_text": false,
     "category_valid": true
   },
-  "from_cache": false
+  "from_cache": false,
+  "interpreter": "RULES"
 }

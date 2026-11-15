@@ -1,4 +1,4 @@
-"""Endpoints still on fixtures (Charulatha's voice interpret/transcribe/speak, notice analyse) and the
+"""Endpoints still on fixtures (Charulatha's voice transcribe/speak, notice analyse) and the
 contract error shape and request validation. Real endpoints are covered in the other test files."""
 import json
 
@@ -12,10 +12,6 @@ def fx(name):
 
 
 def test_voice_stubs(client):
-    body = {"merchant_id": "M001", "language": "ta", "voice_log_id": None, "open_question_id": None}
-    assert client.post("/api/voice/interpret", json={**body, "text": "Koyambedu-la 3,100 rupees-ku kaaikari vaanginen"}).json()["intent"] == "LOG_EXPENSE"
-    assert client.post("/api/voice/interpret", json={**body, "text": "இன்னைக்கு எவ்வளவு லாபம்"}).json()["intent"] == "ASK_DAILY_PROFIT"
-    assert client.post("/api/voice/interpret", json={**body, "text": "veettu panam", "open_question_id": "Q-M001-000213"}).json()["intent"] == "CONFIRM_TRANSACTION"
     assert client.post("/api/voice/speak", json={"merchant_id": "M001", "language": "ta", "text": "சரி"}).json() == fx("voice_speak")
     live = client.post("/api/voice/transcribe", data={"language": "ta", "merchant_id": "M001"}, files={"audio": ("a.webm", b"bytes")})
     assert live.json()["recognition_mode"] == "LIVE"
