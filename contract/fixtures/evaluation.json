@@ -5,10 +5,10 @@
   "model_version": "clf-placeholder",
   "threshold": 0.9,
   "split": {
-    "train_merchants": 30,
-    "test_merchants": 10,
+    "train_merchants": 70,
+    "test_merchants": 30,
     "test_period": "2026-10-16 to 2026-11-14",
-    "test_transactions": 18342
+    "test_transactions": 38527
   },
   "baseline": {
     "precision_auto": 0.96,
@@ -201,5 +201,21 @@
       }
     ]
   },
-  "merchant_answer_error_rate": 0.02
+  "merchant_answer_error_rate": 0.02,
+  "label_mix": {
+    "count_share": {
+      "overall": 0.004051,
+      "demo": 0.005941,
+      "train_calibration": 0.004063,
+      "test_merchants_all_dates": 0.00385,
+      "test_set": 0.003764
+    },
+    "value_share": {
+      "overall": 0.048871,
+      "demo": 0.045813,
+      "train_calibration": 0.05106,
+      "test_merchants_all_dates": 0.044292,
+      "test_set": 0.040972
+    }
+  }
 }

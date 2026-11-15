@@ -9,6 +9,7 @@ import pytest
 
 from data.generator import demo_scripts, params
 from data.generator.generate import FIXED_UNANSWERED, M001_DEMO_CUSTOMERS, generate
+from data.generator.run import label_mix
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -39,7 +40,9 @@ def test_merchants(gen):
     assert m.loc[["M001", "M002", "M003"], "business_category"].tolist() == ["VEGETABLES", "FRUITS", "MIXED_KIRANA"]
     evals = m.loc[params.EVAL_MERCHANTS]
     assert evals.business_category.value_counts().to_dict() == params.EVAL_CATEGORY_COUNTS
-    assert evals.loc[[f"M{n}" for n in range(131, 141)]].business_category.nunique() >= 3  # test set is mixed
+    assert evals.loc[params.TEST_MERCHANTS].business_category.nunique() == 5  # test set has every category
+    assert len(params.TRAIN_MERCHANTS) == 70 and len(params.TEST_MERCHANTS) == 30
+    assert not set(params.TRAIN_MERCHANTS) & set(params.TEST_MERCHANTS)
     assert evals.volume_scale.between(*params.SCALE_RANGE).all()
 
 
@@ -166,9 +169,24 @@ def test_expenses(gen):
 
 
 def test_label_mix_has_both_classes(pay):
-    for lo, hi in [(101, 130), (131, 140)]:
-        part = pay[pay.merchant_id.str[1:].astype(int).between(lo, hi)]
-        assert (part.true_label == "FAMILY").sum() > 50 and (part.true_label == "SALE").sum() > 1000
+    for merchants in (params.TRAIN_MERCHANTS, params.TEST_MERCHANTS):
+        part = pay[pay.merchant_id.isin(merchants)]
+        assert (part.true_label == "FAMILY").sum() > 100 and (part.true_label == "SALE").sum() > 1000
+
+
+def test_label_mix_count_and_value_share(gen, pay):
+    mix = label_mix(gen)
+    splits = {"overall", "demo", "train_calibration", "test_merchants_all_dates", "test_set"}
+    assert set(mix["count_share"]) == set(mix["value_share"]) == set(mix["family_payments"]) == splits
+    fam = pay[pay.true_label == "FAMILY"]
+    assert mix["family_payments"]["overall"] == len(fam)
+    assert mix["count_share"]["overall"] == round(len(fam) / len(pay), 6)
+    assert mix["value_share"]["overall"] == round(fam.amount_paise.sum() / pay.amount_paise.sum(), 6)
+    assert 0.002 < mix["count_share"]["overall"] < 0.01  # about 0.5% by count (DATA 4.3)
+    assert mix["value_share"]["overall"] > mix["count_share"]["overall"]  # family transfers are large
+    in_period = pay.timestamp.str[:10].between("2026-10-16", "2026-11-14")
+    test_fam = pay[pay.merchant_id.isin(params.TEST_MERCHANTS) & in_period & (pay.true_label == "FAMILY")]
+    assert mix["family_payments"]["test_set"] == len(test_fam)
 
 
 # --- demo-day scripts ---------------------------------------------------------

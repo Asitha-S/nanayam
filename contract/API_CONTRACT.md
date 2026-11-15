@@ -555,7 +555,7 @@ Returns the latest evaluation run file (`data/eval/latest.json`), produced by `p
   "data_label": "Synthetic data (generator seed 42)",
   "model_version": "clf-2026-11-14-01",
   "threshold": 0.9,
-  "split": { "train_merchants": 30, "test_merchants": 10, "test_period": "2026-10-16 to 2026-11-14", "test_transactions": 18342 },
+  "split": { "train_merchants": 70, "test_merchants": 30, "test_period": "2026-10-16 to 2026-11-14", "test_transactions": 38527 },
   "baseline": { "precision_auto": 0.962, "coverage": 0.71, "questions_per_merchant_per_day": 6.1, "overall_accuracy": 0.991 },
   "with_feedback": { "precision_auto": 0.974, "coverage": 0.88, "questions_per_merchant_per_day": 2.3, "overall_accuracy": 0.993 },
   "questions_per_day_by_week": { "baseline": [6.3, 6.0, 6.2, 5.9], "with_feedback": [4.1, 2.6, 1.9, 1.7] },
@@ -565,7 +565,7 @@ Returns the latest evaluation run file (`data/eval/latest.json`), produced by `p
   "merchant_answer_error_rate": 0.02
 }
 ```
-**The numbers above are placeholders to show the shape. Real values come only from the run.** The file also has a `conditions` object with all five evaluation conditions (A always-SALE, B naive rule, C model no feedback, D payer memory, E full system) and their metrics, per `docs/DATA_AND_LOGIC.md` 11.3–11.4. `baseline` = C, `with_feedback` = E. The Learning screen fetches **both** endpoints: `/merchants/{id}/learning` for this merchant's activity (questions asked, corrections, payer memory), and `/evaluation` for model metrics (precision by source, config errors, conditions, curve). `/learning` never returns precision figures. The Learning screen must show `precision_auto_by_source` (MODEL, PAYER_MEMORY, MERCHANT_CONFIG) and `config_errors` next to any headline precision, never one combined figure alone. `overall_accuracy` counts ASK items as answered by the simulated merchant (with 2% simulated answer errors).
+**The numbers above are placeholders to show the shape. Real values come only from the run.** The file also has `label_mix` (`count_share` and `value_share` of FAMILY, per split; see `docs/DATA_AND_LOGIC.md` 4.3) and a `conditions` object with all five evaluation conditions (A always-SALE, B naive rule, C model no feedback, D payer memory, E full system) and their metrics, per `docs/DATA_AND_LOGIC.md` 11.3–11.4. `baseline` = C, `with_feedback` = E. The Learning screen fetches **both** endpoints: `/merchants/{id}/learning` for this merchant's activity (questions asked, corrections, payer memory), and `/evaluation` for model metrics (precision by source, config errors, conditions, curve). `/learning` never returns precision figures. The Learning screen must show `precision_auto_by_source` (MODEL, PAYER_MEMORY, MERCHANT_CONFIG) and `config_errors` next to any headline precision, never one combined figure alone. `overall_accuracy` counts ASK items as answered by the simulated merchant (with 2% simulated answer errors). Family-specific metrics inside `conditions` (`family_recall_final`, `silent_family_errors`, `silent_sale_errors`, `config_errors`) are objects with counts and denominators, e.g. `{ "count": 9, "of": 512, "rate": 0.0176 }`; the UI shows "9 of 512".
 
 ---
 

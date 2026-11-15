@@ -106,12 +106,12 @@ Never cut: confirmation step, question binding, template answers with slot check
 | 1:30 | Learning | Preview: next Lakshmi payment → "Family, your instruction" | "He told Naanayam to remember, so next time it doesn't ask. He can change that any time. For everyone else, his answers gradually reduce the questions." |
 | 1:40 | Talk | `ask_profit` → Tamil answer plays, numbers highlight | "Sales 4,820. Expenses 3,100. Recorded profit 1,720. The AI never touches the maths: the ledger calculates it and the answer is a fixed template. UPI only, and only the expenses he entered: we say that on screen." |
 | 2:00 | Today → tap ₹4,820 | source entries | "Every number opens the payments behind it." |
-| 2:10 | Evaluation | | "On synthetic data from merchants the model never saw: always guessing 'sale' looks 93% accurate but finds zero family money. Our full system decides X% on its own at Y% precision, and questions per day fall from A to B as merchants answer." |
+| 2:10 | Evaluation | | "On synthetic data from merchants the model never saw: always guessing 'sale' looks W% accurate but finds zero family money. Our full system decides X% on its own at Y% precision, and questions per day fall from A to B as merchants answer." |
 | 2:25 | Notice | sample notice → fields with badges → evidence | "If a notice ever comes, the same ledger shows his CA what was business and what was family." |
 | 2:45 | Ledger verify | | "Every record is hash-chained. If anyone edits one, we can tell." |
 | 2:55 | Close | | "Others built assistants that talk. We built records that prove." |
 
-Put the real X, A, B from `latest.json` into the script on Saturday night. Never round up.
+Put the real W, X, Y, A, B from `latest.json` into the script on Saturday night. Never round up.
 
 5-minute version adds: tamper demo, Telugu M002 in 30 s, passport screen, mixed kirana GST = UNKNOWN.
 

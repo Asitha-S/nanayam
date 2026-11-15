@@ -11,7 +11,7 @@ Example responses for every endpoint, used by:
 `demo_*`, `payments_*`, `payment_get_015`, `questions_M001_open_2026-11-15`, `confirm_*`, `classify_preview_*`, `expenses_*`, `expense_void`, `voice_*`, `summary_M001_*`, `ledger_M001_2026-11-15` (17 entries with a real hash chain), `ledger_entry_detail`, `ledger_verify_*`, `error_*`, `merchants`, `merchant_M001`, `health`.
 
 **Placeholder (depend on generated history or the evaluation run).** Right shape, invented numbers. **Never show these numbers in the pitch or a screenshot.** They are replaced by real API output after Saturday's seeding and evaluation.
-`evaluation` (labelled "PLACEHOLDER NUMBERS" in `data_label`), `learning_M001`, `tax_summary_*`, `notice_analyse`, `notice_evidence`, `passport_M001`, `questions_M001_open_all` (the 3 older open questions), `refund`, `reversal`.
+`evaluation` (labelled "PLACEHOLDER NUMBERS" in `data_label`; its `split` and `label_mix` already use the generator's 70 train+calibration / 30 test merchants, M101–M200, and the seed-42 label mix, but every metric is still a placeholder), `learning_M001`, `tax_summary_*`, `notice_analyse`, `notice_evidence`, `passport_M001`, `questions_M001_open_all` (the 3 older open questions), `refund`, `reversal`.
 
 ## Summary states for the Today screen
 - `summary_M001_morning`: after the 05:40 expense, profit −₹3,100

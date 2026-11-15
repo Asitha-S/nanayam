@@ -14,8 +14,13 @@ CATEGORY = {
     "TEA_STALL": {"lam": 80, "median": 25, "sigma": 0.5, "lo": 10, "hi": 300},
     "MIXED_KIRANA": {"lam": 45, "median": 150, "sigma": 0.9, "lo": 10, "hi": 4000},
 }
-EVAL_CATEGORY_COUNTS = {"VEGETABLES": 12, "FRUITS": 10, "FLOWERS": 6, "TEA_STALL": 6, "MIXED_KIRANA": 6}
-EVAL_MERCHANTS = [f"M{n}" for n in range(101, 141)]  # M101-M140
+# Same proportions as the original 40 (12/10/6/6/6), scaled to 100 merchants (agreed 2026-11-14)
+EVAL_CATEGORY_COUNTS = {"VEGETABLES": 30, "FRUITS": 25, "FLOWERS": 15, "TEA_STALL": 15, "MIXED_KIRANA": 15}
+EVAL_MERCHANTS = [f"M{n}" for n in range(101, 201)]  # M101-M200
+TRAIN_MERCHANTS = [f"M{n}" for n in range(101, 171)]  # train + calibration (70)
+TEST_MERCHANTS = [f"M{n}" for n in range(171, 201)]  # test, never seen (30)
+TEST_PERIOD = (date(2026, 10, 16), date(2026, 11, 14))  # inclusive
+TARGET_TEST_FAMILY_PAYMENTS = 500
 SCALE_RANGE = (0.6, 1.5)  # eval merchants only; demo merchants use 1.0
 SUNDAY_FACTOR = 1.2
 

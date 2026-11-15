@@ -254,9 +254,13 @@ Sample notice period: 2026-08-01 to 2026-10-31. **Amount questioned = M001's gro
 
 ### 4.1 Run
 
-`python -m data.generator.run --seed 42` writes `data/generated/{merchants,payers,payments,refunds,reversals,expenses}.parquet` plus `labels.parquet` (ground truth: `transaction_id`, `true_label` SALE/FAMILY, `payer_role`). Ground truth is never loaded by the backend.
+`python -m data.generator.run --seed 42` writes `data/generated/{merchants,payers,payments,refunds,reversals,expenses,family_config}.parquet` plus `labels.parquet` (ground truth: `transaction_id`, `true_label` SALE/FAMILY, `payer_role`) and `label_mix.json` (section 4.3). `family_config.parquet` holds the merchants' family payers configured at setup (M001: Karthik). Ground truth is never loaded by the backend.
 
-Merchants: M001–M003 (demo), M101–M140 (evaluation). Period 2026-08-01 to 2026-11-14 inclusive. Demo-day payments for M001/M002 come from the committed scripts, not the generator.
+The generator also writes the demo-day scripts `data/demo/M001_demo_day.json` and `M002_demo_day.json` (section 3) from the same seed, so a fresh run reproduces them exactly.
+
+Payer IDs: demo merchants (M001–M003) use `P1xxxx` for customers (one shared counter; M001's 12 named demo customers reserved), `P2xxxx` for business buyers and `P9xxxx` for family/friends. Evaluation merchants use 8 digits, `P{merchant number}{nnnnn}` (e.g. `P10100042`), because they have far more walk-in payers than P10001–P19999 can hold. Transaction IDs are numbered in time order within each merchant-day.
+
+Merchants: M001–M003 (demo), M101–M200 (evaluation: M101–M170 train + calibration, M171–M200 test). Period 2026-08-01 to 2026-11-14 inclusive. Demo-day payments for M001/M002 come from the committed scripts, not the generator.
 
 ### 4.2 Merchant parameters
 
@@ -268,7 +272,7 @@ Merchants: M001–M003 (demo), M101–M140 (evaluation). Period 2026-08-01 to 20
 | TEA_STALL | 80 | ₹25 | 0.5 | ₹10–₹300 |
 | MIXED_KIRANA | 45 | ₹150 | 0.9 | ₹10–₹4,000 |
 
-M101–M140 categories: 12 VEGETABLES, 10 FRUITS, 6 FLOWERS, 6 TEA_STALL, 6 MIXED_KIRANA. Each merchant gets a scale factor U(0.6, 1.5) on λ. Sundays ×1.2. Shop hours 05:30–21:30, arrival intensity peaks 06:30–09:30 and 17:00–20:00.
+M101–M200 categories: 30 VEGETABLES, 25 FRUITS, 15 FLOWERS, 15 TEA_STALL, 15 MIXED_KIRANA (the original 12/10/6/6/6 proportions, scaled to 100 merchants). Each evaluation merchant gets a scale factor U(0.6, 1.5) on λ; demo merchants M001–M003 use 1.0. Sundays ×1.2. Shop hours 05:30–21:30, arrival intensity peaks 06:30–09:30 and 17:00–20:00.
 
 ### 4.3 Payer roles (ground truth label in brackets)
 
@@ -282,7 +286,7 @@ M101–M140 categories: 12 VEGETABLES, 10 FRUITS, 6 FLOWERS, 6 TEA_STALL, 6 MIXE
 | friend / loan repayment | FAMILY | 0–2 | P2P; round; 2–4 times over the period |
 | mixed relative | 30% SALE / 70% FAMILY | 1 in 3 merchants | SALE ones are non-round P2M, FAMILY ones round P2P |
 
-Overall label mix targets about 93% SALE / 7% FAMILY by count. The generator prints the realised mix and per-role counts; check it.
+Overall label mix targets about **0.5% FAMILY by count** (the role behaviour above gives roughly one family transfer a week per merchant). FAMILY is a much larger share **by value**, because family transfers are large. The generator prints and saves both, overall and per split (demo, train+calibration, test merchants, test set), in `data/generated/label_mix.json`; `seed_demo` copies them into `seed_meta.json` and the evaluation into `latest.json` as `label_mix.count_share` and `label_mix.value_share` (value share = sum of FAMILY amounts / sum of all amounts). It also prints the number of FAMILY payments in the test set (target ≥ 500) and per-role counts; check them.
 
 ### 4.4 Refunds, reversals, expenses
 - Refunds: 0.3% of SALE payments, within 0–2 days, 50% full / 50% partial (20–80%).
@@ -322,11 +326,11 @@ One function `features.build(payment, history_df)` is used in training, evaluati
 
 ### 5.2 Model
 - LightGBM binary classifier, target = FAMILY. Fallback if LightGBM will not install: `sklearn.ensemble.HistGradientBoostingClassifier`. Params: `num_leaves=31, learning_rate=0.05, n_estimators=400, min_child_samples=40, class_weight="balanced"` (then calibrated).
-- Training data: M101–M130, payments 2026-08-01 to 2026-10-01.
+- Training data: M101–M170, payments 2026-08-01 to 2026-10-01.
 - Saved to `ml/artifacts/{model_version}.joblib` with feature list, calibrator, threshold and training metadata. Committed (it is small).
 
 ### 5.3 Calibration
-- Calibration set: M101–M130, 2026-10-02 to 2026-10-15 (not used in fitting).
+- Calibration set: M101–M170, 2026-10-02 to 2026-10-15 (not used in fitting).
 - Isotonic regression on raw model scores → `q_model` = calibrated p(FAMILY).
 - Report ECE (10 equal-width bins) before and after calibration.
 
@@ -529,9 +533,9 @@ Label is fixed: "Recorded business income summary. Not verified income. Not a cr
 ### 11.1 Splits
 | set | merchants | period | used for |
 |---|---|---|---|
-| Train | M101–M130 | 2026-08-01 – 2026-10-01 | fitting |
-| Calibration | M101–M130 | 2026-10-02 – 2026-10-15 | isotonic + choosing τ |
-| Test | **M131–M140 (never seen)** | **2026-10-16 – 2026-11-14 (after training period)** | all reported numbers |
+| Train | M101–M170 | 2026-08-01 – 2026-10-01 | fitting |
+| Calibration | M101–M170 | 2026-10-02 – 2026-10-15 | isotonic + choosing τ |
+| Test | **M171–M200 (never seen)** | **2026-10-16 – 2026-11-14 (after training period)** | all reported numbers |
 
 Both a merchant holdout and a time holdout.
 
@@ -543,7 +547,7 @@ Test merchants' payments before 10-16 are used as history (observable without la
 ### 11.3 Conditions (all run the **complete** decision procedure of 5.6, same model, same τ, same answer RNG)
 | condition | payer memory | remember instruction | purpose |
 |---|---|---|---|
-| A. Always SALE | n/a | n/a | trivial baseline: shows why accuracy alone misleads (~93% "accurate", 0 family found) |
+| A. Always SALE | n/a | n/a | trivial baseline: shows why accuracy alone misleads (over 99% "accurate" by count, 0 family found) |
 | B. Naive rule | n/a | n/a | P2P + round ₹100 → FAMILY, else SALE |
 | C. Model, no feedback | off (n=0 always) | off | baseline system: ASK items answered (2% error) but answers not stored |
 | D. Model + payer memory | on | off | soft learning only |
@@ -570,13 +574,15 @@ Every condition starts test merchants with empty memory and no configured family
 | confusion_matrix_auto | AUTO decisions only |
 | calibration | ECE + 10 bins of q_model on test |
 
-Also: label mix, number of test payments, answer error rate.
+**Family-specific metrics are reported as counts with their denominators, not only rates**, because the FAMILY class is small: e.g. `"family_recall_final": {"count": 503, "of": 512, "rate": 0.9824}` and `"silent_family_errors": {"count": 9, "of": 31200}` (denominator = true SALE AUTO decisions). This applies to family_recall_final, silent_family_errors, silent_sale_errors and config_errors. The screen shows "9 of 31,200", never a bare rate.
+
+Also: label mix (`label_mix.count_share`, `label_mix.value_share`), number of test payments, answer error rate.
 
 ### 11.5 Output
 `data/eval/runs/{run_id}.json` and `data/eval/latest.json`: the contract shape, where `baseline` = condition C and `with_feedback` = condition E, plus a `conditions` object with all five (A–E) and every metric above, `seed`, `git_commit`, `threshold`. Nagasai Sree's screen shows A, C, E side by side and the curve.
 
 ### 11.6 What we are allowed to say
-- "On synthetic data from 10 merchants the model never saw, over a later 30-day period: the full system decided X% of payments without asking at Y% precision, silently removed income in Z cases, and questions per day fell from A to B over four weeks."
+- "On synthetic data from 30 merchants the model never saw, over a later 30-day period: the full system decided X% of payments without asking at Y% precision, silently removed income in Z cases, and questions per day fell from A to B over four weeks."
 - Always "synthetic". Never "accuracy" alone; always precision with coverage, and the always-SALE baseline next to it.
 - Configured family decisions are "the merchant's instruction", reported with their own error count.
 - Any headline precision is shown with its split by source (model alone, payer memory, merchant instruction) so the answer to "how much of this is ML?" is on screen.
