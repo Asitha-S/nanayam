@@ -1,0 +1,82 @@
+<!doctype html><html lang="ta"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Naanayam Today: direction C · Paper and brass</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600&family=Schibsted+Grotesk:wght@400..700&family=JetBrains+Mono:wght@400..500&display=swap">
+<style>
+*{box-sizing:border-box;margin:0}
+body{background:var(--board);color:var(--ink);font:400 18px/1.35 var(--sans)}
+.board{width:1440px;min-height:1040px;padding:36px 64px;display:grid;grid-template-columns:1fr 412px 412px 1fr;gap:0 56px;align-content:start}
+.board>h1{grid-column:1/-1;font:500 15px/1.4 var(--mono);letter-spacing:.02em;color:var(--muted);margin-bottom:24px}
+.board>h1 b{color:var(--ink);font-weight:500}
+.phone{grid-column:auto;background:var(--bg);min-height:900px;border:1px solid var(--line);border-radius:28px;padding:22px 20px 18px;display:flex;flex-direction:column;gap:18px;overflow:hidden}
+.phone.state-ask{grid-column:2}.phone.state-done{grid-column:3}
+.ta{font-family:"Noto Sans Tamil",var(--sans);font-size:22px;line-height:1.45;display:block}
+.en{font-size:15px;line-height:1.35;color:var(--muted);display:block}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.shop{font:600 20px/1.2 var(--display);letter-spacing:-.01em;max-width:200px}
+.day{text-align:right}.day .ta{font-size:22px}
+.money{color:inherit;text-decoration:none;font:600 32px/1.1 var(--display);font-family:var(--display),"Noto Sans",sans-serif;white-space:nowrap}
+.money.hero{font-size:60px;letter-spacing:-.02em;line-height:1}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0}
+.count,.kept{font:500 13px/1.3 var(--mono);color:var(--muted);display:block;margin-top:2px}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.answer{min-height:76px;font:inherit;color:var(--ink);background:var(--bg);border:2px solid var(--ink);border-radius:var(--r);cursor:pointer;padding:8px;text-align:center}
+.answer .ta{font-weight:600;font-size:22px}.answer .en{font-size:14px}
+.answer:hover{background:var(--surface)}.answer:active{transform:translateY(1px)}
+.badge{font:500 13px/1 var(--mono);letter-spacing:.02em;color:var(--badge-ink);border:1px solid var(--badge-line);border-radius:999px;padding:6px 9px;white-space:nowrap}
+.records{display:flex;flex-direction:column}
+.rec{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.rec-name{font:600 17px/1.3 var(--sans);display:block}.rec .ta{font-size:22px}
+.scope{margin-top:auto;padding-top:14px;border-top:1px solid var(--line)}.scope .ta{font-size:22px}.scope .en{font-size:14px}
+.ask{animation:card-in 200ms ease-out both}
+@keyframes card-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.ask{animation:none}}
+:root{--bg:#f6f1e6;--surface:#ece4d3;--ink:#1a1612;--muted:#5d5244;--accent:#8a6420;--gold:#c9a45a;--line:#d8cdb6;--board:#e6dfcf;
+      --badge-ink:#5b4210;--badge-line:#c9a45a;--r:2px;--display:"Schibsted Grotesk";--sans:"Schibsted Grotesk","Noto Sans",sans-serif;--mono:"JetBrains Mono",monospace}
+      .top{border-bottom:2px solid var(--ink);padding-bottom:12px}
+      .profit{border:2px solid var(--gold);padding:14px 16px;display:flex;justify-content:space-between;align-items:flex-end;background:#fbf8f1}
+      .profit .money.hero{font-size:54px}
+      .eq .row{border-bottom:1px solid var(--line)}
+      .minus .money::before{content:"− ";color:var(--muted)}
+      .money{text-decoration:none;border-bottom:2px solid var(--gold);padding-bottom:2px}
+      .ask{border-left:6px solid var(--accent);background:#fbf8f1;padding:14px 16px}
+      .ask-meta{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.kicker{font:500 13px var(--mono);color:var(--accent);width:100%;text-transform:uppercase;letter-spacing:.06em}
+      .ask-amt{font:700 34px/1 var(--display)}.who{font-size:18px}
+      .question{font-size:24px;font-weight:500;margin-top:10px}
+      .answer{background:var(--ink);color:var(--bg);border-color:var(--ink)}.answer .en{color:#d8cdb6}.answer:hover{background:#000}
+      .family{border-top:2px solid var(--ink);margin-top:6px}
+      .badge{background:#fbf8f1}</style></head>
+<body><main class="board"><h1><b>C · Paper and brass</b> · palette warm-black-gold (deal 1, second) turned light for the brief · type Schibsted Grotesk (picked) · data: contract/fixtures (M001, 15 Nov)</h1>
+<article class="phone state-ask" aria-label="19:42, question open">
+  <header class="top"><div class="shop">Murugan Kaaikari Kadai</div><div class="day"><span class="ta ">இன்னைக்கு</span><span class="en">Today, 15 Nov</span></div></header>
+  <section class="ask" aria-label="Question">
+    <div class="ask-meta"><span class="kicker">New payment · 19:42</span><span class="ask-amt">₹2,000</span><span class="who">Lakshmi R</span></div>
+    <p class="ta question">லக்ஷ்மி கிட்ட இருந்து 2,000 ரூபாய் வந்திருக்கு. இது கடை வியாபாரமா, வீட்டு பணமா?</p>
+    <p class="en">₹2,000 received from Lakshmi R. Is this a shop sale or family money?</p>
+    <div class="answers"><button class="answer"><span class="ta ">கடை வியாபாரம்</span><span class="en">Shop sale</span></button><button class="answer"><span class="ta ">வீட்டு பணம்</span><span class="en">Family money</span></button></div>
+  </section>
+  <section class="figures" aria-label="Today's figures">
+    <div class="profit"><div class="label"><span class="ta big">மீதம்</span><span class="en">Recorded profit</span></div><a class="money hero" href="#ledger" aria-label="₹1,720, open ledger entries">₹1,720</a></div>
+    <div class="eq">
+      <div class="row"><div class="label"><span class="ta ">கடை வியாபாரம்</span><span class="en">Shop sales</span></div><a class="money " href="#ledger" aria-label="₹4,820, open ledger entries">₹4,820</a></div>
+      <div class="row minus"><div class="label"><span class="ta ">செலவு</span><span class="en">Expenses</span></div><a class="money " href="#ledger" aria-label="₹3,100, open ledger entries">₹3,100</a></div>
+    </div>
+    <div class="row pending"><div class="label"><span class="ta ">இன்னும் சொல்லல</span><span class="en">Waiting for your answer</span><span class="count">1 payment</span></div><a class="money " href="#ledger" aria-label="₹2,000, open ledger entries">₹2,000</a></div>
+    <div class="row family"><div class="label"><span class="ta ">வீட்டு பணம்</span><span class="en">Family money</span><span class="kept">Not in profit</span></div><a class="money " href="#ledger" aria-label="₹0, open ledger entries">₹0</a></div>
+  </section><footer class="scope"><span class="ta">UPI பணம் மட்டும். கையில வாங்கின காசு இதுல இல்ல.</span><span class="en">UPI payments only. Profit = business sales minus expenses you entered. Cash sales, unrecorded expenses and stock changes are not included.</span></footer></article>
+<article class="phone state-done" aria-label="After the answer">
+  <header class="top"><div class="shop">Murugan Kaaikari Kadai</div><div class="day"><span class="ta ">இன்னைக்கு</span><span class="en">Today, 15 Nov</span></div></header>
+  <section class="figures" aria-label="Today's figures">
+    <div class="profit"><div class="label"><span class="ta big">மீதம்</span><span class="en">Recorded profit</span></div><a class="money hero" href="#ledger" aria-label="₹1,720, open ledger entries">₹1,720</a></div>
+    <div class="eq">
+      <div class="row"><div class="label"><span class="ta ">கடை வியாபாரம்</span><span class="en">Shop sales</span></div><a class="money " href="#ledger" aria-label="₹4,820, open ledger entries">₹4,820</a></div>
+      <div class="row minus"><div class="label"><span class="ta ">செலவு</span><span class="en">Expenses</span></div><a class="money " href="#ledger" aria-label="₹3,100, open ledger entries">₹3,100</a></div>
+    </div>
+    
+    <div class="row family"><div class="label"><span class="ta ">வீட்டு பணம்</span><span class="en">Family money</span><span class="kept">Not in profit</span></div><a class="money " href="#ledger" aria-label="₹2,000, open ledger entries">₹2,000</a></div>
+  </section>
+  <section class="records" aria-label="Today's records">
+    <div class="rec"><div class="rec-main"><span class="rec-name">Lakshmi R</span><span class="ta ">இனிமே வீட்டு பணம்</span><span class="en">Next payments: family</span></div><span class="badge">Your instruction</span></div>
+    <div class="rec"><div class="rec-main"><span class="rec-name">Kaaikari, Koyambedu · 05:40</span><span class="en">“Koyambedu-la 3,100 rupees-ku kaaikari vaanginen”</span></div><span class="badge">Recorded demo clip</span></div>
+  </section><footer class="scope"><span class="ta">UPI பணம் மட்டும். கையில வாங்கின காசு இதுல இல்ல.</span><span class="en">UPI payments only. Profit = business sales minus expenses you entered. Cash sales, unrecorded expenses and stock changes are not included.</span></footer></article>
+</main></body></html>
