@@ -20,7 +20,7 @@ Plan and checkpoints: [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md). Contract change 
 
 **Real since 2026-11-14 (Asitha):** `/voice/answer` (templates + slot check + TTS), `/export/csv`, `/export/pdf`, notice evidence.
 
-**Still fixture stubs**, owned by Charulatha: `/voice/transcribe`, `/voice/interpret`, `/voice/speak`, `/notices/analyse`.
+**Still fixture stubs**, owned by Charulatha: `/voice/transcribe`, `/voice/interpret`, `/voice/speak`. `/notices/analyse` is an agreed fallback until her reader lands: the committed sample (`demo_key=sample_notice_v1`) is stored and returned, anything else is 503.
 
 `GET /evaluation` serves `data/eval/latest.json` from the final holdout run (conditions A–E, never hand-edited). Robustness results: `data/eval/robustness.json`. Every evaluation execution is logged in `data/eval/experiment_log.jsonl`.
 

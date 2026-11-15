@@ -143,3 +143,37 @@ def test_evidence_warns_on_tamper_and_unknown_notice(real):
     ev = real.get(f"/api/merchants/M001/notices/{nid}/evidence").json()
     assert ev["ledger_verify_status"] == "TAMPERED" and "Ledger integrity check failed." in ev["ca_review_warnings"]
     assert real.get("/api/merchants/M001/notices/NTC-M001-999/evidence").status_code == 404
+
+
+# --- analyse fallback (agreed 2026-11-14) -> evidence end to end -------------------------------------
+def _analyse(c, demo_key="sample_notice_v1", merchant="M001", data=b"png bytes"):
+    form = {"merchant_id": merchant} | ({"demo_key": demo_key} if demo_key else {})
+    return c.post("/api/notices/analyse", data=form, files={"file": ("sample_notice.png", data, "image/png")})
+
+
+def test_analyse_sample_then_evidence_end_to_end(real):
+    r = _analyse(real)
+    assert r.status_code == 201, r.text
+    a = r.json()
+    assert a["notice_id"] == "NTC-M001-001" and a["from_cache"] is True and a["missing_fields"] == []
+    f = a["fields"]
+    assert (f["period_start"]["value"], f["period_end"]["value"]) == (NOTICE["period_start"], NOTICE["period_end"])
+    assert f["amount_questioned_paise"] == {"value": NOTICE["amount_questioned_paise"], "origin": "EXTRACTED_FROM_NOTICE",
+                                            "confidence": f["amount_questioned_paise"]["confidence"]}
+    assert a["explanation"] == {"language": "ta", "text": None, "audio_id": None}  # Tamil explanation: Charulatha
+    assert "does not give legal advice" in a["disclaimer"]
+    ev = real.get(f"/api/merchants/M001/notices/{a['notice_id']}/evidence").json()
+    assert ev["amount_questioned"]["amount_display"] == "₹8,42,162" and ev["difference_vs_notice"]["amount_paise"] == 0
+    assert ev["ledger_view"]["unresolved"]["entry_count"] == 3
+    assert _analyse(real).json()["notice_id"] == "NTC-M001-002"  # each analysis is stored
+
+
+@pytest.mark.parametrize("demo_key", [None, "other_notice", "SAMPLE_NOTICE_V1"])
+def test_analyse_other_input_is_sarvam_unavailable(real, demo_key):
+    r = _analyse(real, demo_key=demo_key)
+    assert r.status_code == 503 and r.json()["error"]["code"] == "SARVAM_UNAVAILABLE"
+
+
+def test_analyse_validation(real):
+    assert _analyse(real, data=b"").status_code == 422
+    assert _analyse(real, merchant="M999").status_code == 422

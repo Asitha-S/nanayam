@@ -1,6 +1,7 @@
 """Learning, evaluation, tax summary, notices, passport (contract sections 8-10).
 
-REAL: learning, evaluation, tax summary, passport, notice evidence. STUB (fixtures): notice analyse (Charulatha).
+REAL: learning, evaluation, tax summary, passport, notice evidence (Asitha).
+notice analyse: Charulatha's notice/analyse.py (fallback for the committed sample until her implementation lands).
 """
 import sqlite3
 import json
@@ -11,9 +12,10 @@ from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from .. import errors
 from ..config import REPO_ROOT
 from ..deps import get_conn
+from ..notice.analyse import analyse
 from ..notice.evidence import evidence
 from ..services import insights as svc
-from ..stubs import fixture, require_merchant, require_merchant_422
+
 
 router = APIRouter(tags=["insights"])
 
@@ -43,11 +45,13 @@ async def analyse_notice(
     merchant_id: str = Form(...),
     file: UploadFile = File(...),
     demo_key: str | None = Form(None),
+    conn: sqlite3.Connection = Depends(get_conn),
 ):
-    require_merchant_422(merchant_id)
-    if not await file.read():
+    """Calls Charulatha's notice.analyse.analyse (currently the agreed fallback for the committed sample)."""
+    data = await file.read()
+    if not data:
         raise errors.validation_error("Empty file", field="file")
-    return fixture("notice_analyse")
+    return analyse(conn, merchant_id=merchant_id, file_bytes=data, demo_key=demo_key)
 
 
 @router.get("/merchants/{merchant_id}/notices/{notice_id}/evidence")

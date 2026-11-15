@@ -25,7 +25,7 @@ python -m scripts.smoke                       # starts its own server, runs the 
 | `/voice/answer` (templates + positional slot check + TTS), `/audio/{id}` | Real | Asitha (since 2026-11-14) |
 | `/voice/transcribe`, `/voice/interpret`, `/voice/speak` | **Stub** (fixtures; demo-clip hash check is real) | Charulatha |
 | `/notices/{id}/evidence` | Real (reads the stored notice) | Asitha (since 2026-11-14) |
-| `/notices/analyse` | **Stub** (fixtures; does not store a notice yet) | Charulatha |
+| `/notices/analyse` | **Fallback** (agreed): `demo_key=sample_notice_v1` stores and returns the sample's known fields; anything else 503 | Charulatha (`notice/analyse.py`) |
 | `/export/csv`, `/export/pdf` | Real | Asitha (since 2026-11-14) |
 
 ## 3. Checklist for Charulatha
@@ -46,11 +46,13 @@ router to your function as soon as it exists (tell him in the PR). Never compute
       returning exactly the `/voice/interpret` response (contract §6), with the deterministic validation of §5.2.
 - [x] ~~`app/voice/answer.py`~~ (taken over by Asitha, done). If Bulbul reads "4,820 ரூபாய்" badly (§6.4), tell Asitha:
       the digits-to-words conversion goes into the TTS input only.
-- [ ] **`app/notice/analyse`**: `analyse(conn, *, merchant_id, file_bytes, demo_key) -> dict` (contract §9 analyse
-      response) using `app.sarvam.client.vision` and `chat`, the §11.3 validation and deterministic field confidence.
-      **Store the result** with `app.notice.store.save_notice(conn, merchant_id=..., file_sha256=..., fields=<the response's
-      "fields" object>, explanation_text=...)`; it returns the `notice_id` to put in the response. Evidence
+- [ ] **`app/notice/analyse.py`**: replace the body of the fallback `analyse(conn, *, merchant_id, file_bytes, demo_key)`
+      (keep the signature: the router calls it unchanged) with the real reader: `app.sarvam.client.vision` and `chat`,
+      the §11.3 validation and deterministic field confidence, returning the contract §9 analyse response.
+      **Store the result** with `app.notice.store.save_notice(conn, merchant_id=..., file_sha256=..., fields=<the
+      response's "fields" object>, explanation_text=...)`; it returns the `notice_id` to put in the response. Evidence
       (`app/notice/evidence.py`, Asitha) reads exactly that row. Tamil explanation: figures from the evidence object.
+      Tests to keep green: `test_analyse_sample_then_evidence_end_to_end` and the smoke test's two notice checks.
 - [ ] **Sample notice image**: amount **₹8,42,162** (= M001 gross UPI receipts 2026-08-01..2026-10-31, in
       `data/demo/notice_numbers.json`; regenerate the image if that file ever changes). Expected evidence on the
       committed seed: difference vs notice 0, unresolved 3 (Mani, Jaya, Prabhu, 29–31 Oct).

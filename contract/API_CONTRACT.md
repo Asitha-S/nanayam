@@ -622,7 +622,7 @@ Fields: `merchant_id`, `file` (png/jpg/pdf), optional `demo_key` (`"sample_notic
   "from_cache": true
 }
 ```
-Any field not found: `value: null`, `origin: "NOT_FOUND"`, listed in `missing_fields`.
+Any field not found: `value: null`, `origin: "NOT_FOUND"`, listed in `missing_fields`. Every successful analysis is stored (a new `notice_id` each time) and is what `/evidence` reads. **Fallback until the real reader lands (agreed 2026-11-14):** `demo_key: "sample_notice_v1"` returns and stores the committed sample's known fields (period and amount from `data/demo/notice_numbers.json`), `from_cache: true`, `explanation.text: null`; any other input → `503 SARVAM_UNAVAILABLE`.
 
 ### GET `/merchants/{merchant_id}/notices/{notice_id}/evidence`
 Every figure below is `DERIVED_FROM_LEDGER` for the notice period.

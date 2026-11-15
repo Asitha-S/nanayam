@@ -30,11 +30,9 @@ def free_port() -> int:
 
 
 class Smoke:
-    def __init__(self, http, db_path: Path):
-        """http: any httpx-compatible client whose base URL ends in /api (a live server or a TestClient).
-        db_path: the server's database (the sample notice is stored there, as analyse() will do)."""
+    def __init__(self, http):
+        """http: any httpx-compatible client whose base URL ends in /api (a live server or a TestClient)."""
         self.http = http
-        self.db_path = Path(db_path)
         self.rows: list[tuple[str, bool, str]] = []
 
     def check(self, name: str, ok: bool, detail: str = "") -> bool:
@@ -106,7 +104,13 @@ class Smoke:
         self.check("PDF CA pack", pdf.startswith(b"%PDF") and b"Rs 1,720" in pdf and b"Recorded profit" in pdf,
                    f"{len(pdf)} bytes")
         notice = json.loads((REPO / "data" / "demo" / "notice_numbers.json").read_text(encoding="utf-8"))
-        nid = store_sample_notice(self.db_path, notice)
+        an = self.http.post("/notices/analyse", data={"merchant_id": "M001", "demo_key": "sample_notice_v1"},
+                            files={"file": ("sample_notice.png", b"sample notice placeholder bytes", "image/png")})
+        a = an.json()
+        self.check("notice analyse (sample)", an.status_code == 201 and a.get("from_cache") is True
+                   and a["fields"]["amount_questioned_paise"]["value"] == notice["amount_questioned_paise"],
+                   f"{a.get('notice_id')}, period {a['fields']['period_start']['value']}..{a['fields']['period_end']['value']}")
+        nid = a["notice_id"]
         ev = self.http.get(f"/merchants/M001/notices/{nid}/evidence").json()
         self.check("notice evidence", ev.get("difference_vs_notice", {}).get("amount_paise") == 0
                    and ev["ledger_view"]["unresolved"]["entry_count"] == 3
@@ -117,26 +121,6 @@ class Smoke:
         self.check("voice interpret (stub)", vi.status_code == 200, vi.json().get("intent", ""))
 
 
-def store_sample_notice(db_path: Path, notice: dict) -> str:
-    """Store the sample notice's fields as analyse() will (SMOKE TEST DATA: the values come from
-    notice_numbers.json, not from reading the image)."""
-    import sqlite3
-
-    if str(REPO / "backend") not in sys.path:
-        sys.path.insert(0, str(REPO / "backend"))
-    from app.notice.store import save_notice
-
-    f = lambda v: {"value": v, "origin": "EXTRACTED_FROM_NOTICE", "confidence": 0.95}  # noqa: E731
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    try:
-        return save_notice(conn, merchant_id="M001", file_sha256="smoke-test", fields={
-            "period_start": f(notice["period_start"]), "period_end": f(notice["period_end"]),
-            "amount_questioned_paise": f(notice["amount_questioned_paise"])})
-    finally:
-        conn.close()
-
-
 def main() -> int:
     port = free_port()
     tmp = Path(tempfile.mkdtemp(prefix="naanayam_smoke_"))
@@ -144,7 +128,7 @@ def main() -> int:
            "LOGS_DIR": str(tmp / "logs"), "DEMO_TIME": DEMO_TIME, "PYTHONIOENCODING": "utf-8"}
     server = subprocess.Popen([sys.executable, "-m", "uvicorn", "app.main:app", "--port", str(port)],
                               cwd=REPO / "backend", env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    smoke = Smoke(httpx.Client(base_url=f"http://127.0.0.1:{port}/api", timeout=30), tmp / "smoke.db")
+    smoke = Smoke(httpx.Client(base_url=f"http://127.0.0.1:{port}/api", timeout=30))
     started = time.monotonic()
     try:
         for _ in range(120):
