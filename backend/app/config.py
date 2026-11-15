@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FIXTURES_DIR = REPO_ROOT / "contract" / "fixtures"
+DEMO_DATA_DIR = REPO_ROOT / "data" / "demo"
 
 load_dotenv(REPO_ROOT / ".env", override=False)
 
@@ -33,6 +34,7 @@ class Settings:
     sarvam_person: str
     cache_root: Path
     logs_dir: Path
+    demo_seed_db: Path
 
 
 def _bool(value: str) -> bool:
@@ -63,4 +65,5 @@ def get_settings() -> Settings:
         sarvam_person=os.getenv("SARVAM_PERSON", "").strip() or "unknown",
         cache_root=_path(os.getenv("SARVAM_CACHE_ROOT", "cache")),
         logs_dir=_path(os.getenv("LOGS_DIR", "logs")),
+        demo_seed_db=_path(os.getenv("DEMO_SEED_DB", "data/demo/seed.db")),
     )

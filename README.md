@@ -14,7 +14,13 @@ Plan and checkpoints: [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md). Contract change 
 
 ## Status
 
-Every endpoint in the contract runs as a **fixture stub**: it returns the matching file from `contract/fixtures/` (always M001-shaped data). Real logic replaces stubs behind the same routes. Already real: `/api/health`, the error shape, request validation, the Sarvam client with its content-hash cache and demo-clip check, the database schema, `money.display`, the clock, and ledger hashing/verification.
+**Real (SQLite):** `POST /payments`, `GET /payments/{txn}`, questions, confirm (question binding + correction table), `POST /expenses`, `/summary` with sources, `/ledger`, `/ledger/{id}`, `/demo/reset`, `/demo/next-payment`, `/demo/script`, `/health`. Also real: the error shape, request validation, the Sarvam client with its content-hash cache and demo-clip check, `money.display`, the clock, ledger hashing/verification, and the data generator.
+
+**Classifier: PLACEHOLDER RULE, NOT A MODEL** (P2P + personal + multiple of ₹500 → ask, else sale). `/health` shows `model_version: placeholder-rule-not-a-model` while it is active. It is replaced by the trained model before the demo.
+
+**Still fixture stubs** (return `contract/fixtures/`, always M001-shaped): payments list, refund, reversal, classify preview, expense list and void, ledger verify, tamper, merchants, voice, learning, evaluation, tax summary, notices, passport, export.
+
+`/demo/reset` needs `data/demo/seed.db` (built by `python -m data.seed_demo`, coming next). Generate the synthetic data with `python -m data.generator.run --seed 42`.
 
 ## Setup
 

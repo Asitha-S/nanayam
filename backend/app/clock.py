@@ -8,12 +8,18 @@ Rules (agreed 2026-11-14):
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import date, datetime, timedelta, timezone
+from typing import Iterator
 
 from .config import get_settings
 
 # IST has no daylight saving, so a fixed offset is exact (and avoids needing tzdata on Windows).
 IST = timezone(timedelta(hours=5, minutes=30), "IST")
+
+# Set only by frozen_at(): replaying history (seed_demo, evaluation) writes entries at historical times.
+_frozen: ContextVar[datetime | None] = ContextVar("naanayam_frozen_now", default=None)
 
 
 def _wall_now() -> datetime:
@@ -32,9 +38,22 @@ def today() -> date:
 
 
 def now() -> datetime:
-    """DEMO_DATE combined with the real IST time of day (whole seconds)."""
+    """DEMO_DATE combined with the real IST time of day (whole seconds), unless frozen_at() is active."""
+    frozen = _frozen.get()
+    if frozen is not None:
+        return frozen
     wall = _wall_now().astimezone(IST)
     return datetime.combine(today(), wall.time().replace(microsecond=0), tzinfo=IST)
+
+
+@contextmanager
+def frozen_at(dt: datetime) -> Iterator[None]:
+    """Make now() return dt inside the block. For replaying history only (seed_demo), never in request handling."""
+    token = _frozen.set(to_ist(dt).replace(microsecond=0))
+    try:
+        yield
+    finally:
+        _frozen.reset(token)
 
 
 def effective_now(prev_created_at: datetime | None = None) -> datetime:

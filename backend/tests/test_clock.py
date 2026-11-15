@@ -50,3 +50,12 @@ def test_only_clock_calls_datetime_now():
         and any(s in p.read_text(encoding="utf-8") for s in ("datetime.now(", "datetime.utcnow(", "date.today(", "time.time("))
     ]
     assert offenders == []
+
+
+def test_frozen_at_overrides_now_only_inside_block(env, wall_clock):
+    wall_clock("12:00:00")
+    past = clock.parse("2026-10-29T20:05:00+05:30")
+    with clock.frozen_at(past):
+        assert clock.iso(clock.now()) == "2026-10-29T20:05:00+05:30"
+        assert clock.iso(clock.created_at_for(past, None)) == "2026-10-29T20:05:00+05:30"
+    assert clock.iso(clock.now()) == "2026-11-15T12:00:00+05:30"

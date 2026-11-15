@@ -1,4 +1,5 @@
-"""Every contract endpoint exists, returns its fixture, and uses the contract error shape."""
+"""Endpoints still on fixtures return them; contract error shape and request validation.
+Real P1 endpoints are covered in test_p1_flows.py."""
 import json
 
 import pytest
@@ -13,13 +14,8 @@ def fx(name):
 GET_CASES = [
     ("/api/merchants", "merchants"),
     ("/api/merchants/M001", "merchant_M001"),
-    ("/api/payments/TXN-M001-20261115-015", "payment_get_015"),
     ("/api/merchants/M001/payments", "payments_list_M001_2026-11-15"),
-    ("/api/merchants/M001/questions", "questions_M001_open_all"),
-    ("/api/merchants/M001/questions?date=2026-11-15", "questions_M001_open_2026-11-15"),
     ("/api/merchants/M001/expenses", "expenses_list_M001_2026-11-15"),
-    ("/api/merchants/M001/ledger", "ledger_M001_2026-11-15"),
-    ("/api/ledger/" + fx("ledger_entry_detail")["ledger_entry_id"], "ledger_entry_detail"),
     ("/api/merchants/M001/ledger/verify", "ledger_verify_valid"),
     ("/api/merchants/M001/learning", "learning_M001"),
     ("/api/evaluation", "evaluation"),
@@ -27,7 +23,6 @@ GET_CASES = [
     ("/api/merchants/M003/tax-summary", "tax_summary_M003"),
     ("/api/merchants/M001/notices/NTC-M001-001/evidence", "notice_evidence"),
     ("/api/merchants/M001/passport", "passport_M001"),
-    ("/api/demo/script?merchant_id=M001", "demo_script_M001"),
 ]
 
 
@@ -38,29 +33,7 @@ def test_get_returns_fixture(client, path, name):
     assert r.json() == fx(name)
 
 
-def test_summary_sources(client):
-    assert client.get("/api/merchants/M001/summary").json()["sources"] is None
-    with_sources = client.get("/api/merchants/M001/summary?include_sources=true").json()
-    assert with_sources == fx("summary_M001_after_confirm")
-
-
-POST_CASES = [
-    ("/api/payments", "payments_post_request_015", 201, "payments_post_015_ask"),
-    ("/api/expenses", "expenses_post_request", 201, "expenses_post"),
-    ("/api/payments/TXN-M001-20261115-015/confirm", "confirm_request_015", 201, "confirm_015"),
-]
-
-
-@pytest.mark.parametrize("path, request_fx, status, response_fx", POST_CASES)
-def test_post_returns_fixture(client, wall_clock, path, request_fx, status, response_fx):
-    wall_clock("12:00:00")
-    r = client.post(path, json=fx(request_fx))
-    assert r.status_code == status, r.text
-    assert r.json() == fx(response_fx)
-
-
-def test_other_posts(client):
-    assert client.post("/api/demo/reset", json={}).json() == fx("demo_reset")
+def test_other_stub_posts(client):
     assert client.post("/api/classify/preview", json={
         "merchant_id": "M001", "payer_id": "P90001", "amount_paise": 200000,
         "payment_type": "P2P", "timestamp": "2026-11-15T20:30:00+05:30",
@@ -117,22 +90,6 @@ def test_health_threshold_is_effective_max(make_client):
         assert c.get("/api/health").json()["threshold"] >= 0.97
 
 
-def test_tamper_flag_and_reset(client):
-    client.post("/api/demo/tamper", json={"merchant_id": "M001", "ledger_entry_id": "LE-M001-004725"})
-    assert client.get("/api/health").json()["tampered"] is True
-    assert client.get("/api/merchants/M001/ledger/verify").json()["status"] == "TAMPERED"
-    client.post("/api/demo/reset", json={})
-    assert client.get("/api/health").json()["tampered"] is False
-
-
-def test_next_payment_script(client):
-    indexes = [client.post("/api/demo/next-payment", json={"merchant_id": "M001"}).json() for _ in range(15)]
-    assert [p["demo_index"] for p in indexes] == list(range(1, 16))
-    assert indexes[-1]["action"] == "ASK_MERCHANT" and indexes[-1]["demo_remaining"] == 0
-    done = client.post("/api/demo/next-payment", json={"merchant_id": "M001"})
-    assert done.status_code == 409 and done.json()["error"]["code"] == "INVALID_STATE"
-
-
 @pytest.mark.parametrize("method, path", [
     ("post", "/api/demo/reset"), ("post", "/api/demo/next-payment"), ("get", "/api/demo/script?merchant_id=M001"), ("post", "/api/demo/tamper"),
 ])
@@ -143,7 +100,7 @@ def test_demo_tools_404_when_disabled(make_client, method, path):
         assert c.get("/api/health").json()["demo_tools"] is False
 
 
-# --- errors -------------------------------------------------------------------
+# --- errors and validation (no database rows needed) ---------------------------
 def test_unknown_merchant_404(client):
     r = client.get("/api/merchants/M999/summary")
     assert r.status_code == 404 and r.json()["error"]["code"] == "NOT_FOUND"
@@ -174,7 +131,8 @@ def test_unknown_field_rejected(client):
 
 def test_unknown_merchant_in_body_is_422(client):
     body = fx("payments_post_request_015") | {"merchant_id": "M999"}
-    assert client.post("/api/payments", json=body).status_code == 422
+    r = client.post("/api/payments", json=body)
+    assert r.status_code == 422 and r.json()["error"]["details"]["field"] == "merchant_id"
 
 
 def test_malformed_json_is_400(client):
@@ -187,25 +145,10 @@ def test_remember_payer_with_sale_is_422(client):
     assert client.post("/api/payments/TXN-M001-20261115-015/confirm", json=body).status_code == 422
 
 
-def test_question_mismatch_is_409(client):
-    body = fx("confirm_request_015") | {"question_id": "Q-M001-000210"}
-    r = client.post("/api/payments/TXN-M001-20261115-015/confirm", json=body)
-    assert r.status_code == 409 and r.json()["error"]["details"]["reason"] == "QUESTION_MISMATCH"
-
-
 @pytest.mark.parametrize("amount", [0, 99, 50_000_001])
-def test_expense_amount_range(client, wall_clock, amount):
-    wall_clock("12:00:00")
+def test_expense_amount_range(client, amount):
     body = fx("expenses_post_request") | {"amount_paise": amount}
     assert client.post("/api/expenses", json=body).status_code == 422
-
-
-@pytest.mark.parametrize("timestamp", ["2026-11-15T23:00:00+05:30", "2026-11-07T05:40:00+05:30"])
-def test_expense_time_window(client, wall_clock, timestamp):
-    wall_clock("12:00:00")
-    body = fx("expenses_post_request") | {"timestamp": timestamp}
-    r = client.post("/api/expenses", json=body)
-    assert r.status_code == 422 and r.json()["error"]["details"]["field"] == "timestamp"
 
 
 def test_unknown_audio_404(client):

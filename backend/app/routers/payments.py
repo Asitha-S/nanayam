@@ -1,28 +1,31 @@
-"""Payments, questions, confirmation, preview (contract sections 3-4). STUB: fixtures."""
+"""Payments, questions, confirmation, preview (contract sections 3-4).
+
+REAL: POST /payments, GET /payments/{txn}, GET questions, POST confirm.
+STUB (fixtures): payments list, refund, reversal, classify preview.
+"""
+import sqlite3
 from datetime import date
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query, Response
 
-from .. import errors
+from ..deps import get_conn
 from ..schemas import Classification, ConfirmIn, Language, PaymentIn, PreviewIn, QuestionStatus, RefundIn, ReversalIn
+from ..services import payments as svc
 from ..stubs import fixture, require_merchant, require_merchant_422
 
 router = APIRouter(tags=["payments"])
 
-ASK_TXN = "TXN-M001-20261115-015"
-
 
 @router.post("/payments", status_code=201)
-def create_payment(body: PaymentIn):
-    require_merchant_422(body.merchant_id)
-    return fixture("payments_post_015_ask" if body.transaction_id == ASK_TXN else "payments_post_012_auto")
+def create_payment(body: PaymentIn, response: Response, conn: sqlite3.Connection = Depends(get_conn)):
+    status, out = svc.create_payment(conn, body)
+    response.status_code = status
+    return out
 
 
 @router.get("/payments/{transaction_id}")
-def get_payment(transaction_id: str):
-    if transaction_id != ASK_TXN:
-        raise errors.not_found(f"Unknown transaction {transaction_id}", transaction_id=transaction_id)
-    return fixture("payment_get_015")
+def get_payment(transaction_id: str, conn: sqlite3.Connection = Depends(get_conn)):
+    return svc.payment_detail(conn, transaction_id)
 
 
 @router.get("/merchants/{merchant_id}/payments")
@@ -34,7 +37,7 @@ def list_payments(
     limit: int = Query(200, ge=1, le=1000),
     offset: int = Query(0, ge=0),
 ):
-    require_merchant(merchant_id)
+    require_merchant(merchant_id)  # STUB
     out = fixture("payments_list_M001_2026-11-15")
     if classification:
         out["items"] = [i for i in out["items"] if i["current_classification"] == classification]
@@ -45,12 +48,12 @@ def list_payments(
 
 @router.post("/payments/{transaction_id}/refund", status_code=201)
 def refund(transaction_id: str, body: RefundIn):
-    return fixture("refund")
+    return fixture("refund")  # STUB
 
 
 @router.post("/payments/{transaction_id}/reversal", status_code=201)
 def reversal(transaction_id: str, body: ReversalIn):
-    return fixture("reversal")
+    return fixture("reversal")  # STUB
 
 
 @router.get("/merchants/{merchant_id}/questions")
@@ -59,27 +62,20 @@ def list_questions(
     status: QuestionStatus = "OPEN",
     date: date | None = None,
     language: Language | None = None,
+    conn: sqlite3.Connection = Depends(get_conn),
 ):
-    require_merchant(merchant_id)
-    if status != "OPEN":
-        return {"merchant_id": merchant_id, "items": []}
-    return fixture("questions_M001_open_2026-11-15" if date is not None else "questions_M001_open_all")
+    return svc.list_questions(conn, merchant_id, status=status, date=date.isoformat() if date else None,
+                              language=language)
 
 
 @router.post("/payments/{transaction_id}/confirm", status_code=201)
-def confirm(transaction_id: str, body: ConfirmIn):
-    require_merchant_422(body.merchant_id)
-    out = fixture("confirm_015")
-    if body.question_id is not None and (body.question_id != out["question_id"] or transaction_id != ASK_TXN):
-        raise errors.invalid_state(
-            f"question {body.question_id} does not belong to transaction {transaction_id}",
-            reason="QUESTION_MISMATCH",
-            question_id=body.question_id,
-        )
+def confirm(transaction_id: str, body: ConfirmIn, response: Response, conn: sqlite3.Connection = Depends(get_conn)):
+    status, out = svc.confirm(conn, transaction_id, body)
+    response.status_code = status
     return out
 
 
 @router.post("/classify/preview")
 def classify_preview(body: PreviewIn):
-    require_merchant_422(body.merchant_id)
+    require_merchant_422(body.merchant_id)  # STUB
     return fixture("classify_preview_remembered")
