@@ -8,6 +8,7 @@ import demoDay from '../../../data/demo/M001_demo_day.json'
 import { get, post } from '../api'
 import { useMerchant } from '../app/merchant'
 import { go as goTo } from '../app/route'
+import { talkWords } from '../components/talk/strings'
 import '../styles/tour.css'
 import { STEPS } from './steps'
 
@@ -168,8 +169,25 @@ export function TourProvider({ children }) {
       await sleep(150)
       await askScreen({ action: 'send', count: n })
     },
-    /** The scripted expense (idempotent by client_request_id). */
-    logExpense: () => post('/expenses', demoDay.expense),
+    /** Say the expense on the Talk screen: the recorded clip if registered, else typed into the box. Waits for the card. */
+    async sayExpense(clipKey, text) {
+      await waitFor(() => document.getElementById('talk-text'), 8000)
+      await sleep(150)
+      await askScreen({ action: 'expense-utterance', clipKey, text })
+      const card = await waitFor(() => document.querySelector('[data-tour="expense-card"][data-status="open"]'), 30000)
+      if (!card) throw new Error('The confirmation card did not appear on the Talk screen')
+    },
+    /** Tap the yes button on the open expense card and wait until it is saved (nothing to do if already saved). */
+    async confirmExpense() {
+      if (document.querySelector('[data-tour="expense-card"][data-status="saved"]')) return
+      const yes = talkWords('ta').yes
+      const btn = [...document.querySelectorAll('[data-tour="expense-card"][data-status="open"] button')]
+        .find((b) => b.textContent.includes(yes))
+      if (!btn) throw new Error('There is no expense card waiting for a yes')
+      btn.click()
+      const saved = await waitFor(() => document.querySelector('[data-tour="expense-card"][data-status="saved"]'), 20000)
+      if (!saved) throw new Error('The expense was not saved')
+    },
     /** If the scripted question is still open, answer it the way the script does (family, remember). Returns the payer id. */
     async answerAskedPayment() {
       const script = await get(`/demo/script?merchant_id=${demoDay.merchant_id}`)
@@ -212,9 +230,26 @@ export function TourProvider({ children }) {
     show(0, false)
   }, [setMerchantId, show])
   const exit = useCallback(() => { setIndex(-1); setBusy(false); setError(null) }, [])
-  const next = useCallback(() => (index >= STEPS.length - 1 ? exit() : show(index + 1, true)), [index, show, exit])
+  const next = useCallback(async () => {
+    const step = STEPS[index]
+    if (step?.leave) { // forward-only: what this step finishes before the tour moves on
+      setBusy(true)
+      setError(null)
+      try {
+        await step.leave(helpers.current)
+      } catch (e) {
+        e.phase = 'leave'
+        setError(e)
+        return
+      } finally {
+        setBusy(false)
+      }
+    }
+    if (index >= STEPS.length - 1) exit()
+    else show(index + 1, true)
+  }, [index, show, exit])
   const back = useCallback(() => index > 0 && show(index - 1, false), [index, show])
-  const retry = useCallback(() => show(index, true), [index, show])
+  const retry = useCallback(() => (error?.phase === 'leave' ? next() : show(index, true)), [error, index, next, show])
 
   // keyboard: Esc closes; arrows move when focus is not in a text field
   useEffect(() => {

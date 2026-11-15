@@ -11,17 +11,28 @@ export const STEPS = [
   {
     id: 'intro',
     title: 'Judge tour',
-    text: <>Murugan&apos;s day, step by step: payments arrive, one question in Tamil, the profit spoken back, and the proof behind every number. Starting resets the demo day.</>,
+    text: <>Murugan&apos;s day, step by step: the morning&apos;s expense, payments arriving, one question in Tamil, the profit spoken back, and the proof behind every number. Starting resets the demo day.</>,
     next: 'Reset and start',
+  },
+  {
+    id: 'expense',
+    target: 'expense-card',
+    title: 'The morning\u2019s stock purchase',
+    text: <>5:40 AM at Koyambedu market. Murugan logs his stock purchase by speaking. Nothing is saved until he says yes.</>,
+    enter: async (h) => {
+      await h.post('/demo/reset', {})
+      await h.go('/talk')
+      await h.sayExpense('ta/expense_koyambedu', 'Koyambedu-la 3,100 rupees-ku kaaikari vaanginen')
+    },
+    // Next taps the card's yes button (the same tap Murugan would make) and waits until it is saved
+    leave: (h) => h.confirmExpense(),
   },
   {
     id: 'arrive',
     target: 'soundbox-stage',
     title: 'A payment arrives',
-    text: <>A customer pays by UPI. The Soundbox announces it, and Naanayam counts it as a shop sale without asking anyone: it is sure enough. The morning&apos;s Koyambedu stock purchase is already logged by voice.</>,
+    text: <>A customer pays by UPI. The Soundbox announces it, and Naanayam counts it as a shop sale without asking anyone: it is sure enough.</>,
     enter: async (h) => {
-      await h.post('/demo/reset', {})
-      await h.logExpense()
       await h.go('/soundbox')
       await h.send(1)
     },

@@ -187,7 +187,7 @@ export function ExpenseCard({ r, W, t, demoDate, act }) {
   if (r.status === 'saved') return <SavedExpense r={r} W={W} t={t} act={act} />
 
   return (
-    <div className={`tcard expense ${r.status === 'closed' || r.status === 'cancelled' ? 'is-done' : ''}`}>
+    <div className={`tcard expense ${r.status === 'closed' || r.status === 'cancelled' ? 'is-done' : ''}`} data-tour="expense-card" data-status={r.status}>
       <Head tone="sun" label={`Expense · ${statusText}`}>
         <span className={`tcard-date ${notToday ? 'is-other' : ''}`}>{notToday ? 'Not today: ' : ''}{longDate(d.date)}</span>
       </Head>
@@ -301,7 +301,7 @@ function ExpenseForm({ r, W, t, act }) {
 function SavedExpense({ r, W, t, act }) {
   const s = r.result
   return (
-    <div className="tcard expense is-saved">
+    <div className="tcard expense is-saved" data-tour="expense-card" data-status="saved">
       <Head tone="sun" label={r.voidState === 'voided' ? 'Expense · Voided' : 'Expense · Saved'}>
         <Badge kind="ledger" />
       </Head>

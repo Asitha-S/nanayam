@@ -4,6 +4,7 @@
 // an utterance carries the id of the question card on screen; a late answer for a closed card is dropped; switching
 // merchant clears everything. Nothing is saved without the merchant's tap (or spoken answer to a question card).
 import '../styles/talk.css'
+import { TOUR_EVENT } from '../tour/Tour'
 import { RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError, USING_FIXTURES, apiUrl, get, post, useApi } from '../api'
@@ -544,6 +545,32 @@ export default function Talk({ params }) {
       setReply(id, failure(e, 'transcribe'))
     }
   }
+
+  // Judge tour: say the morning expense as Murugan would. The recorded clip if it is registered (its own badge
+  // shows "Recorded demo clip"), otherwise the sentence is typed into the text box and sent. Starts a clean
+  // conversation so a card from an earlier run is never mistaken for this one.
+  const tourRef = useRef(null)
+  tourRef.current = { clips, playClip, sendText, setText, resetAll }
+  useEffect(() => {
+    const on = async (e) => {
+      if (e.detail?.action !== 'expense-utterance') return
+      e.detail.ack?.()
+      tourRef.current.resetAll()
+      await new Promise((r) => setTimeout(r, 300))
+      const clip = tourRef.current.clips.find((c) => c.demoKey === e.detail.clipKey)
+      if (clip) {
+        tourRef.current.playClip(clip)
+        return e.detail.done?.('clip')
+      }
+      tourRef.current.setText(e.detail.text)
+      await new Promise((r) => setTimeout(r, 900)) // let the words show in the box first
+      tourRef.current.sendText(e.detail.text, 'typed')
+      tourRef.current.setText('')
+      return e.detail.done?.('typed')
+    }
+    window.addEventListener(TOUR_EVENT, on)
+    return () => window.removeEventListener(TOUR_EVENT, on)
+  }, [])
 
   // The two big tap buttons (every voice path has a tap path).
   const tapProfit = () => {
