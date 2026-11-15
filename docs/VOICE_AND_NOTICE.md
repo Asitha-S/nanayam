@@ -306,7 +306,7 @@ Folder `assets/demo_audio/ta/` (Charulatha) and `te/` (Nagasai Sree). Record in 
 | te/answer_family.wav | "ఇంటి డబ్బు, తమ్ముడు పంపాడు" (or as appropriate for brother) |
 | te/ask_profit.wav | "ఈరోజు లాభం ఎంత?" |
 
-Each has a `demo_key` (file name without extension); its sha256 goes into `demo_clips.json`. Playing one shows the "Recorded demo clip" badge. On stage: default to the recorded clips (Wi-Fi independent) and say so plainly: "this is a clip we recorded; you can also try the mic." If Wi-Fi works, keep `DEMO_MODE=cache_first` so a judge's unscripted sentence is genuinely transcribed. Rehearse the live mic with a stranger's voice on Saturday.
+Each has a `demo_key` = its path under `assets/demo_audio/` without extension, including the language folder (`ta/expense_koyambedu`, `te/expense_koyambedu`), because ta/ and te/ share file names. Its sha256 goes into `demo_clips.json`; run `python -m backend.app.sarvam.register_demo_clips` from the repo root after recording. Playing one shows the "Recorded demo clip" badge. On stage: default to the recorded clips (Wi-Fi independent) and say so plainly: "this is a clip we recorded; you can also try the mic." If Wi-Fi works, keep `DEMO_MODE=cache_first` so a judge's unscripted sentence is genuinely transcribed. Rehearse the live mic with a stranger's voice on Saturday.
 
 ---
 

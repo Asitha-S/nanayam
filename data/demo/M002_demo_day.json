@@ -1,0 +1,213 @@
+{
+  "merchant_id": "M002",
+  "demo_date": "2026-11-15",
+  "generated_by": "python -m data.generator.run --seed 42",
+  "expense": {
+    "client_request_id": "0b7d3c1e-5a2f-4e8b-9c6d-1f2e3a4b5c6d",
+    "merchant_id": "M002",
+    "amount_paise": 420000,
+    "category": "STOCK_PURCHASE",
+    "description": "Pandlu, Koyambedu",
+    "timestamp": "2026-11-15T05:55:00+05:30",
+    "input_source": "VOICE",
+    "language": "te",
+    "utterance_text": "Koyambedu lo 4,200 rupayalaku pandlu konnanu",
+    "voice_log_id": null
+  },
+  "payments": [
+    {
+      "demo_index": 1,
+      "request": {
+        "transaction_id": "TXN-M002-20261115-001",
+        "merchant_id": "M002",
+        "payer_id": "P11577",
+        "payer_name": "Nandhini T",
+        "payer_vpa_kind": "PERSONAL",
+        "amount_paise": 30000,
+        "payment_type": "P2M",
+        "timestamp": "2026-11-15T07:10:10+05:30",
+        "description": null
+      },
+      "expected_action": "AUTO_CLASSIFY",
+      "expected_suggested_classification": "SALE",
+      "expected_final_classification": "SALE"
+    },
+    {
+      "demo_index": 2,
+      "request": {
+        "transaction_id": "TXN-M002-20261115-002",
+        "merchant_id": "M002",
+        "payer_id": "P11578",
+        "payer_name": "Kumar Devi",
+        "payer_vpa_kind": "PERSONAL",
+        "amount_paise": 45000,
+        "payment_type": "P2M",
+        "timestamp": "2026-11-15T08:05:10+05:30",
+        "description": null
+      },
+      "expected_action": "AUTO_CLASSIFY",
+      "expected_suggested_classification": "SALE",
+      "expected_final_classification": "SALE"
+    },
+    {
+      "demo_index": 3,
+      "request": {
+        "transaction_id": "TXN-M002-20261115-003",
+        "merchant_id": "M002",
+        "payer_id": "P11579",
+        "payer_name": "Padmaja N",
+        "payer_vpa_kind": "PERSONAL",
+        "amount_paise": 60000,
+        "payment_type": "P2M",
+        "timestamp": "2026-11-15T09:30:10+05:30",
+        "description": null
+      },
+      "expected_action": "AUTO_CLASSIFY",
+      "expected_suggested_classification": "SALE",
+      "expected_final_classification": "SALE"
+    },
+    {
+      "demo_index": 4,
+      "request": {
+        "transaction_id": "TXN-M002-20261115-004",
+        "merchant_id": "M002",
+        "payer_id": "P11580",
+        "payer_name": "Sravani N",
+        "payer_vpa_kind": "PERSONAL",
+        "amount_paise": 25000,
+        "payment_type": "P2M",
+        "timestamp": "2026-11-15T10:15:10+05:30",
+        "description": null
+      },
+      "expected_action": "AUTO_CLASSIFY",
+      "expected_suggested_classification": "SALE",
+      "expected_final_classification": "SALE"
+    },
+    {
+      "demo_index": 5,
+      "request": {
+        "transaction_id": "TXN-M002-20261115-005",
+        "merchant_id": "M002",
+        "payer_id": "P20011",
+        "payer_name": "Hotel Sri Sai",
+        "payer_vpa_kind": "BUSINESS",
+        "amount_paise": 80000,
+        "payment_type": "P2M",
+        "timestamp": "2026-11-15T11:40:10+05:30",
+        "description": null
+      },
+      "expected_action": "AUTO_CLASSIFY",
+      "expected_suggested_classification": "SALE",
+      "expected_final_classification": "SALE"
+    },
+    {
+      "demo_index": 6,
+      "request": {
+        "transaction_id": "TXN-M002-20261115-006",
+        "merchant_id": "M002",
+        "payer_id": "P20011",
+        "payer_name": "Hotel Sri Sai",
+        "payer_vpa_kind": "BUSINESS",
+        "amount_paise": 120000,
+        "payment_type": "P2M",
+        "timestamp": "2026-11-15T13:20:10+05:30",
+        "description": null
+      },
+      "expected_action": "AUTO_CLASSIFY",
+      "expected_suggested_classification": "SALE",
+      "expected_final_classification": "SALE"
+    },
+    {
+      "demo_index": 7,
+      "request": {
+        "transaction_id": "TXN-M002-20261115-007",
+        "merchant_id": "M002",
+        "payer_id": "P11581",
+        "payer_name": "Valli",
+        "payer_vpa_kind": "PERSONAL",
+        "amount_paise": 35000,
+        "payment_type": "P2M",
+        "timestamp": "2026-11-15T15:05:10+05:30",
+        "description": null
+      },
+      "expected_action": "AUTO_CLASSIFY",
+      "expected_suggested_classification": "SALE",
+      "expected_final_classification": "SALE"
+    },
+    {
+      "demo_index": 8,
+      "request": {
+        "transaction_id": "TXN-M002-20261115-008",
+        "merchant_id": "M002",
+        "payer_id": "P11582",
+        "payer_name": "Lavanya T",
+        "payer_vpa_kind": "PERSONAL",
+        "amount_paise": 90000,
+        "payment_type": "P2M",
+        "timestamp": "2026-11-15T16:45:10+05:30",
+        "description": null
+      },
+      "expected_action": "AUTO_CLASSIFY",
+      "expected_suggested_classification": "SALE",
+      "expected_final_classification": "SALE"
+    },
+    {
+      "demo_index": 9,
+      "request": {
+        "transaction_id": "TXN-M002-20261115-009",
+        "merchant_id": "M002",
+        "payer_id": "P11583",
+        "payer_name": "Kumar A",
+        "payer_vpa_kind": "PERSONAL",
+        "amount_paise": 70000,
+        "payment_type": "P2M",
+        "timestamp": "2026-11-15T18:10:10+05:30",
+        "description": null
+      },
+      "expected_action": "AUTO_CLASSIFY",
+      "expected_suggested_classification": "SALE",
+      "expected_final_classification": "SALE"
+    },
+    {
+      "demo_index": 10,
+      "request": {
+        "transaction_id": "TXN-M002-20261115-010",
+        "merchant_id": "M002",
+        "payer_id": "P11584",
+        "payer_name": "Mohan N",
+        "payer_vpa_kind": "PERSONAL",
+        "amount_paise": 80000,
+        "payment_type": "P2M",
+        "timestamp": "2026-11-15T19:00:10+05:30",
+        "description": null
+      },
+      "expected_action": "AUTO_CLASSIFY",
+      "expected_suggested_classification": "SALE",
+      "expected_final_classification": "SALE"
+    },
+    {
+      "demo_index": 11,
+      "request": {
+        "transaction_id": "TXN-M002-20261115-011",
+        "merchant_id": "M002",
+        "payer_id": "P90011",
+        "payer_name": "Srinivas",
+        "payer_vpa_kind": "PERSONAL",
+        "amount_paise": 150000,
+        "payment_type": "P2P",
+        "timestamp": "2026-11-15T19:50:10+05:30",
+        "description": null
+      },
+      "expected_action": "ASK_MERCHANT",
+      "expected_suggested_classification": "FAMILY",
+      "expected_final_classification": "FAMILY"
+    }
+  ],
+  "answer": {
+    "demo_index": 11,
+    "confirmed_category": "FAMILY",
+    "channel": "VOICE",
+    "remember_payer": true,
+    "utterance_text": "ఇంటి డబ్బు, తమ్ముడు పంపాడు"
+  }
+}
