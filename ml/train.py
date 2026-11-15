@@ -51,8 +51,22 @@ K_SELECTION_ANSWER_ERROR = 0.02  # same simulated merchant as the evaluation; it
 RULES_VERSION = "5.6-2026-11-14b"  # rule order with guardrails 5d/1b; part of the model ID
 
 
-def new_model() -> LGBMClassifier:
-    return LGBMClassifier(**PARAMS, random_state=SEED, deterministic=True, force_row_wise=True, n_jobs=1, verbose=-1)
+def new_model(seed: int = SEED) -> LGBMClassifier:
+    return LGBMClassifier(**PARAMS, random_state=seed, deterministic=True, force_row_wise=True, n_jobs=1, verbose=-1)
+
+
+def fold_splits(period: pd.DataFrame, fold_seed: int | None):
+    """5 folds grouped by merchant. fold_seed None = GroupKFold's default assignment (the release pipeline);
+    an int = merchants shuffled with that seed into 5 groups (robustness experiment 4b)."""
+    groups = period.merchant_id.to_numpy()
+    if fold_seed is None:
+        yield from (held for _, held in GroupKFold(n_splits=N_FOLDS).split(period, groups=groups))
+        return
+    merchants = sorted(set(groups))
+    np.random.default_rng(fold_seed).shuffle(merchants)
+    for k in range(N_FOLDS):
+        held = set(merchants[k::N_FOLDS])
+        yield np.flatnonzero(np.isin(groups, list(held)))
 
 
 def xy(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
@@ -73,16 +87,18 @@ def ece(p: np.ndarray, y: np.ndarray, bins: int = 10) -> tuple[float, list[dict]
     return round(float(total), 4), out
 
 
-def out_of_fold_scores(period: pd.DataFrame) -> np.ndarray:
+def out_of_fold_scores(period: pd.DataFrame, seed: int = SEED, fold_seed: int | None = None,
+                       verbose: bool = True) -> np.ndarray:
     """Raw scores for every row of `period`, each from a model that never saw that row's merchant."""
     raw = np.full(len(period), np.nan)
     groups = period.merchant_id.to_numpy()
-    for k, (_, held_idx) in enumerate(GroupKFold(n_splits=N_FOLDS).split(period, groups=groups)):
+    for k, held_idx in enumerate(fold_splits(period, fold_seed)):
         held = set(groups[held_idx])
         fit_rows = period[~period.merchant_id.isin(held) & period.date.between(*TRAIN_DATES)]
-        model = new_model().fit(*xy(fit_rows))
+        model = new_model(seed).fit(*xy(fit_rows))
         raw[held_idx] = model.predict_proba(period.iloc[held_idx][list(FEATURES)].to_numpy(float))[:, 1]
-        print(f"  fold {k + 1}/{N_FOLDS}: {len(held)} held-out merchants, fit on {len(fit_rows):,} rows")
+        if verbose:
+            print(f"  fold {k + 1}/{N_FOLDS}: {len(held)} held-out merchants, fit on {len(fit_rows):,} rows")
     assert not np.isnan(raw).any()
     return raw
 
@@ -150,6 +166,29 @@ def select_k(calib: pd.DataFrame, q: np.ndarray, tau: float) -> tuple[float, lis
                       "coverage": round(float((d.action == "AUTO_CLASSIFY").mean()), 4)})
     best = min(table, key=lambda r: (r["silent_errors"]["total"], r["questions_per_merchant_per_day"], r["k"]))
     return best["k"], table
+
+
+def fit_pipeline(df: pd.DataFrame, *, seed: int = SEED, fold_seed: int | None = None, conf_threshold: float = 0.90,
+                 verbose: bool = False) -> dict:
+    """Model, out-of-fold isotonic calibration, tau and k exactly as the release pipeline, without saving or
+    logging. Used by robustness experiment 4b (LightGBM seed and fold assignment varied)."""
+    mine = df[df.merchant_id.isin(TRAIN_MERCHANTS)].reset_index(drop=True)
+    train = mine[mine.date.between(*TRAIN_DATES)]
+    calib = mine[mine.date.between(*CALIB_DATES)].reset_index(drop=True)
+    period = mine[mine.date.between(*OOF_DATES)].reset_index(drop=True)
+    raw_oof = out_of_fold_scores(period, seed=seed, fold_seed=fold_seed, verbose=verbose)
+    calibrator = IsotonicRegression(out_of_bounds="clip", y_min=0.0, y_max=1.0).fit(
+        raw_oof, (period.true_label == "FAMILY").to_numpy(int))
+    model = new_model(seed).fit(*xy(train))
+    q_calib = calibrator.predict(model.predict_proba(xy(calib)[0])[:, 1])
+    table = selection_table(calib, q_calib, TAU_GRID)
+    tau, met = choose_tau(table, conf_threshold)
+    k, k_table = select_k(calib, q_calib, tau)
+    buf = io.BytesIO()
+    joblib.dump((model, calibrator, tau, k, RULES_VERSION), buf)
+    version = f"clf-robust-s{seed}-f{fold_seed}-{hashlib.sha256(buf.getvalue()).hexdigest()[:6]}"
+    return {"model_version": version, "model": model, "calibrator": calibrator, "threshold": tau, "k": k,
+            "met_constraints": met, "k_table": k_table}
 
 
 def _git_commit() -> str | None:

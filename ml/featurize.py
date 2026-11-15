@@ -18,9 +18,15 @@ OUT = GENERATED / "features.parquet"
 
 
 def featurize(merchant_ids: list[str] | None = None) -> pd.DataFrame:
-    merchants = pd.read_parquet(GENERATED / "merchants.parquet").set_index("merchant_id")
-    payments = pd.read_parquet(GENERATED / "payments.parquet")
-    labels = pd.read_parquet(GENERATED / "labels.parquet").set_index("transaction_id")
+    return featurize_frames(pd.read_parquet(GENERATED / "merchants.parquet"),
+                            pd.read_parquet(GENERATED / "payments.parquet"),
+                            pd.read_parquet(GENERATED / "labels.parquet"), merchant_ids)
+
+
+def featurize_frames(merchants: pd.DataFrame, payments: pd.DataFrame, labels: pd.DataFrame,
+                     merchant_ids: list[str] | None = None) -> pd.DataFrame:
+    merchants = merchants.set_index("merchant_id")
+    labels = labels.set_index("transaction_id")
     eval_ids = [m for m in merchants.index if m.startswith("M") and int(m[1:]) >= 101]
     wanted = set(merchant_ids or eval_ids)
     payments = payments[payments.merchant_id.isin(wanted)].sort_values(["merchant_id", "timestamp", "transaction_id"])

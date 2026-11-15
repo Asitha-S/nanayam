@@ -182,6 +182,8 @@ class _Ctx:
     ids: object
     payers: dict  # payer_id -> (name, kind)
     rows: list  # payment dicts (no transaction_id yet)
+    family_rate: float = 1.0  # robustness only: family/friend transfer rate multiplier (1.0 = as specified)
+    specs: list = field(default_factory=list)  # (kind, payer_id, kwargs) of family/friend payers, for rescaling
 
     def payer(self, pid: str, name: str, kind: str) -> str:
         if pid in self.payers and self.payers[pid] != (name, kind):
@@ -279,18 +281,26 @@ def non_round_rupees(rng) -> int:
 
 def _family(ctx: _Ctx, pid: str, amounts=P.FAMILY_AMOUNTS, gap=P.FAMILY_GAP_DAYS, p2p=P.FAMILY_P2P,
             non_round=P.FAMILY_NON_ROUND) -> None:
+    ctx.specs.append(("family", pid, {"amounts": amounts, "gap": gap, "p2p": p2p, "non_round": non_round}))
     rng = ctx.rng
+    scale = 1.0 / ctx.family_rate  # interval between transfers: x2 for rate x0.5, /4 for rate x4
     d = int(rng.integers(0, gap[1]))
+    if ctx.family_rate != 1.0:
+        d = int(d * scale)
     while d < len(DAYS):
         ptype = "P2P" if rng.random() < p2p else "P2M"
         rupees = non_round_rupees(rng) if rng.random() < non_round else int(rng.choice(amounts))
         ctx.pay(pid, _family_time(rng, DAYS[d]), rupees, ptype, "FAMILY", "family")
-        d += int(rng.integers(gap[0], gap[1] + 1))
+        step = int(rng.integers(gap[0], gap[1] + 1))
+        d += step if ctx.family_rate == 1.0 else max(1, round(step * scale))
 
 
 def _friend(ctx: _Ctx, pid: str) -> None:
+    ctx.specs.append(("friend", pid, {}))
     rng = ctx.rng
     k = int(rng.integers(P.FRIEND_TIMES[0], P.FRIEND_TIMES[1] + 1))
+    if ctx.family_rate != 1.0:
+        k = min(len(DAYS), max(1, round(k * ctx.family_rate)))
     for d in sorted(rng.choice(len(DAYS), size=k, replace=False)):
         ts = at(DAYS[d], window_seconds(rng, 1, time(8, 0), P.SHOP_CLOSE)[0])
         rupees = non_round_rupees(rng) if rng.random() < P.FRIEND_NON_ROUND else int(rng.choice(P.FRIEND_AMOUNTS))
@@ -374,6 +384,29 @@ def _merchant_payments(ctx: _Ctx, scale: float) -> list[str]:
     for _ in range(int(rng.integers(P.CREDIT_COUNT[0], P.CREDIT_COUNT[1] + 1))):
         _credit_settlement(ctx, _new_person(ctx, "customer"))
     return pool
+
+
+def _rescale_family(ctx: _Ctx, rows: list[dict], refunds: list[dict], reversals: list[dict], seed: int,
+                    family_rate: float) -> tuple[list[dict], list[dict], list[dict]]:
+    """Robustness only. The merchant was generated exactly as at rate 1 (same payers, customers, refunds).
+    Replace only the family/friend payments: the same payers' transfers are regenerated at the scaled rate from a
+    separate random stream, transaction IDs are renumbered in time order, customer refunds are mapped across, and
+    reversals of the old family/friend payments are dropped (the new ones get none)."""
+    mid = ctx.merchant["merchant_id"]
+    ctx2 = _Ctx(merchant=ctx.merchant, rng=np.random.default_rng([seed, int(mid[1:]), 77]), ids=ctx.ids,
+                payers=ctx.payers, rows=[], family_rate=family_rate)
+    for kind, pid, kw in list(ctx.specs):
+        if kind == "family":
+            _family(ctx2, pid, **kw)
+        else:
+            _friend(ctx2, pid)
+    keep = [r for r in rows if r["payer_role"] not in ("family", "friend_loan")]
+    old_ids = [r["transaction_id"] for r in keep]
+    new_rows = _assign_ids(keep + ctx2.rows)
+    mapping = dict(zip(old_ids, (r["transaction_id"] for r in keep)))
+    refunds = [dict(x, transaction_id=mapping[x["transaction_id"]]) for x in refunds]  # refunds are on sales only
+    reversals = [dict(x, transaction_id=mapping[x["transaction_id"]]) for x in reversals if x["transaction_id"] in mapping]
+    return new_rows, refunds, reversals
 
 
 def _assign_ids(rows: list[dict]) -> list[dict]:
@@ -465,7 +498,9 @@ def merchant_list(seed: int) -> list[dict]:
     return out
 
 
-def generate(seed: int = 42, only: list[str] | None = None) -> Generated:
+def generate(seed: int = 42, only: list[str] | None = None, family_rate: float = 1.0) -> Generated:
+    """family_rate != 1.0 is for robustness experiments only (family and friend transfer rates; number of
+    family/friend payers and all customer behaviour unchanged)."""
     merchants = [m for m in merchant_list(seed) if only is None or m["merchant_id"] in only]
     payers: dict[str, tuple[str, str]] = {pid: v for pid, v in NAMED_PAYERS.items()}
     demo_ids = DemoIds()
@@ -475,10 +510,12 @@ def generate(seed: int = 42, only: list[str] | None = None) -> Generated:
         mid = m["merchant_id"]
         rng = np.random.default_rng([seed, int(mid[1:])])
         ids = demo_ids if mid in ("M001", "M002", "M003") else EvalIds(mid)
-        ctx = _Ctx(merchant=m, rng=rng, ids=ids, payers=payers, rows=[])
+        ctx = _Ctx(merchant=m, rng=rng, ids=ids, payers=payers, rows=[])  # always the rate-1 stream
         pools[mid] = _merchant_payments(ctx, m["volume_scale"])
         rows = _assign_ids(ctx.rows)
         rf, rv = _refunds_reversals(rows, rng)
+        if family_rate != 1.0:
+            rows, rf, rv = _rescale_family(ctx, rows, rf, rv, seed, family_rate)
         payments += rows
         refunds += rf
         reversals += rv
