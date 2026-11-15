@@ -53,7 +53,10 @@ router to your function as soon as it exists (tell him in the PR). Never compute
       response's "fields" object>, explanation_text=...)`; it returns the `notice_id` to put in the response. Evidence
       (`app/notice/evidence.py`, Asitha) reads exactly that row. Tamil explanation: figures from the evidence object.
       Tests to keep green: `test_analyse_sample_then_evidence_end_to_end` and the smoke test's two notice checks.
-- [ ] **Sample notice image**: amount **₹8,42,162** (= M001 gross UPI receipts 2026-08-01..2026-10-31, in
+- [ ] **Sample notice image**: commit `assets/notice/sample_notice.png`, then run
+      `python -m backend.app.sarvam.register_demo_clips` so `demo_key=sample_notice_v1` accepts only that file (422
+      for anything else; until the image exists any file is accepted with a warning). Your real `analyse()` should call
+      `app.notice.sample.check_sample_file(file_bytes)` for that key. Amount **₹8,42,162** (= M001 gross UPI receipts 2026-08-01..2026-10-31, in
       `data/demo/notice_numbers.json`; regenerate the image if that file ever changes). Expected evidence on the
       committed seed: difference vs notice 0, unresolved 3 (Mani, Jaya, Prabhu, 29–31 Oct).
 - [x] ~~`app/export/`~~ (taken over by Asitha, done).

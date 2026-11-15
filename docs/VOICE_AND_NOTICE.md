@@ -332,7 +332,7 @@ Each has a `demo_key` = its path under `assets/demo_audio/` without extension, i
 `{amount}` = M001 gross UPI receipts for the period, from `data/demo/notice_numbers.json` (Asitha publishes Friday). Format like a government letter (plain, typed, a seal-like box marked SAMPLE). Do not copy any real department's logo or emblem.
 
 ### 11.3 Extraction
-1. `vision(file, demo_key="sample_notice_v1")` → OCR text (cached).
+1. `vision(file, demo_key="sample_notice_v1")` → OCR text (cached). The demo key is bound to the committed image by sha256, like the demo clips: after committing `assets/notice/sample_notice.png`, run `python -m backend.app.sarvam.register_demo_clips` (it registers `sample_notice_v1` in `cache/sarvam_demo/demo_clips.json`); any other file sent with that key is rejected with 422 (`app/notice/sample.py`, `check_sample_file`).
 2. LLM extracts JSON with fields: `notice_title, issuing_office, reference_number, issue_date, period_start, period_end, amount_questioned_rupees, response_deadline, documents_requested[]`, each with an `evidence_span` copied from the OCR text.
 3. Deterministic validation per field:
    - span must be found in OCR text, else `NOT_FOUND`;

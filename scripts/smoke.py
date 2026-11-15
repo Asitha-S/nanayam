@@ -104,8 +104,10 @@ class Smoke:
         self.check("PDF CA pack", pdf.startswith(b"%PDF") and b"Rs 1,720" in pdf and b"Recorded profit" in pdf,
                    f"{len(pdf)} bytes")
         notice = json.loads((REPO / "data" / "demo" / "notice_numbers.json").read_text(encoding="utf-8"))
+        image = REPO / "assets" / "notice" / "sample_notice.png"
+        upload = image.read_bytes() if image.exists() else b"sample notice placeholder bytes"
         an = self.http.post("/notices/analyse", data={"merchant_id": "M001", "demo_key": "sample_notice_v1"},
-                            files={"file": ("sample_notice.png", b"sample notice placeholder bytes", "image/png")})
+                            files={"file": ("sample_notice.png", upload, "image/png")})
         a = an.json()
         self.check("notice analyse (sample)", an.status_code == 201 and a.get("from_cache") is True
                    and a["fields"]["amount_questioned_paise"]["value"] == notice["amount_questioned_paise"],

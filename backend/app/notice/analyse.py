@@ -2,7 +2,8 @@
 
 FALLBACK STUB (agreed 2026-11-14) until Charulatha's real analyse() lands; she replaces this function's body,
 keeping the signature, and the router needs no change:
-- demo_key "sample_notice_v1": the committed sample notice's known fields (period and amount from
+- demo_key "sample_notice_v1" with the committed sample image (sha256 checked by notice/sample.py; 422 for any
+  other file once the image is committed): the sample notice's known fields (period and amount from
   data/demo/notice_numbers.json, the other fields from contract/fixtures/notice_analyse.json) are saved with
   notice.store.save_notice and returned, marked from_cache true (as the cached reading of the sample would be);
 - any other input: 503 SARVAM_UNAVAILABLE (reading arbitrary notices is not available yet).
@@ -17,9 +18,8 @@ import sqlite3
 from .. import errors, repo
 from ..config import DEMO_DATA_DIR
 from ..stubs import fixture
+from .sample import SAMPLE_DEMO_KEY, check_sample_file
 from .store import save_notice
-
-SAMPLE_DEMO_KEY = "sample_notice_v1"
 
 
 def _sample_fields() -> dict:
@@ -36,6 +36,7 @@ def analyse(conn: sqlite3.Connection, *, merchant_id: str, file_bytes: bytes, de
     if demo_key != SAMPLE_DEMO_KEY:
         raise errors.sarvam_unavailable("Reading notices is not available yet; only the committed sample "
                                         f"(demo_key {SAMPLE_DEMO_KEY!r}) can be analysed", service="vision")
+    check_sample_file(file_bytes)
     fields = _sample_fields()
     notice_id = save_notice(conn, merchant_id=merchant_id, file_sha256=hashlib.sha256(file_bytes).hexdigest(),
                             fields=fields)

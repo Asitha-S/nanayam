@@ -146,7 +146,11 @@ def test_evidence_warns_on_tamper_and_unknown_notice(real):
 
 
 # --- analyse fallback (agreed 2026-11-14) -> evidence end to end -------------------------------------
-def _analyse(c, demo_key="sample_notice_v1", merchant="M001", data=b"png bytes"):
+SAMPLE_IMAGE = DEMO_DATA_DIR.parents[1] / "assets" / "notice" / "sample_notice.png"
+SAMPLE_BYTES = SAMPLE_IMAGE.read_bytes() if SAMPLE_IMAGE.exists() else b"png bytes"
+
+
+def _analyse(c, demo_key="sample_notice_v1", merchant="M001", data=SAMPLE_BYTES):
     form = {"merchant_id": merchant} | ({"demo_key": demo_key} if demo_key else {})
     return c.post("/api/notices/analyse", data=form, files={"file": ("sample_notice.png", data, "image/png")})
 
