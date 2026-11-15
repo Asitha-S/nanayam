@@ -19,6 +19,7 @@
 | IDs | `merchant_id` `M001`; `payer_id` `P10001`; `transaction_id` `TXN-M001-20261115-015`; `expense_id` `EXP-M001-000231`; `ledger_entry_id` `LE-M001-000874`; `question_id` `Q-M001-000057`; `notice_id` `NTC-M001-001`; `audio_id` `AUD-<sha256 first 16 hex>` |
 | Success | Plain JSON object (no wrapper). `200` for reads and idempotent replays, `201` for new resources. |
 | Validation | The backend revalidates every field of every write (amount > 0 and ≤ ₹5,00,000 for expenses, enums, merchant exists, question belongs to the transaction and merchant). Frontend validation is a convenience only. |
+| Lists | Every list response with `count` reports the total number of items matching the filters, before `limit`/`offset`; `items` is the requested page. |
 | Confidence format | API: JSON number rounded to 4 dp (e.g. `0.98`, `0.7123`) or `null`. Database and hash canonicalisation: 4-decimal string (`"0.9800"`) or null. Conversion happens only in the repository layer: `f"{x:.4f}"` on write, `float(s)` on read. The fixture ledger hashes were computed this way. |
 | Confidence | `confidence` is a calibrated model probability (optionally adjusted by payer memory) when `confidence_kind` = `MODEL`. When the decision comes from the merchant's configuration, `confidence` = `null` and `confidence_kind` = `NONE`. The UI shows "Your instruction" instead of a percentage. |
 | Errors | Always this shape, with the HTTP status below: |
@@ -555,7 +556,7 @@ Returns the latest evaluation run file (`data/eval/latest.json`), produced by `p
   "data_label": "Synthetic data (generator seed 42)",
   "model_version": "clf-2026-11-14-01",
   "threshold": 0.9,
-  "split": { "train_merchants": 70, "test_merchants": 30, "test_period": "2026-10-16 to 2026-11-14", "test_transactions": 38527 },
+  "split": { "train_merchants": 70, "test_merchants": 110, "test_period": "2026-10-16 to 2026-11-14", "test_transactions": 152189 },
   "baseline": { "precision_auto": 0.962, "coverage": 0.71, "questions_per_merchant_per_day": 6.1, "overall_accuracy": 0.991 },
   "with_feedback": { "precision_auto": 0.974, "coverage": 0.88, "questions_per_merchant_per_day": 2.3, "overall_accuracy": 0.993 },
   "questions_per_day_by_week": { "baseline": [6.3, 6.0, 6.2, 5.9], "with_feedback": [4.1, 2.6, 1.9, 1.7] },

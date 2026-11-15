@@ -41,7 +41,9 @@ def test_merchants(gen):
     evals = m.loc[params.EVAL_MERCHANTS]
     assert evals.business_category.value_counts().to_dict() == params.EVAL_CATEGORY_COUNTS
     assert evals.loc[params.TEST_MERCHANTS].business_category.nunique() == 5  # test set has every category
-    assert len(params.TRAIN_MERCHANTS) == 70 and len(params.TEST_MERCHANTS) == 30
+    assert len(params.TRAIN_MERCHANTS) == 70 and len(params.TEST_MERCHANTS) == 110
+    assert evals.loc[params.TRAIN_MERCHANTS].business_category.value_counts().to_dict() == params.TRAIN_CATEGORY_COUNTS
+    assert evals.loc[params.TEST_MERCHANTS].business_category.value_counts().to_dict() == params.TEST_CATEGORY_COUNTS
     assert not set(params.TRAIN_MERCHANTS) & set(params.TEST_MERCHANTS)
     assert evals.volume_scale.between(*params.SCALE_RANGE).all()
 
@@ -187,6 +189,7 @@ def test_label_mix_count_and_value_share(gen, pay):
     in_period = pay.timestamp.str[:10].between("2026-10-16", "2026-11-14")
     test_fam = pay[pay.merchant_id.isin(params.TEST_MERCHANTS) & in_period & (pay.true_label == "FAMILY")]
     assert mix["family_payments"]["test_set"] == len(test_fam)
+    assert len(test_fam) >= params.TARGET_TEST_FAMILY_PAYMENTS  # >= 500 FAMILY in the test window
 
 
 # --- demo-day scripts ---------------------------------------------------------

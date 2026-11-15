@@ -1,0 +1,9 @@
+{
+  "merchant_id": "M001",
+  "period_start": "2026-08-01",
+  "period_end": "2026-10-31",
+  "amount_questioned_paise": 64817300,
+  "amount_questioned_display": "₹6,48,173",
+  "definition": "M001 gross UPI receipts in the notice period: sum of all PAYMENT_IN amounts, before refunds and reversals (DATA_AND_LOGIC 3.7).",
+  "seed_db_sha256": "b7e189c24a6de0c0694e9cdf3652287e2c22de891772403b68c6aed52401ea9f"
+}

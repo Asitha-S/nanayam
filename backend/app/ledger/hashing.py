@@ -40,7 +40,8 @@ def confidence_from_db(s: str | None) -> float | None:
 
 def canonical(entry: Mapping) -> str:
     """entry must hold the DB form (confidence as a 4 dp string or None)."""
-    missing = [f for f in HASH_FIELDS if f not in entry]
+    keys = set(entry.keys())  # works for dicts and sqlite3.Row (where `in` tests values, not keys)
+    missing = [f for f in HASH_FIELDS if f not in keys]
     if missing:
         raise KeyError(f"ledger entry missing hash fields: {missing}")
     conf = entry["confidence"]

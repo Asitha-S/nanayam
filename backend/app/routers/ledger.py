@@ -1,19 +1,16 @@
-"""Summary, ledger, provenance, verify (contract section 7).
-
-REAL: summary, ledger list, ledger entry detail. STUB: verify (fixture; real hash walk comes with P3).
-"""
+"""Summary, ledger, provenance, verify (contract section 7). All real."""
 import sqlite3
 from datetime import date
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query
 
-from .. import clock, errors, money, repo
+from .. import clock, errors, money, periods, repo
 from ..deps import get_conn
 from ..finance.summary import compute
 from ..ledger import writer as ledger
+from ..ledger.hashing import verify_chain
 from ..schemas import Classification, EntryType
 from ..services.payments import payment_detail
-from ..stubs import fixture, require_merchant
 
 router = APIRouter(tags=["ledger"])
 
@@ -21,14 +18,6 @@ SCOPE_NOTE = ("UPI payments only. Profit = business sales minus expenses you ent
               "Cash sales, unrecorded expenses and stock changes are not included.")
 ATTRIBUTION_NOTE = ("Refunds and reversals are counted on the date of the original payment, "
                     "so past days can change when a later refund happens.")
-
-
-def _period(start_date: date | None, end_date: date | None) -> tuple[date, date]:
-    end = end_date or clock.today()
-    start = start_date or end
-    if end < start:
-        raise errors.validation_error("end_date is before start_date", field="end_date")
-    return start, end
 
 
 @router.get("/merchants/{merchant_id}/summary")
@@ -40,7 +29,7 @@ def summary(
     conn: sqlite3.Connection = Depends(get_conn),
 ):
     repo.require_merchant(conn, merchant_id)
-    start, end = _period(start_date, end_date)
+    start, end = periods.resolve(start_date, end_date)
     b = compute(conn, merchant_id, start, end)
     return {
         "merchant_id": merchant_id,
@@ -73,7 +62,7 @@ def ledger_list(
     conn: sqlite3.Connection = Depends(get_conn),
 ):
     repo.require_merchant(conn, merchant_id)
-    start, end = _period(start_date, end_date)
+    start, end = periods.resolve(start_date, end_date)
     sql = "SELECT * FROM ledger_entries WHERE merchant_id = ? AND substr(effective_at, 1, 10) BETWEEN ? AND ?"
     args: list = [merchant_id, start.isoformat(), end.isoformat()]
     if entry_type:
@@ -82,9 +71,10 @@ def ledger_list(
     if classification:
         sql += " AND classification = ?"
         args.append(classification)
+    total = conn.execute(sql.replace("SELECT *", "SELECT COUNT(*)", 1), args).fetchone()[0]
     sql += " ORDER BY seq LIMIT ? OFFSET ?"
     items = [ledger.to_api(r) for r in conn.execute(sql, [*args, limit, offset])]
-    return {"merchant_id": merchant_id, "count": len(items), "items": items}
+    return {"merchant_id": merchant_id, "count": total, "items": items}
 
 
 def _source(conn: sqlite3.Connection, row) -> dict | None:
@@ -115,7 +105,21 @@ def ledger_entry(ledger_entry_id: str, conn: sqlite3.Connection = Depends(get_co
     return {**ledger.to_api(row), "source": _source(conn, row)}
 
 
+VERIFY_MESSAGES = {
+    "hash_mismatch": "Entry {id} was changed after it was written (hash_mismatch).",
+    "prev_hash_mismatch": "Entry {id} does not link to the entry before it (prev_hash_mismatch): "
+                          "an entry was inserted, deleted or reordered.",
+}
+
+
 @router.get("/merchants/{merchant_id}/ledger/verify")
-def verify(merchant_id: str, request: Request):
-    require_merchant(merchant_id)  # STUB
-    return fixture("ledger_verify_tampered" if request.app.state.demo.tampered else "ledger_verify_valid")
+def verify(merchant_id: str, conn: sqlite3.Connection = Depends(get_conn)):
+    repo.require_merchant(conn, merchant_id)
+    rows = conn.execute("SELECT * FROM ledger_entries WHERE merchant_id = ? ORDER BY seq", (merchant_id,)).fetchall()
+    result = verify_chain(rows)
+    if result.status == "VALID":
+        message = f"All {result.entries_checked} entries verified. No changes detected."
+    else:
+        message = VERIFY_MESSAGES[result.problem].format(id=result.first_invalid_entry_id)
+    return {"merchant_id": merchant_id, "status": result.status, "entries_checked": result.entries_checked,
+            "first_invalid_entry_id": result.first_invalid_entry_id, "message": message}

@@ -9,7 +9,7 @@ from ..classifier.decide import decide
 from ..feedback.memory import payer_counts
 from ..ledger import writer as ledger
 from ..questions_text import question_text, question_text_en
-from ..schemas import ConfirmIn, PaymentIn
+from ..schemas import ConfirmIn, PaymentIn, RefundIn, ReversalIn
 
 
 # --- create -------------------------------------------------------------------------
@@ -271,3 +271,111 @@ def _confirm_response(conn, pay, req: ConfirmIn, *, previous, ledger_entry_id, f
     if configured and req.confirmed_category == "SALE":
         out["suggest_unconfigure"] = True
     return out
+
+
+# --- list (contract section 3) -------------------------------------------------------
+LIST_SQL = """
+SELECT p.transaction_id, p.timestamp, py.payer_name, p.amount_paise, pr.confidence,
+       le.classification AS current_classification, le.classification_source
+FROM payments p
+JOIN payers py ON py.payer_id = p.payer_id
+JOIN predictions pr ON pr.transaction_id = p.transaction_id
+JOIN ledger_entries le ON le.ledger_entry_id = (
+    SELECT l2.ledger_entry_id FROM ledger_entries l2
+    WHERE l2.source_type = 'PAYMENT' AND l2.source_id = p.transaction_id
+      AND l2.entry_type IN ('PAYMENT_IN', 'RECLASSIFICATION')
+    ORDER BY l2.seq DESC LIMIT 1)
+WHERE p.merchant_id = ? AND substr(p.timestamp, 1, 10) BETWEEN ? AND ?
+"""
+
+
+def list_payments(conn: sqlite3.Connection, merchant_id: str, start, end, classification: str | None,
+                  limit: int, offset: int) -> dict:
+    """confidence = initial prediction's confidence; classification_source = current source (CHANGES 2026-11-14)."""
+    repo.require_merchant(conn, merchant_id)
+    sql, args = LIST_SQL, [merchant_id, start.isoformat(), end.isoformat()]
+    if classification:
+        sql += " AND le.classification = ?"
+        args.append(classification)
+    total = conn.execute(f"SELECT COUNT(*) FROM ({sql})", args).fetchone()[0]
+    rows = conn.execute(sql + " ORDER BY p.timestamp, p.transaction_id LIMIT ? OFFSET ?", [*args, limit, offset])
+    items = [
+        {
+            "transaction_id": r["transaction_id"], "timestamp": r["timestamp"], "payer_name": r["payer_name"],
+            "amount_paise": r["amount_paise"], "amount_display": money.display(r["amount_paise"]),
+            "current_classification": r["current_classification"], "confidence": r["confidence"],
+            "classification_source": r["classification_source"],
+        }
+        for r in rows
+    ]
+    return {"merchant_id": merchant_id, "count": total, "items": items}
+
+
+# --- refunds and reversals (contract section 3; a payment has refunds or a reversal, never both) ---
+def _refunded(conn: sqlite3.Connection, transaction_id: str) -> int:
+    return conn.execute("SELECT COALESCE(SUM(amount_paise), 0) FROM refunds WHERE transaction_id = ?",
+                        (transaction_id,)).fetchone()[0]
+
+
+def refund(conn: sqlite3.Connection, transaction_id: str, req: RefundIn) -> tuple[int, dict]:
+    body = req.model_dump(mode="json") | {"transaction_id": transaction_id,
+                                         "timestamp": clock.iso(clock.parse(req.timestamp))}
+    phash = repo.payload_hash(body)
+    with db.write_tx(conn):
+        pay = conn.execute("SELECT * FROM payments WHERE transaction_id = ?", (transaction_id,)).fetchone()
+        if pay is None:
+            raise errors.not_found(f"Unknown transaction {transaction_id}", transaction_id=transaction_id)
+        existing = conn.execute("SELECT * FROM refunds WHERE refund_id = ?", (req.refund_id,)).fetchone()
+        if existing is not None:
+            if existing["payload_hash"] != phash:
+                raise errors.duplicate_conflict(f"refund_id {req.refund_id} already exists with different content",
+                                                refund_id=req.refund_id)
+            return 200, _refund_response(conn, pay, req.refund_id)
+        if conn.execute("SELECT 1 FROM reversals WHERE transaction_id = ?", (transaction_id,)).fetchone():
+            raise errors.invalid_state("Payment was reversed and cannot be refunded", reason="REVERSED")
+        if clock.parse(body["timestamp"]) < clock.parse(pay["timestamp"]):
+            raise errors.validation_error("Refund is earlier than the payment", field="timestamp")
+        remaining = pay["amount_paise"] - _refunded(conn, transaction_id)
+        if req.amount_paise > remaining:
+            raise errors.invalid_state("Refund is larger than the remaining refundable amount",
+                                       reason="EXCEEDS_REMAINING", remaining_refundable_paise=remaining)
+        conn.execute(
+            "INSERT INTO refunds (refund_id, transaction_id, amount_paise, timestamp, reason, payload_hash)"
+            " VALUES (?, ?, ?, ?, ?, ?)",
+            (req.refund_id, transaction_id, req.amount_paise, body["timestamp"], req.reason, phash),
+        )
+        ledger.append(conn, merchant_id=pay["merchant_id"], entry_type="REFUND_OUT", source_type="REFUND",
+                      source_id=req.refund_id, amount_paise=req.amount_paise, effective_at=body["timestamp"])
+    return 201, _refund_response(conn, pay, req.refund_id)
+
+
+def _refund_response(conn, pay, refund_id: str) -> dict:
+    entry = conn.execute("SELECT ledger_entry_id FROM ledger_entries WHERE source_type = 'REFUND' AND source_id = ?",
+                         (refund_id,)).fetchone()
+    return {"refund_id": refund_id, "ledger_entry_id": entry["ledger_entry_id"],
+            "remaining_refundable_paise": pay["amount_paise"] - _refunded(conn, pay["transaction_id"])}
+
+
+def reverse(conn: sqlite3.Connection, transaction_id: str, req: ReversalIn) -> tuple[int, dict]:
+    ts = clock.iso(clock.parse(req.timestamp))
+    with db.write_tx(conn):
+        pay = conn.execute("SELECT * FROM payments WHERE transaction_id = ?", (transaction_id,)).fetchone()
+        if pay is None:
+            raise errors.not_found(f"Unknown transaction {transaction_id}", transaction_id=transaction_id)
+        if conn.execute("SELECT 1 FROM reversals WHERE transaction_id = ?", (transaction_id,)).fetchone():
+            return 200, _reversal_response(conn, transaction_id)  # idempotent per transaction
+        if _refunded(conn, transaction_id):
+            raise errors.invalid_state("Payment has refunds and cannot be reversed", reason="HAS_REFUNDS")
+        if clock.parse(ts) < clock.parse(pay["timestamp"]):
+            raise errors.validation_error("Reversal is earlier than the payment", field="timestamp")
+        conn.execute("INSERT INTO reversals (transaction_id, timestamp, reason) VALUES (?, ?, ?)",
+                     (transaction_id, ts, req.reason))
+        ledger.append(conn, merchant_id=pay["merchant_id"], entry_type="REVERSAL", source_type="REVERSAL",
+                      source_id=transaction_id, amount_paise=pay["amount_paise"], effective_at=ts)
+    return 201, _reversal_response(conn, transaction_id)
+
+
+def _reversal_response(conn, transaction_id: str) -> dict:
+    entry = conn.execute("SELECT ledger_entry_id FROM ledger_entries WHERE source_type = 'REVERSAL' AND source_id = ?",
+                         (transaction_id,)).fetchone()
+    return {"transaction_id": transaction_id, "ledger_entry_id": entry["ledger_entry_id"], "reversed": True}

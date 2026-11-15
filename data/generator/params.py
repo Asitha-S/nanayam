@@ -14,11 +14,14 @@ CATEGORY = {
     "TEA_STALL": {"lam": 80, "median": 25, "sigma": 0.5, "lo": 10, "hi": 300},
     "MIXED_KIRANA": {"lam": 45, "median": 150, "sigma": 0.9, "lo": 10, "hi": 4000},
 }
-# Same proportions as the original 40 (12/10/6/6/6), scaled to 100 merchants (agreed 2026-11-14)
-EVAL_CATEGORY_COUNTS = {"VEGETABLES": 30, "FRUITS": 25, "FLOWERS": 15, "TEA_STALL": 15, "MIXED_KIRANA": 15}
-EVAL_MERCHANTS = [f"M{n}" for n in range(101, 201)]  # M101-M200
+# Same proportions as the original 40 (12/10/6/6/6), scaled to 180 merchants (agreed 2026-11-14).
+# Each group gets the proportions separately, so train and test both have every category.
+TRAIN_CATEGORY_COUNTS = {"VEGETABLES": 21, "FRUITS": 18, "FLOWERS": 11, "TEA_STALL": 10, "MIXED_KIRANA": 10}
+TEST_CATEGORY_COUNTS = {"VEGETABLES": 33, "FRUITS": 27, "FLOWERS": 17, "TEA_STALL": 17, "MIXED_KIRANA": 16}
 TRAIN_MERCHANTS = [f"M{n}" for n in range(101, 171)]  # train + calibration (70)
-TEST_MERCHANTS = [f"M{n}" for n in range(171, 201)]  # test, never seen (30)
+TEST_MERCHANTS = [f"M{n}" for n in range(171, 281)]  # test, never seen (110)
+EVAL_MERCHANTS = TRAIN_MERCHANTS + TEST_MERCHANTS  # M101-M280
+EVAL_CATEGORY_COUNTS = {c: TRAIN_CATEGORY_COUNTS[c] + TEST_CATEGORY_COUNTS[c] for c in TRAIN_CATEGORY_COUNTS}
 TEST_PERIOD = (date(2026, 10, 16), date(2026, 11, 14))  # inclusive
 TARGET_TEST_FAMILY_PAYMENTS = 500
 SCALE_RANGE = (0.6, 1.5)  # eval merchants only; demo merchants use 1.0

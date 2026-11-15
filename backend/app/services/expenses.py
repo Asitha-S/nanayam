@@ -72,3 +72,30 @@ def _response(conn: sqlite3.Connection, expense_id: str, *, replay: bool) -> dic
         "status": "VOIDED" if voided else "RECORDED",
         "idempotent_replay": replay,
     }
+
+
+def list_expenses(conn: sqlite3.Connection, merchant_id: str, start, end, category: str | None,
+                  include_voided: bool) -> dict:
+    repo.require_merchant(conn, merchant_id)
+    sql = (
+        "SELECT e.*, le.ledger_entry_id,"
+        " EXISTS (SELECT 1 FROM expense_voids v WHERE v.expense_id = e.expense_id) AS voided"
+        " FROM expenses e JOIN ledger_entries le ON le.source_type = 'EXPENSE' AND le.source_id = e.expense_id"
+        " AND le.entry_type = 'EXPENSE' WHERE e.merchant_id = ? AND substr(e.timestamp, 1, 10) BETWEEN ? AND ?"
+    )
+    args: list = [merchant_id, start.isoformat(), end.isoformat()]
+    if category:
+        sql += " AND e.category = ?"
+        args.append(category)
+    if not include_voided:
+        sql += " AND NOT EXISTS (SELECT 1 FROM expense_voids v WHERE v.expense_id = e.expense_id)"
+    items = [
+        {
+            "expense_id": r["expense_id"], "timestamp": r["timestamp"], "amount_paise": r["amount_paise"],
+            "amount_display": money.display(r["amount_paise"]), "category": r["category"],
+            "description": r["description"], "input_source": r["input_source"], "voided": bool(r["voided"]),
+            "ledger_entry_id": r["ledger_entry_id"],
+        }
+        for r in conn.execute(sql + " ORDER BY e.timestamp, e.expense_id", args)
+    ]
+    return {"merchant_id": merchant_id, "count": len(items), "items": items}

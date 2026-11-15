@@ -1,17 +1,18 @@
 """Payments, questions, confirmation, preview (contract sections 3-4).
 
-REAL: POST /payments, GET /payments/{txn}, GET questions, POST confirm.
-STUB (fixtures): payments list, refund, reversal, classify preview.
+REAL: POST /payments, GET /payments/{txn}, payments list, GET questions, POST confirm.
+STUB (fixtures): refund, reversal, classify preview (services exist; routes switch after the classifier).
 """
 import sqlite3
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query, Response
 
+from .. import periods
 from ..deps import get_conn
 from ..schemas import Classification, ConfirmIn, Language, PaymentIn, PreviewIn, QuestionStatus, RefundIn, ReversalIn
 from ..services import payments as svc
-from ..stubs import fixture, require_merchant, require_merchant_422
+from ..stubs import fixture, require_merchant_422
 
 router = APIRouter(tags=["payments"])
 
@@ -36,14 +37,10 @@ def list_payments(
     classification: Classification | None = None,
     limit: int = Query(200, ge=1, le=1000),
     offset: int = Query(0, ge=0),
+    conn: sqlite3.Connection = Depends(get_conn),
 ):
-    require_merchant(merchant_id)  # STUB
-    out = fixture("payments_list_M001_2026-11-15")
-    if classification:
-        out["items"] = [i for i in out["items"] if i["current_classification"] == classification]
-    out["items"] = out["items"][offset : offset + limit]
-    out["count"] = len(out["items"])
-    return out
+    start, end = periods.resolve(start_date, end_date)
+    return svc.list_payments(conn, merchant_id, start, end, classification, limit, offset)
 
 
 @router.post("/payments/{transaction_id}/refund", status_code=201)

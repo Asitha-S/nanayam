@@ -260,7 +260,7 @@ The generator also writes the demo-day scripts `data/demo/M001_demo_day.json` an
 
 Payer IDs: demo merchants (M001–M003) use `P1xxxx` for customers (one shared counter; M001's 12 named demo customers reserved), `P2xxxx` for business buyers and `P9xxxx` for family/friends. Evaluation merchants use 8 digits, `P{merchant number}{nnnnn}` (e.g. `P10100042`), because they have far more walk-in payers than P10001–P19999 can hold. Transaction IDs are numbered in time order within each merchant-day.
 
-Merchants: M001–M003 (demo), M101–M200 (evaluation: M101–M170 train + calibration, M171–M200 test). Period 2026-08-01 to 2026-11-14 inclusive. Demo-day payments for M001/M002 come from the committed scripts, not the generator.
+Merchants: M001–M003 (demo), M101–M280 (evaluation: M101–M170 train + calibration, M171–M280 test). Period 2026-08-01 to 2026-11-14 inclusive. Demo-day payments for M001/M002 come from the committed scripts, not the generator.
 
 ### 4.2 Merchant parameters
 
@@ -272,7 +272,7 @@ Merchants: M001–M003 (demo), M101–M200 (evaluation: M101–M170 train + cali
 | TEA_STALL | 80 | ₹25 | 0.5 | ₹10–₹300 |
 | MIXED_KIRANA | 45 | ₹150 | 0.9 | ₹10–₹4,000 |
 
-M101–M200 categories: 30 VEGETABLES, 25 FRUITS, 15 FLOWERS, 15 TEA_STALL, 15 MIXED_KIRANA (the original 12/10/6/6/6 proportions, scaled to 100 merchants). Each evaluation merchant gets a scale factor U(0.6, 1.5) on λ; demo merchants M001–M003 use 1.0. Sundays ×1.2. Shop hours 05:30–21:30, arrival intensity peaks 06:30–09:30 and 17:00–20:00.
+Evaluation categories keep the original 12/10/6/6/6 proportions within each group: train + calibration M101–M170 = 21 VEGETABLES, 18 FRUITS, 11 FLOWERS, 10 TEA_STALL, 10 MIXED_KIRANA; test M171–M280 = 33 VEGETABLES, 27 FRUITS, 17 FLOWERS, 17 TEA_STALL, 16 MIXED_KIRANA. Each evaluation merchant gets a scale factor U(0.6, 1.5) on λ; demo merchants M001–M003 use 1.0. Sundays ×1.2. Shop hours 05:30–21:30, arrival intensity peaks 06:30–09:30 and 17:00–20:00.
 
 ### 4.3 Payer roles (ground truth label in brackets)
 
@@ -535,7 +535,7 @@ Label is fixed: "Recorded business income summary. Not verified income. Not a cr
 |---|---|---|---|
 | Train | M101–M170 | 2026-08-01 – 2026-10-01 | fitting |
 | Calibration | M101–M170 | 2026-10-02 – 2026-10-15 | isotonic + choosing τ |
-| Test | **M171–M200 (never seen)** | **2026-10-16 – 2026-11-14 (after training period)** | all reported numbers |
+| Test | **M171–M280 (110, never seen)** | **2026-10-16 – 2026-11-14 (after training period)** | all reported numbers |
 
 Both a merchant holdout and a time holdout.
 
@@ -582,7 +582,7 @@ Also: label mix (`label_mix.count_share`, `label_mix.value_share`), number of te
 `data/eval/runs/{run_id}.json` and `data/eval/latest.json`: the contract shape, where `baseline` = condition C and `with_feedback` = condition E, plus a `conditions` object with all five (A–E) and every metric above, `seed`, `git_commit`, `threshold`. Nagasai Sree's screen shows A, C, E side by side and the curve.
 
 ### 11.6 What we are allowed to say
-- "On synthetic data from 30 merchants the model never saw, over a later 30-day period: the full system decided X% of payments without asking at Y% precision, silently removed income in Z cases, and questions per day fell from A to B over four weeks."
+- "On synthetic data from 110 merchants the model never saw, over a later 30-day period: the full system decided X% of payments without asking at Y% precision, silently removed income in Z cases, and questions per day fell from A to B over four weeks."
 - Always "synthetic". Never "accuracy" alone; always precision with coverage, and the always-SALE baseline next to it.
 - Configured family decisions are "the merchant's instruction", reported with their own error count.
 - Any headline precision is shown with its split by source (model alone, payer memory, merchant instruction) so the answer to "how much of this is ML?" is on screen.

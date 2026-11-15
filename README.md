@@ -14,13 +14,13 @@ Plan and checkpoints: [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md). Contract change 
 
 ## Status
 
-**Real (SQLite):** `POST /payments`, `GET /payments/{txn}`, questions, confirm (question binding + correction table), `POST /expenses`, `/summary` with sources, `/ledger`, `/ledger/{id}`, `/demo/reset`, `/demo/next-payment`, `/demo/script`, `/health`. Also real: the error shape, request validation, the Sarvam client with its content-hash cache and demo-clip check, `money.display`, the clock, ledger hashing/verification, and the data generator.
+**Real (SQLite):** `POST /payments`, `GET /payments/{txn}`, payments list, expenses list, questions, confirm (question binding + correction table), `POST /expenses`, `/summary` with sources, `/ledger`, `/ledger/{id}`, `/ledger/verify`, `/demo/reset`, `/demo/next-payment`, `/demo/script`, `/health`. Also real: the error shape, request validation, the Sarvam client with its content-hash cache and demo-clip check, `money.display`, the clock, ledger hashing/verification, and the data generator.
 
 **Classifier: PLACEHOLDER RULE, NOT A MODEL** (P2P + personal + multiple of ₹500 → ask, else sale). `/health` shows `model_version: placeholder-rule-not-a-model` while it is active. It is replaced by the trained model before the demo.
 
-**Still fixture stubs** (return `contract/fixtures/`, always M001-shaped): payments list, refund, reversal, classify preview, expense list and void, ledger verify, tamper, merchants, voice, learning, evaluation, tax summary, notices, passport, export.
+**Still fixture stubs** (return `contract/fixtures/`, always M001-shaped): refund, reversal, classify preview, expense void, tamper, merchants, voice, learning, evaluation, tax summary, notices, passport, export.
 
-`/demo/reset` needs `data/demo/seed.db` (built by `python -m data.seed_demo`, coming next). Generate the synthetic data with `python -m data.generator.run --seed 42`.
+`/demo/reset` restores the committed `data/demo/seed.db`. **The committed seed was built with the placeholder classifier (integration only; `seed_meta.json` says `placeholder_classifier: true`).** Rebuild: `python -m data.generator.run --seed 42` then `python -m data.seed_demo` (it refuses to run with the placeholder unless `--allow-placeholder`).
 
 ## Setup
 

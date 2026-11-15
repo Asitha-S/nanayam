@@ -14,9 +14,6 @@ def fx(name):
 GET_CASES = [
     ("/api/merchants", "merchants"),
     ("/api/merchants/M001", "merchant_M001"),
-    ("/api/merchants/M001/payments", "payments_list_M001_2026-11-15"),
-    ("/api/merchants/M001/expenses", "expenses_list_M001_2026-11-15"),
-    ("/api/merchants/M001/ledger/verify", "ledger_verify_valid"),
     ("/api/merchants/M001/learning", "learning_M001"),
     ("/api/evaluation", "evaluation"),
     ("/api/merchants/M001/tax-summary", "tax_summary_M001"),

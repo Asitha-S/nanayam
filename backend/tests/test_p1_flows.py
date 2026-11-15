@@ -334,3 +334,59 @@ def test_m002_demo_day(seeded):
 
 def test_health_reports_placeholder_model(seeded):
     assert seeded.get("/api/health").json()["model_version"] == "placeholder-rule-not-a-model"
+
+
+# --- lists (count = total matching before limit/offset) ---------------------------------
+def test_payments_list(seeded):
+    inject(seeded, 15)
+    qid = ask_question_id(seeded)
+    confirm(seeded, question_id=qid)
+    r = seeded.get("/api/merchants/M001/payments").json()
+    assert r["count"] == 15 and [i["transaction_id"][-3:] for i in r["items"]] == [f"{n:03d}" for n in range(1, 16)]
+    last = r["items"][-1]
+    assert (last["current_classification"], last["classification_source"], last["confidence"]) == (
+        "FAMILY", "MERCHANT_CONFIRMED", 0.6)  # current source, initial confidence
+    assert last["amount_display"] == "₹2,000" and last["payer_name"] == "Lakshmi R"
+    page = seeded.get("/api/merchants/M001/payments", params={"limit": 5, "offset": 10}).json()
+    assert page["count"] == 15 and len(page["items"]) == 5 and page["items"][0]["transaction_id"].endswith("-011")
+    fam = seeded.get("/api/merchants/M001/payments", params={"classification": "FAMILY"}).json()
+    assert fam["count"] == 1
+    october = seeded.get("/api/merchants/M001/payments", params={"start_date": "2026-10-01", "end_date": "2026-10-31"}).json()
+    assert october["count"] == 2
+    karthik = next(i for i in october["items"] if i["payer_name"] == "Karthik")
+    assert karthik["confidence"] is None and karthik["classification_source"] == "MERCHANT_CONFIG"
+    assert seeded.get("/api/merchants/M999/payments").status_code == 404
+
+
+def test_ledger_count_is_total_before_paging(seeded):
+    inject(seeded, 15)
+    page = seeded.get("/api/merchants/M001/ledger", params={"limit": 4, "offset": 2}).json()
+    assert page["count"] == 15 and len(page["items"]) == 4
+
+
+def test_expenses_list(seeded):
+    seeded.post("/api/expenses", json=EXPENSE)
+    r = seeded.get("/api/merchants/M001/expenses").json()
+    assert r["count"] == 1
+    item = r["items"][0]
+    assert (item["amount_display"], item["category"], item["voided"], item["input_source"]) == (
+        "₹3,100", "STOCK_PURCHASE", False, "VOICE")
+    assert seeded.get(f"/api/ledger/{item['ledger_entry_id']}").json()["source"]["expense_id"] == item["expense_id"]
+    assert seeded.get("/api/merchants/M001/expenses", params={"category": "RENT"}).json()["count"] == 0
+    assert seeded.get("/api/merchants/M001/expenses", params={"start_date": "2026-11-01", "end_date": "2026-11-14"}).json()["count"] == 0
+
+
+# --- ledger verify (real hash walk) ---------------------------------------------------
+def test_verify_valid_then_detects_direct_edit(seeded):
+    inject(seeded, 3)
+    ok = seeded.get("/api/merchants/M001/ledger/verify").json()
+    assert ok["status"] == "VALID" and ok["first_invalid_entry_id"] is None
+    assert ok["entries_checked"] == len(ledger_rows()) and "No changes detected" in ok["message"]
+    target = ledger_rows()[-2]["ledger_entry_id"]
+    conn = sqlite3.connect(get_settings().db_path)
+    conn.execute("UPDATE ledger_entries SET amount_paise = amount_paise + 100 WHERE ledger_entry_id = ?", (target,))
+    conn.commit()
+    conn.close()
+    bad = seeded.get("/api/merchants/M001/ledger/verify").json()
+    assert (bad["status"], bad["first_invalid_entry_id"]) == ("TAMPERED", target)
+    assert "hash_mismatch" in bad["message"]

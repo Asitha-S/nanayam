@@ -1,13 +1,14 @@
-"""Expenses (contract section 5). REAL: POST /expenses. STUB (fixtures): list, void."""
+"""Expenses (contract section 5). REAL: POST /expenses, list. STUB (fixtures): void."""
 import sqlite3
 from datetime import date
 
 from fastapi import APIRouter, Depends, Response
 
+from .. import periods
 from ..deps import get_conn
 from ..schemas import ExpenseCategory, ExpenseIn, ExpenseVoidIn
 from ..services import expenses as svc
-from ..stubs import fixture, require_merchant, require_merchant_422
+from ..stubs import fixture, require_merchant_422
 
 router = APIRouter(tags=["expenses"])
 
@@ -26,9 +27,10 @@ def list_expenses(
     end_date: date | None = None,
     category: ExpenseCategory | None = None,
     include_voided: bool = False,
+    conn: sqlite3.Connection = Depends(get_conn),
 ):
-    require_merchant(merchant_id)  # STUB
-    return fixture("expenses_list_M001_2026-11-15")
+    start, end = periods.resolve(start_date, end_date)
+    return svc.list_expenses(conn, merchant_id, start, end, category, include_voided)
 
 
 @router.post("/expenses/{expense_id}/void", status_code=201)

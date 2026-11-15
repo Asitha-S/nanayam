@@ -417,8 +417,11 @@ def _expenses(merchant: dict, rng) -> list[dict]:
 # --- top level --------------------------------------------------------------------
 def merchant_list(seed: int) -> list[dict]:
     rng = np.random.default_rng([seed, 0])
-    cats = [c for c, n in P.EVAL_CATEGORY_COUNTS.items() for _ in range(n)]
-    rng.shuffle(cats)
+    cats = []
+    for counts in (P.TRAIN_CATEGORY_COUNTS, P.TEST_CATEGORY_COUNTS):  # proportions kept within each group
+        group = [c for c, n in counts.items() for _ in range(n)]
+        rng.shuffle(group)
+        cats += group
     out = [dict(m, city="Chennai", created_at=P.MERCHANT_CREATED_AT, volume_scale=1.0) for m in DEMO_MERCHANTS]
     for mid, cat in zip(P.EVAL_MERCHANTS, cats):
         mrng = np.random.default_rng([seed, int(mid[1:]), 1])

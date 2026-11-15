@@ -41,7 +41,7 @@ def label_mix(gen: Generated) -> dict:
         total = int(part.amount_paise.sum())
         out["value_share"][name] = round(int(fam.amount_paise.sum()) / total, 6) if total else None
     out["definition"] = ("FAMILY share. count_share = FAMILY payments / all payments; value_share = sum of FAMILY "
-                         "amounts / sum of all amounts. test_set = test merchants M171-M200 in the test period "
+                         "amounts / sum of all amounts. test_set = test merchants M171-M280 in the test period "
                          f"{params.TEST_PERIOD[0]} to {params.TEST_PERIOD[1]}.")
     return out
 
