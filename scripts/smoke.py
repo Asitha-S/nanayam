@@ -101,8 +101,13 @@ class Smoke:
         self.check("CSV export", len(data) == 17 and paid == 682000 and "# ledger verify: VALID" in csv_text,
                    f"{len(data)} rows, PAYMENT_IN Rs {paid // 100}")
         pdf = self.http.get("/merchants/M001/export/pdf", params={"start_date": "2026-11-15", "end_date": "2026-11-15"}).content
-        self.check("PDF CA pack", pdf.startswith(b"%PDF") and b"Rs 1,720" in pdf and b"Recorded profit" in pdf,
-                   f"{len(pdf)} bytes")
+        import io
+
+        from pypdf import PdfReader
+
+        pdf_text = "\n".join(p.extract_text() for p in PdfReader(io.BytesIO(pdf)).pages)
+        self.check("PDF CA pack (₹ embedded)", pdf.startswith(b"%PDF") and "₹1,720" in pdf_text
+                   and "Recorded profit" in pdf_text, f"{len(pdf)} bytes")
         notice = json.loads((REPO / "data" / "demo" / "notice_numbers.json").read_text(encoding="utf-8"))
         image = REPO / "assets" / "notice" / "sample_notice.png"
         upload = image.read_bytes() if image.exists() else b"sample notice placeholder bytes"
