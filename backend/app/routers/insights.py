@@ -1,23 +1,25 @@
-"""Learning, evaluation, tax summary, notices, passport (contract sections 8-10). STUB: fixtures.
+"""Learning, evaluation, tax summary, notices, passport (contract sections 8-10).
 
-Notice extraction/evidence logic is Charulatha's backend/app/notice/ module.
+REAL: learning, evaluation, tax summary, passport. STUB (fixtures): notices (Charulatha's backend/app/notice/).
 """
+import sqlite3
 import json
 from datetime import date
 
-from fastapi import APIRouter, File, Form, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 
 from .. import errors
 from ..config import REPO_ROOT
+from ..deps import get_conn
+from ..services import insights as svc
 from ..stubs import fixture, require_merchant, require_merchant_422
 
 router = APIRouter(tags=["insights"])
 
 
 @router.get("/merchants/{merchant_id}/learning")
-def learning(merchant_id: str):
-    require_merchant(merchant_id)
-    return fixture("learning_M001")
+def learning(merchant_id: str, conn: sqlite3.Connection = Depends(get_conn)):
+    return svc.learning(conn, merchant_id)
 
 
 @router.get("/evaluation")
@@ -30,9 +32,9 @@ def evaluation():
 
 
 @router.get("/merchants/{merchant_id}/tax-summary")
-def tax_summary(merchant_id: str, start_date: date | None = None, end_date: date | None = None):
-    require_merchant(merchant_id)
-    return fixture("tax_summary_M003" if merchant_id == "M003" else "tax_summary_M001")
+def tax_summary(merchant_id: str, start_date: date | None = None, end_date: date | None = None,
+                conn: sqlite3.Connection = Depends(get_conn)):
+    return svc.tax_summary(conn, merchant_id, start_date, end_date)
 
 
 @router.post("/notices/analyse", status_code=201)
@@ -57,6 +59,5 @@ def notice_evidence(merchant_id: str, notice_id: str):
 
 
 @router.get("/merchants/{merchant_id}/passport")
-def passport(merchant_id: str, months: int = Query(3, ge=1, le=3)):
-    require_merchant(merchant_id)
-    return fixture("passport_M001")
+def passport(merchant_id: str, months: int = Query(3, ge=1, le=3), conn: sqlite3.Connection = Depends(get_conn)):
+    return svc.passport(conn, merchant_id, months)

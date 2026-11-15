@@ -39,13 +39,3 @@ def require_merchant_422(merchant_id: str) -> None:
     if merchant_id not in known_merchant_ids():
         raise errors.validation_error(f"Unknown merchant {merchant_id}", field="merchant_id")
 
-
-class DemoState:
-    """In-memory demo state for the stub phase (next scripted payment, tamper flag)."""
-
-    def __init__(self) -> None:
-        self.reset()
-
-    def reset(self) -> None:
-        self.next_index: dict[str, int] = {}
-        self.tampered = False

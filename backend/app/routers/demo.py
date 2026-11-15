@@ -1,26 +1,20 @@
-"""/demo/* (contract section 1). Mounted only when ENABLE_DEMO_TOOLS=true, else every path is 404.
-
-REAL: reset (from data/demo/seed.db), next-payment and script (from data/demo/*_demo_day.json).
-STUB: tamper (in-memory flag; the real SQLite edit lives in demo/tamper.py with P3).
-"""
+"""/demo/* (contract section 1). Mounted only when ENABLE_DEMO_TOOLS=true, else every path is 404. All real."""
 import sqlite3
 
-from fastapi import APIRouter, Body, Depends, Query, Request
+from fastapi import APIRouter, Body, Depends, Query
 
+from .. import repo
 from ..config import get_settings
 from ..demo import service
 from ..deps import get_conn
 from ..schemas import DemoResetIn, MerchantRef, TamperIn
-from ..stubs import require_merchant_422
 
 router = APIRouter(prefix="/demo", tags=["demo"])
 
 
 @router.post("/reset")
-def reset(request: Request, body: DemoResetIn | None = Body(default=None)):
-    out = service.reset(get_settings().db_path)
-    request.app.state.demo.reset()
-    return out
+def reset(body: DemoResetIn | None = Body(default=None)):
+    return service.reset(get_settings().db_path)
 
 
 @router.post("/next-payment", status_code=201)
@@ -34,7 +28,9 @@ def script(merchant_id: str = Query(...), conn: sqlite3.Connection = Depends(get
 
 
 @router.post("/tamper")
-def tamper(request: Request, body: TamperIn):
-    require_merchant_422(body.merchant_id)  # STUB
-    request.app.state.demo.tampered = True
+def tamper(body: TamperIn, conn: sqlite3.Connection = Depends(get_conn)):
+    from ..demo.tamper import tamper as do_tamper  # the only import of demo/tamper.py, kept inside the route
+
+    repo.require_merchant_in_body(conn, body.merchant_id)
+    do_tamper(conn, body.merchant_id, body.ledger_entry_id)
     return {"tampered": True}

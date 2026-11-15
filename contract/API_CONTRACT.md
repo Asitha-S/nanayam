@@ -545,7 +545,7 @@ Directly edits one entry's amount in SQLite without updating hashes, so `/ledger
   "recent_feedback": [ { "feedback_id": "FB-M001-000031", "payer_name": "Lakshmi R", "confirmed_category": "FAMILY", "at": "2026-11-15T19:43:02+05:30" } ]
 }
 ```
-All counts from the database. `first_7_days` = first 7 days of the merchant's history.
+All counts from the database. `first_7_days` = first 7 days of the merchant's history. Also `payers`: the merchant's configured family payers and payers with answers, each `{ payer_id, payer_name, kind, relation_label, confirmed_family, confirmed_sale }` with `kind` = `INSTRUCTION` (configured: "always family, your instruction"), `MIXED` (rule 5a: always asked) or `MEMORY` (answers nudge the model). Shown as activity; the Learning headline is the evaluation's weekly questions (C vs E).
 
 ### GET `/evaluation`
 Returns the latest evaluation run file (`data/eval/latest.json`), produced by `python -m ml.evaluate`. Never hand-edited.

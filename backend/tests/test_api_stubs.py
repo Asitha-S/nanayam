@@ -12,13 +12,7 @@ def fx(name):
 
 
 GET_CASES = [
-    ("/api/merchants", "merchants"),
-    ("/api/merchants/M001", "merchant_M001"),
-    ("/api/merchants/M001/learning", "learning_M001"),
-    ("/api/merchants/M001/tax-summary", "tax_summary_M001"),
-    ("/api/merchants/M003/tax-summary", "tax_summary_M003"),
     ("/api/merchants/M001/notices/NTC-M001-001/evidence", "notice_evidence"),
-    ("/api/merchants/M001/passport", "passport_M001"),
 ]
 
 
@@ -27,10 +21,6 @@ def test_get_returns_fixture(client, path, name):
     r = client.get(path)
     assert r.status_code == 200, r.text
     assert r.json() == fx(name)
-
-
-def test_other_stub_posts(client):
-    assert client.put("/api/merchants/M001", json={"preferred_language": "ta"}).status_code == 200
 
 
 def test_voice_stubs(client):

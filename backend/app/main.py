@@ -10,7 +10,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from . import db, errors
 from .config import get_settings
 from .routers import demo, expenses, export, health, insights, ledger, merchants, payments, voice
-from .stubs import DemoState
 
 API_PREFIX = "/api"
 
@@ -24,7 +23,6 @@ def create_app() -> FastAPI:
         yield
 
     app = FastAPI(title="Naanayam API", version="1.1", lifespan=lifespan)
-    app.state.demo = DemoState()
     errors.install_handlers(app)
     app.add_middleware(
         CORSMiddleware,

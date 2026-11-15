@@ -15,6 +15,13 @@ from ..schemas import PaymentIn
 from ..services import payments
 
 SCRIPT_MERCHANTS = ("M001", "M002")
+FLAGS_SQL = "CREATE TABLE IF NOT EXISTS demo_flags (name TEXT PRIMARY KEY, value TEXT NOT NULL)"
+
+
+def is_tampered(conn: sqlite3.Connection) -> bool:
+    """True after /demo/tamper until /demo/reset (the seed has no demo_flags table). Survives restarts."""
+    exists = conn.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'demo_flags'").fetchone()
+    return bool(exists) and conn.execute("SELECT 1 FROM demo_flags WHERE name = 'tampered'").fetchone() is not None
 
 
 @lru_cache
