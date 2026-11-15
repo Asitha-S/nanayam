@@ -29,8 +29,10 @@ from lightgbm import LGBMClassifier
 from sklearn.isotonic import IsotonicRegression
 from sklearn.model_selection import GroupKFold
 
+from . import experiment_log
 from .common import ARTIFACTS, GENERATED, REPO_ROOT
 from .featurize import OUT as FEATURES_FILE, featurize
+from .simulate import replay, silent_errors, simulated_answers
 from app.classifier import procedure  # noqa: E402
 from app.classifier.features import FEATURES  # noqa: E402
 
@@ -44,6 +46,9 @@ TAU_GRID = [round(0.80 + i / 100, 2) for i in range(20)] + [0.995, 0.998, 0.999]
 MIN_PRECISION = 0.95
 MAX_QUESTIONS_PER_MERCHANT_DAY = 1.0
 PARAMS = dict(num_leaves=31, learning_rate=0.05, n_estimators=400, min_child_samples=40, class_weight="balanced")
+K_CANDIDATES = [0.5, 1.0, 2.0, 4.0]
+K_SELECTION_ANSWER_ERROR = 0.02  # same simulated merchant as the evaluation; its own seeded stream
+RULES_VERSION = "5.6-2026-11-14b"  # rule order with guardrails 5d/1b; part of the model ID
 
 
 def new_model() -> LGBMClassifier:
@@ -127,6 +132,26 @@ def choose_tau(table: list[dict], conf_threshold: float) -> tuple[float, bool]:
     return best["threshold"], True
 
 
+def select_k(calib: pd.DataFrame, q: np.ndarray, tau: float) -> tuple[float, list[dict]]:
+    """Condition D on the calibration set only. Objective, lexicographic: fewest silent errors, then fewest
+    questions per merchant per day, then the smaller k."""
+    t = calib.sort_values(["merchant_id", "timestamp", "transaction_id"])
+    q_sorted = pd.Series(q, index=calib.index).loc[t.index].to_numpy()
+    t = t.reset_index(drop=True)
+    truth = t.true_label.to_numpy()
+    answers, remember = simulated_answers(truth, K_SELECTION_ANSWER_ERROR, np.random.default_rng([SEED, 1002]))
+    merchant_days = t.merchant_id.nunique() * t.date.nunique()
+    table = []
+    for k in K_CANDIDATES:
+        d = replay("D", t, q_sorted, tau, answers, remember, k=k)
+        asked = int((d.action == "ASK_MERCHANT").sum())
+        table.append({"k": k, "silent_errors": silent_errors(d, truth),
+                      "questions": asked, "questions_per_merchant_per_day": round(asked / merchant_days, 4),
+                      "coverage": round(float((d.action == "AUTO_CLASSIFY").mean()), 4)})
+    best = min(table, key=lambda r: (r["silent_errors"]["total"], r["questions_per_merchant_per_day"], r["k"]))
+    return best["k"], table
+
+
 def _git_commit() -> str | None:
     try:
         return subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, capture_output=True, text=True,
@@ -158,16 +183,23 @@ def main() -> None:
     q_calib = calibrator.predict(model.predict_proba(xy(calib)[0])[:, 1])
 
     conf_threshold = float(os.getenv("CONF_THRESHOLD", "0.90"))
-    table = selection_table(calib, q_calib, TAU_GRID)
-    tau, met = choose_tau(table, conf_threshold)
-    chosen = next(r for r in table if r["threshold"] == tau)
+    calib_dataset = f"calibration: M101-M170, generator seed 42, {CALIB_DATES[0]}..{CALIB_DATES[1]}"
+    with experiment_log.logged_run(kind="calibration", dataset=calib_dataset, model_version=None, k=None,
+                                   threshold=None, config={"purpose": "choose tau (condition C) and k (condition D)",
+                                                           "k_candidates": K_CANDIDATES, "tau_grid": TAU_GRID}) as run:
+        table = selection_table(calib, q_calib, TAU_GRID)
+        tau, met = choose_tau(table, conf_threshold)
+        chosen = next(r for r in table if r["threshold"] == tau)
+        k, k_table = select_k(calib, q_calib, tau)
+        run["threshold"], run["k"] = tau, k
 
     buf = io.BytesIO()
-    joblib.dump((model, calibrator), buf)
+    joblib.dump((model, calibrator, tau, k, RULES_VERSION), buf)
     version = f"clf-{datetime.now().strftime('%Y%m%d')}-{hashlib.sha256(buf.getvalue()).hexdigest()[:6]}"
     artifact = {
         "model_version": version, "model": model, "calibrator": calibrator, "features": list(FEATURES),
-        "threshold": tau, "params": PARAMS, "seed": SEED, "git_commit": _git_commit(),
+        "threshold": tau, "k": k, "rules_version": RULES_VERSION, "params": PARAMS, "seed": SEED,
+        "git_commit": _git_commit(),
         "trained_at": datetime.now().astimezone().isoformat(timespec="seconds"),
         "train": {"merchants": "M101-M170", "dates": TRAIN_DATES, "rows": len(train), "family": int(y.sum())},
         "calibration": {"method": f"isotonic on out-of-fold scores, {N_FOLDS} folds grouped by merchant",
@@ -179,15 +211,23 @@ def main() -> None:
             "constraints": {"max_questions_per_merchant_per_day": MAX_QUESTIONS_PER_MERCHANT_DAY,
                             "min_precision_auto": MIN_PRECISION, "min_threshold": conf_threshold},
             "tie_break": "lower threshold", "met_constraints": met, "chosen": chosen, "table": table},
+        "k_selection": {
+            "set": f"M101-M170, {CALIB_DATES[0]}..{CALIB_DATES[1]}, condition D, simulated answers "
+                   f"({K_SELECTION_ANSWER_ERROR:.0%} error), memory empty at the start, tau {tau}",
+            "objective": "lexicographic: fewest silent errors, then fewest questions per merchant per day, then smaller k",
+            "candidates": K_CANDIDATES, "chosen": k, "table": k_table},
         "label_mix": json.loads((GENERATED / "label_mix.json").read_text(encoding="utf-8")),
     }
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
-    for old in ARTIFACTS.glob("clf-*.joblib"):
-        old.unlink()  # one model at a time; the previous one is in git history
-    path = ARTIFACTS / f"{version}.joblib"
-    joblib.dump(artifact, path, compress=3)
+    path = ARTIFACTS / f"{version}.joblib"  # older artifacts (the model-freeze-1 baseline) are never touched
+    if path.exists():
+        # The ID hashes model, calibrator, tau, k and rules version, so an existing file with this ID holds the
+        # same decision-relevant content (deterministic retrain). Never overwrite it; just point current.json at it.
+        print(f"{path.name} already exists (identical model, tau, k, rules): reusing it, not overwriting")
+    else:
+        joblib.dump(artifact, path, compress=3)
     (ARTIFACTS / "current.json").write_text(json.dumps(
-        {"model_version": version, "threshold": tau, "artifact": path.relative_to(REPO_ROOT).as_posix()}, indent=2)
+        {"model_version": version, "threshold": tau, "k": k, "artifact": path.relative_to(REPO_ROOT).as_posix()}, indent=2)
         + "\n", encoding="utf-8")
 
     print(f"model {version} -> {path} ({path.stat().st_size / 1e6:.1f} MB)")
@@ -200,6 +240,12 @@ def main() -> None:
         print(f"  {r['threshold']:<6} {r['coverage']:<9} {r['precision_auto']!s:<10} {r['questions_per_merchant_per_day']:<15} "
               f"{s['total']:>3} ({s['family_counted_as_sale']}, {s['sale_removed_as_family']})"
               f"{'':17}{r['family_recall']['count']} of {r['family_recall']['of']}{mark}")
+    print(f"k = {k} (condition D on the calibration set)")
+    for r in k_table:
+        s = r["silent_errors"]
+        print(f"  k {r['k']:<4} silent {s['total']} ({s['family_counted_as_sale']}, {s['sale_removed_as_family']})  "
+              f"questions/merchant/day {r['questions_per_merchant_per_day']}  coverage {r['coverage']}"
+              f"{'  <' if r['k'] == k else ''}")
 
 
 if __name__ == "__main__":

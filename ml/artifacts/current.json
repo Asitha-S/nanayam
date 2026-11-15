@@ -1,5 +1,6 @@
 {
-  "model_version": "clf-20261114-e37803",
+  "model_version": "clf-20261114-e8dfc2",
   "threshold": 0.99,
-  "artifact": "ml/artifacts/clf-20261114-e37803.joblib"
+  "k": 0.5,
+  "artifact": "ml/artifacts/clf-20261114-e8dfc2.joblib"
 }

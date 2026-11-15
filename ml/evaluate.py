@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import json
 import subprocess
-from collections import defaultdict
 from datetime import date, datetime
 
 import joblib
@@ -24,13 +23,13 @@ import numpy as np
 import pandas as pd
 
 from .common import ARTIFACTS, GENERATED, REPO_ROOT
+from .simulate import replay, simulated_answers
 from .train import ece
 from app.classifier import procedure  # noqa: E402
 from app.classifier.features import FEATURES  # noqa: E402
 
 SEED = 42
 ANSWER_ERROR_RATE = 0.02
-REMEMBER_PROBABILITY = 0.5
 TEST_MERCHANTS = [f"M{n}" for n in range(171, 281)]
 TEST_PERIOD = (date(2026, 10, 16), date(2026, 11, 14))
 WEEKS = [("Days 1–7", 0, 6), ("Days 8–14", 7, 13), ("Days 15–21", 14, 20), ("Days 22–30", 21, 29)]
@@ -42,41 +41,6 @@ OUT_DIR = REPO_ROOT / "data" / "eval"
 
 def _counted(count: int, of: int) -> dict:
     return {"count": int(count), "of": int(of), "rate": round(count / of, 4) if of else None}
-
-
-def replay(cond: str, t: pd.DataFrame, q: np.ndarray, tau: float, answers: np.ndarray, remember: np.ndarray) -> pd.DataFrame:
-    n = len(t)
-    merchant, payer = t.merchant_id.to_numpy(), t.payer_id.to_numpy()
-    new, amount = t.is_new_payer.to_numpy() > 0, t.amount_paise.to_numpy()
-    p2p, round100 = t.is_p2p.to_numpy() > 0, t.is_round_100.to_numpy() > 0
-    action = np.empty(n, dtype=object)
-    suggested = np.empty(n, dtype=object)
-    source = np.empty(n, dtype=object)
-    final = np.empty(n, dtype=object)
-    memory: dict = defaultdict(lambda: [0, 0])
-    configured: set = set()
-    for i in range(n):
-        if cond == "A":
-            a, s, src = "AUTO_CLASSIFY", "SALE", "BASELINE"
-        elif cond == "B":
-            a, s, src = "AUTO_CLASSIFY", ("FAMILY" if p2p[i] and round100[i] else "SALE"), "BASELINE"
-        else:
-            key = (merchant[i], payer[i])
-            nf, ns = memory[key] if cond in ("D", "E") else (0, 0)
-            o = procedure.run(q=float(q[i]), n_family=nf, n_sale=ns, configured_family=cond == "E" and key in configured,
-                              is_new_payer=bool(new[i]), amount_paise=int(amount[i]),
-                              payment_type="P2P" if p2p[i] else "P2M", tau=tau)
-            a, s, src = o.action, o.suggested, o.source
-        action[i], suggested[i], source[i] = a, s, src
-        if a == "AUTO_CLASSIFY":
-            final[i] = s
-        else:
-            final[i] = answers[i]
-            if cond in ("D", "E"):
-                memory[(merchant[i], payer[i])][0 if answers[i] == "FAMILY" else 1] += 1
-                if cond == "E" and answers[i] == "FAMILY" and remember[i]:
-                    configured.add((merchant[i], payer[i]))
-    return pd.DataFrame({"action": action, "suggested": suggested, "source": source, "final": final})
 
 
 def metrics(d: pd.DataFrame, t: pd.DataFrame, cond: str) -> dict:
@@ -140,6 +104,7 @@ def main() -> None:
     current = json.loads((ARTIFACTS / "current.json").read_text(encoding="utf-8"))
     art = joblib.load(REPO_ROOT / current["artifact"])
     tau = float(current["threshold"])
+    k = float(current.get("k", 2.0))
     feats = pd.read_parquet(GENERATED / "features.parquet")
     t = feats[feats.merchant_id.isin(TEST_MERCHANTS)
               & feats.date.between(TEST_PERIOD[0].isoformat(), TEST_PERIOD[1].isoformat())]
@@ -147,15 +112,12 @@ def main() -> None:
     raw = art["model"].predict_proba(t[list(FEATURES)].to_numpy(float))[:, 1]
     q = art["calibrator"].predict(raw)
 
-    rng = np.random.default_rng([SEED, 2026])
     truth = t.true_label.to_numpy()
-    flip = rng.random(len(t)) < ANSWER_ERROR_RATE
-    answers = np.where(flip, np.where(truth == "FAMILY", "SALE", "FAMILY"), truth)
-    remember = rng.random(len(t)) < REMEMBER_PROBABILITY
+    answers, remember = simulated_answers(truth, ANSWER_ERROR_RATE, np.random.default_rng([SEED, 2026]))
 
     conditions = {}
     for cond in CONDITIONS:
-        conditions[cond] = metrics(replay(cond, t, q, tau, answers, remember), t, cond)
+        conditions[cond] = metrics(replay(cond, t, q, tau, answers, remember, k=k), t, cond)
         c = conditions[cond]
         print(f"{cond} {c['name']:40s} precision_auto {c['precision_auto']}  coverage {c['coverage']}  "
               f"q/merchant/day {c['questions_per_merchant_per_day']}")

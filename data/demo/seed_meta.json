@@ -1,13 +1,13 @@
 {
   "generator_seed": 42,
-  "model_version": "clf-20261114-e37803",
+  "model_version": "clf-20261114-e8dfc2",
   "placeholder_classifier": false,
   "threshold": 0.99,
-  "git_commit": "006b75292109a6b6ebeda043ca6f48ae3e695776",
+  "git_commit": "7a2443922eea8ad35c105a1a40019bd8701fde9e",
   "git_dirty": true,
-  "created_at": "2026-11-14T01:38:47+05:30",
+  "created_at": "2026-11-14T12:56:09+05:30",
   "demo_date": "2026-11-15",
-  "seed_db_sha256": "3bbe28c6516f442ff2d228691b237f081084563df3729bbb7e361b2bed9af3b6",
+  "seed_db_sha256": "e6fcf00900c50307e2d8bdc968cdc5648535b857c5b91ee1a3ba6985ba213f60",
   "label_mix": {
     "count_share": {
       "overall": 0.004213,
