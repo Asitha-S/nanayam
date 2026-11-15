@@ -18,6 +18,7 @@ def env(tmp_path, monkeypatch):
         "SARVAM_CACHE_ROOT": str(tmp_path / "cache"),
         "LOGS_DIR": str(tmp_path / "logs"),
         "SARVAM_API_KEY": "",
+        "DEMO_TIME": "",  # tests control the time of day with wall_clock; a developer's .env must not pin it
     }
 
     def apply(**overrides):

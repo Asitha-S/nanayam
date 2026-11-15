@@ -3,7 +3,7 @@
 Starts the real backend (uvicorn) on a free port with a throwaway database, restores the committed seed via
 /demo/reset, drives the M001 demo journey over HTTP and checks every number (DATA_AND_LOGIC 3.3). Prints a
 pass/fail table and exits non-zero on any failure. The server is always stopped at the end.
-Needs the IST wall-clock time to be after 05:40 (the scripted expense time); otherwise the expense is "in the future".
+The server runs with DEMO_TIME=21:30, so every scripted demo-day event is in the past at any real time of day.
 """
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ from pathlib import Path
 import httpx
 
 REPO = Path(__file__).resolve().parents[1]
+DEMO_TIME = "21:30"
 SCRIPT = json.loads((REPO / "data" / "demo" / "M001_demo_day.json").read_text(encoding="utf-8"))
 
 
@@ -29,8 +30,9 @@ def free_port() -> int:
 
 
 class Smoke:
-    def __init__(self, base: str):
-        self.http = httpx.Client(base_url=base, timeout=30)
+    def __init__(self, http):
+        """http: any httpx-compatible client whose base URL ends in /api (a live server or a TestClient)."""
+        self.http = http
         self.rows: list[tuple[str, bool, str]] = []
 
     def check(self, name: str, ok: bool, detail: str = "") -> bool:
@@ -97,10 +99,10 @@ def main() -> int:
     port = free_port()
     tmp = Path(tempfile.mkdtemp(prefix="naanayam_smoke_"))
     env = {**os.environ, "DB_PATH": str(tmp / "smoke.db"), "ENABLE_DEMO_TOOLS": "true", "DEMO_MODE": "cache_only",
-           "LOGS_DIR": str(tmp / "logs"), "PYTHONIOENCODING": "utf-8"}
+           "LOGS_DIR": str(tmp / "logs"), "DEMO_TIME": DEMO_TIME, "PYTHONIOENCODING": "utf-8"}
     server = subprocess.Popen([sys.executable, "-m", "uvicorn", "app.main:app", "--port", str(port)],
                               cwd=REPO / "backend", env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    smoke = Smoke(f"http://127.0.0.1:{port}/api")
+    smoke = Smoke(httpx.Client(base_url=f"http://127.0.0.1:{port}/api", timeout=30))
     started = time.monotonic()
     try:
         for _ in range(120):

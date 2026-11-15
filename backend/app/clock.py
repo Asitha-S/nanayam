@@ -1,16 +1,18 @@
 """The only source of "now" in the backend. Nothing else calls datetime.now().
 
 Rules (agreed 2026-11-14):
-- now() = DEMO_DATE + the real IST time of day.
+- now() = DEMO_DATE + the real IST time of day, or + DEMO_TIME (HH:MM) when that env var is set (demo laptop and
+  smoke test use DEMO_TIME=21:30 so every scripted demo-day event is in the past).
 - A ledger entry's created_at = max(now, event time, previous entry's created_at for that merchant),
   so created_at never goes backwards within a merchant's chain.
 - The expense "not in the future" check uses the same effective now: max(now, previous created_at).
 """
 from __future__ import annotations
 
+import os
 from contextlib import contextmanager
 from contextvars import ContextVar
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from typing import Iterator
 
 from .config import get_settings
@@ -33,15 +35,31 @@ def real_now() -> datetime:
     return _wall_now().astimezone(IST).replace(microsecond=0)
 
 
+def demo_time() -> time | None:
+    """DEMO_TIME=HH:MM pins the time of day of now(). Unset or empty = real time of day."""
+    value = os.getenv("DEMO_TIME", "").strip()
+    if not value:
+        return None
+    try:
+        hh, mm = value.split(":")
+        return time(int(hh), int(mm))
+    except ValueError as exc:
+        raise ValueError(f"DEMO_TIME must be HH:MM (00:00-23:59), got {value!r}") from exc
+
+
 def today() -> date:
     return get_settings().demo_date
 
 
 def now() -> datetime:
-    """DEMO_DATE combined with the real IST time of day (whole seconds), unless frozen_at() is active."""
+    """DEMO_DATE combined with DEMO_TIME if set, else the real IST time of day (whole seconds).
+    frozen_at() (history replay) takes precedence over both."""
     frozen = _frozen.get()
     if frozen is not None:
         return frozen
+    pinned = demo_time()
+    if pinned is not None:
+        return datetime.combine(today(), pinned, tzinfo=IST)
     wall = _wall_now().astimezone(IST)
     return datetime.combine(today(), wall.time().replace(microsecond=0), tzinfo=IST)
 

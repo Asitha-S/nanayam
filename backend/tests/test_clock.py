@@ -1,3 +1,4 @@
+import pytest
 from datetime import date
 from pathlib import Path
 
@@ -59,3 +60,21 @@ def test_frozen_at_overrides_now_only_inside_block(env, wall_clock):
         assert clock.iso(clock.now()) == "2026-10-29T20:05:00+05:30"
         assert clock.iso(clock.created_at_for(past, None)) == "2026-10-29T20:05:00+05:30"
     assert clock.iso(clock.now()) == "2026-11-15T12:00:00+05:30"
+
+
+def test_demo_time_pins_time_of_day(env, wall_clock, monkeypatch):
+    wall_clock("03:12:45")
+    monkeypatch.setenv("DEMO_TIME", "21:30")
+    assert clock.iso(clock.now()) == "2026-11-15T21:30:00+05:30"
+    assert clock.real_now().hour == 3  # logs and cache records keep the real time
+    with clock.frozen_at(clock.parse("2026-10-29T20:05:00+05:30")):  # history replay still wins
+        assert clock.iso(clock.now()) == "2026-10-29T20:05:00+05:30"
+    monkeypatch.setenv("DEMO_TIME", "")
+    assert clock.iso(clock.now()) == "2026-11-15T03:12:45+05:30"
+
+
+@pytest.mark.parametrize("bad", ["9pm", "25:00", "21:61", "21"])
+def test_demo_time_rejects_bad_values(env, monkeypatch, bad):
+    monkeypatch.setenv("DEMO_TIME", bad)
+    with pytest.raises(ValueError):
+        clock.now()

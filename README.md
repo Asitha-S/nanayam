@@ -52,6 +52,10 @@ From the repository root (the venv active):
 
 After the gate, commit `data/demo/seed.db`, `seed_meta.json`, `notice_numbers.json` and `ml/artifacts/` together.
 
+**Demo laptop:** set `DEMO_TIME=21:30` in `.env`. The backend's clock is then 2026-11-15 21:30 at any real time of day, so the scripted 05:40 expense and all demo-day payments are in the past (otherwise a morning rehearsal rejects the expense as "in the future"). The smoke test always runs its server with `DEMO_TIME=21:30`. Leave it empty in development.
+
+Frozen: tag `model-freeze-2` (model `clf-20261114-e8dfc2`, τ 0.99, k 0.5). No changes to generator, features, model, calibration, threshold, k or rules after it.
+
 The frontend can work without the backend: set `VITE_API_BASE=fixtures` in `frontend/.env` to read `contract/fixtures/` directly.
 
 Using Sarvam: always go through `backend/app/sarvam/client.py` (`stt`, `chat`, `tts`, `vision`). Develop with `DEMO_MODE=cache_first` so repeated runs cost no credits. Model IDs live only in `backend/app/sarvam/models.py`. After recording demo clips into `assets/demo_audio/{ta,te}/`, run `python -m backend.app.sarvam.register_demo_clips` from the repo root.
