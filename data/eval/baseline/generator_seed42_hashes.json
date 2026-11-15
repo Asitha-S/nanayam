@@ -1,0 +1,32 @@
+{
+  "tag": "model-freeze-1",
+  "commit": "cb97bf8",
+  "generator_seed": 42,
+  "parquet_sha256": {
+    "merchants.parquet": "67e5cd23a65f71046706a29de77bb09cb8907b90f608b1d5ba45b112231d5cbb",
+    "payers.parquet": "28ab7c15a0ed5d3b51bb9b8d2154d2f3c19f8c69b51b856a9c1f7b4ff4e6a5ba",
+    "payments.parquet": "00b4d1ffe1dfa91f87f052aaab248eadaf527b9b1fe4eb6cbddfdb97291f4cd7",
+    "refunds.parquet": "9ae6b1343cd5e9f8001feede2088bd073e16dc89f166f9ac6a69d1f8a43ad5c4",
+    "reversals.parquet": "a34561cd3be9902ab3ad1970077c21da987860392f610db8af643b0344360718",
+    "expenses.parquet": "ef7b4d2908ec438e0e51ea23255c10a0c03501d341e02d799ab733c3888aaa4a",
+    "labels.parquet": "be6c4e5309ab0ee4d671fa55f2e9db5718d2a6328265b95e8a3c234d7214548a",
+    "family_config.parquet": "a7cba1805f24d7f518ceb04e109920a1e984d3664c978033f6ec9d2ebd12f557"
+  },
+  "label_mix": {
+    "count_share": {
+      "overall": 0.004213,
+      "demo": 0.006586,
+      "train_calibration": 0.004214,
+      "test_merchants_all_dates": 0.004157,
+      "test_set": 0.004354
+    },
+    "value_share": {
+      "overall": 0.044606,
+      "demo": 0.051878,
+      "train_calibration": 0.044152,
+      "test_merchants_all_dates": 0.044668,
+      "test_set": 0.045787
+    }
+  },
+  "notice_amount_paise": 84216200
+}
