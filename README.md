@@ -14,11 +14,11 @@ Plan and checkpoints: [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md). Contract change 
 
 ## Status
 
-**Real (SQLite):** `POST /payments`, `GET /payments/{txn}`, payments list, expenses list, questions, confirm (question binding + correction table), `POST /expenses`, `/summary` with sources, `/ledger`, `/ledger/{id}`, `/ledger/verify`, `/demo/reset`, `/demo/next-payment`, `/demo/script`, `/health`. Also real: the error shape, request validation, the Sarvam client with its content-hash cache and demo-clip check, `money.display`, the clock, ledger hashing/verification, and the data generator.
+**Real (SQLite):** `POST /payments`, `GET /payments/{txn}`, payments list, expenses list, questions, confirm (question binding + correction table), `POST /expenses`, refund, reversal, expense void, `/classify/preview`, `/evaluation`, `/summary` with sources, `/ledger`, `/ledger/{id}`, `/ledger/verify`, `/demo/reset`, `/demo/next-payment`, `/demo/script`, `/health`. Also real: the error shape, request validation, the Sarvam client with its content-hash cache and demo-clip check, `money.display`, the clock, ledger hashing/verification, and the data generator.
 
 **Classifier:** trained LightGBM + isotonic calibration (`ml/artifacts/`, `python -m ml.train`), with the DATA §5.6 decision procedure, payer memory and rules 5a–5c. `/health` shows the model version.
 
-**Still fixture stubs** (return `contract/fixtures/`, always M001-shaped): refund, reversal, classify preview, expense void, tamper, merchants, voice, learning, evaluation, tax summary, notices, passport, export.
+**Still fixture stubs** (return `contract/fixtures/`, always M001-shaped): tamper, merchants, voice, learning, tax summary, notices, passport, export.
 
 `GET /evaluation` serves `data/eval/latest.json` from `python -m ml.evaluate` (conditions A–E, never hand-edited).
 

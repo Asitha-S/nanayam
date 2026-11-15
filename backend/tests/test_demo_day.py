@@ -113,6 +113,15 @@ def test_without_remember_payer_memory_raises_confidence(demo):
     assert d.confidence > first["confidence"]
 
 
+def test_preview_endpoint_after_remember(demo):
+    ask = run_payments(demo, M001, 15)[14]
+    assert answer(demo, M001, ask).status_code == 201
+    r = demo.post("/api/classify/preview", json={"merchant_id": "M001", "payer_id": "P90001", "amount_paise": 200000,
+                                                 "payment_type": "P2P", "timestamp": "2026-11-15T20:30:00+05:30"}).json()
+    assert (r["suggested_classification"], r["action"], r["classification_source"], r["confidence"]) == (
+        "FAMILY", "AUTO_CLASSIFY", "MERCHANT_CONFIG", None)
+
+
 def test_m002_demo_day(demo):
     assert demo.post("/api/expenses", json=M002["expense"]).status_code == 201
     ask = run_payments(demo, M002, 11)[10]

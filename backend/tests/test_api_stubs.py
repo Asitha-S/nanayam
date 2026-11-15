@@ -30,15 +30,6 @@ def test_get_returns_fixture(client, path, name):
 
 
 def test_other_stub_posts(client):
-    assert client.post("/api/classify/preview", json={
-        "merchant_id": "M001", "payer_id": "P90001", "amount_paise": 200000,
-        "payment_type": "P2P", "timestamp": "2026-11-15T20:30:00+05:30",
-    }).json() == fx("classify_preview_remembered")
-    assert client.post("/api/expenses/EXP-M001-000318/void", json={"merchant_id": "M001", "reason": "Wrong amount"}).status_code == 201
-    assert client.post("/api/payments/TXN-1/refund", json={
-        "refund_id": "RF-M001-000012", "amount_paise": 6000, "timestamp": "2026-11-14T10:05:00+05:30", "reason": "x",
-    }).status_code == 201
-    assert client.post("/api/payments/TXN-1/reversal", json={"timestamp": "2026-11-14T12:00:00+05:30", "reason": "Bank reversal"}).status_code == 201
     assert client.put("/api/merchants/M001", json={"preferred_language": "ta"}).status_code == 200
 
 

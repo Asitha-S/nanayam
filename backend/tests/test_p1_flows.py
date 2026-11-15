@@ -392,3 +392,82 @@ def test_verify_valid_then_detects_direct_edit(seeded):
     bad = seeded.get("/api/merchants/M001/ledger/verify").json()
     assert (bad["status"], bad["first_invalid_entry_id"]) == ("TAMPERED", target)
     assert "hash_mismatch" in bad["message"]
+
+
+# --- refunds, reversals (a payment is refunded or reversed, never both) --------------------
+def _refund(c, txn, refund_id, amount, ts="2026-11-15T20:30:00+05:30"):
+    return c.post(f"/api/payments/{txn}/refund", json={"refund_id": refund_id, "amount_paise": amount,
+                                                       "timestamp": ts, "reason": "Returned tomatoes"})
+
+
+def _reverse(c, txn, ts="2026-11-15T20:40:00+05:30"):
+    return c.post(f"/api/payments/{txn}/reversal", json={"timestamp": ts, "reason": "Bank reversal"})
+
+
+def test_refunds_partial_full_and_too_much(seeded):
+    (p,) = inject(seeded, 1)  # Rs 40 sale at 06:12
+    txn = p["transaction_id"]
+    a = _refund(seeded, txn, "RF-M001-000001", 1500)
+    assert a.status_code == 201 and a.json()["remaining_refundable_paise"] == 2500
+    assert _refund(seeded, txn, "RF-M001-000001", 1500).status_code == 200  # replay
+    assert _refund(seeded, txn, "RF-M001-000001", 1600).json()["error"]["code"] == "DUPLICATE_CONFLICT"
+    too_much = _refund(seeded, txn, "RF-M001-000002", 2600)
+    assert too_much.status_code == 409 and too_much.json()["error"]["details"]["reason"] == "EXCEEDS_REMAINING"
+    assert _refund(seeded, txn, "RF-M001-000002", 2500).json()["remaining_refundable_paise"] == 0
+    s = summary(seeded, include_sources="true")
+    assert s["refunds"]["amount_paise"] == 4000 and s["business_sales"]["amount_paise"] == 0 and s["reconciliation_ok"]
+    assert len(s["sources"]["refunds"]) == 2
+    assert seeded.get(f"/api/payments/{txn}").json()["refunded_paise"] == 4000
+    early = _refund(seeded, inject(seeded, 1)[0]["transaction_id"], "RF-M001-000003", 100, ts="2026-11-15T05:00:00+05:30")
+    assert early.status_code == 422
+
+
+def test_reversal_rules(seeded):
+    p1, p2 = inject(seeded, 2)
+    _refund(seeded, p1["transaction_id"], "RF-M001-000001", 1000)
+    has_refunds = _reverse(seeded, p1["transaction_id"])
+    assert has_refunds.status_code == 409 and has_refunds.json()["error"]["details"]["reason"] == "HAS_REFUNDS"
+    r = _reverse(seeded, p2["transaction_id"])
+    assert r.status_code == 201 and r.json()["reversed"] is True
+    assert _reverse(seeded, p2["transaction_id"]).status_code == 200  # idempotent per transaction
+    after = _refund(seeded, p2["transaction_id"], "RF-M001-000002", 100)
+    assert after.status_code == 409 and after.json()["error"]["details"]["reason"] == "REVERSED"
+    blocked = confirm(seeded, txn=p2["transaction_id"], confirmed_category="SALE")
+    assert blocked.status_code == 409 and blocked.json()["error"]["details"]["reason"] == "REVERSED"
+    s = summary(seeded)
+    assert s["reversals"]["amount_paise"] == 6000 and s["reconciliation_ok"]
+    assert seeded.get(f"/api/payments/{p2['transaction_id']}").json()["reversed"] is True
+    assert _reverse(seeded, "TXN-NOPE").status_code == 404
+
+
+# --- expense void --------------------------------------------------------------------------
+def test_void_expense(seeded):
+    e = seeded.post("/api/expenses", json=EXPENSE).json()
+    r = seeded.post(f"/api/expenses/{e['expense_id']}/void", json={"merchant_id": "M001", "reason": "Wrong amount"})
+    assert r.status_code == 201 and r.json()["status"] == "VOIDED"
+    void_entry = seeded.get(f"/api/ledger/{r.json()['void_ledger_entry_id']}").json()
+    assert void_entry["entry_type"] == "EXPENSE_VOID" and void_entry["supersedes_entry_id"] == e["ledger_entry_id"]
+    again = seeded.post(f"/api/expenses/{e['expense_id']}/void", json={"merchant_id": "M001", "reason": "x"})
+    assert again.status_code == 409 and again.json()["error"]["details"]["reason"] == "ALREADY_VOIDED"
+    assert summary(seeded)["expenses"]["amount_paise"] == 0
+    assert seeded.get("/api/merchants/M001/expenses").json()["count"] == 0
+    listed = seeded.get("/api/merchants/M001/expenses", params={"include_voided": "true"}).json()["items"]
+    assert len(listed) == 1 and listed[0]["voided"] is True
+    assert seeded.post("/api/expenses", json=EXPENSE).json()["status"] == "VOIDED"  # replay shows current status
+    wrong = seeded.post(f"/api/expenses/{e['expense_id']}/void", json={"merchant_id": "M002", "reason": "x"})
+    assert wrong.status_code == 404
+
+
+# --- preview -----------------------------------------------------------------------------
+def test_preview_writes_nothing(seeded):
+    before = len(ledger_rows())
+    body = {"merchant_id": "M001", "payer_id": "P90002", "amount_paise": 200000, "payment_type": "P2P",
+            "timestamp": "2026-11-15T20:30:00+05:30"}
+    r = seeded.post("/api/classify/preview", json=body).json()
+    assert r == {"suggested_classification": "FAMILY", "confidence": None, "confidence_kind": "NONE",
+                 "action": "AUTO_CLASSIFY", "classification_source": "MERCHANT_CONFIG",
+                 "reasons": ["Marked as family by merchant"], "written": False}
+    stranger = seeded.post("/api/classify/preview", json=body | {"payer_id": "P99999"}).json()
+    assert stranger["action"] == "ASK_MERCHANT" and stranger["written"] is False
+    assert len(ledger_rows()) == before
+    assert seeded.post("/api/classify/preview", json=body | {"merchant_id": "M999"}).status_code == 422

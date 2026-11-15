@@ -74,6 +74,26 @@ def _response(conn: sqlite3.Connection, expense_id: str, *, replay: bool) -> dic
     }
 
 
+def void_expense(conn: sqlite3.Connection, expense_id: str, req) -> tuple[int, dict]:
+    """Expenses are never edited or deleted: an EXPENSE_VOID entry supersedes the EXPENSE entry."""
+    with db.write_tx(conn):
+        e = conn.execute("SELECT * FROM expenses WHERE expense_id = ?", (expense_id,)).fetchone()
+        if e is None or e["merchant_id"] != req.merchant_id:
+            raise errors.not_found(f"Unknown expense {expense_id} for merchant {req.merchant_id}", expense_id=expense_id)
+        if conn.execute("SELECT 1 FROM expense_voids WHERE expense_id = ?", (expense_id,)).fetchone():
+            raise errors.invalid_state("Expense is already voided", reason="ALREADY_VOIDED", expense_id=expense_id)
+        original = conn.execute("SELECT ledger_entry_id FROM ledger_entries WHERE source_type = 'EXPENSE'"
+                                " AND source_id = ? AND entry_type = 'EXPENSE'", (expense_id,)).fetchone()
+        entry = ledger.append(
+            conn, merchant_id=e["merchant_id"], entry_type="EXPENSE_VOID", source_type="EXPENSE", source_id=expense_id,
+            amount_paise=e["amount_paise"], effective_at=e["timestamp"], supersedes_entry_id=original["ledger_entry_id"],
+            expense_category=e["category"],
+        )
+        conn.execute("INSERT INTO expense_voids (expense_id, reason, created_at) VALUES (?, ?, ?)",
+                     (expense_id, req.reason, entry["created_at"]))
+    return 201, {"expense_id": expense_id, "void_ledger_entry_id": entry["ledger_entry_id"], "status": "VOIDED"}
+
+
 def list_expenses(conn: sqlite3.Connection, merchant_id: str, start, end, category: str | None,
                   include_voided: bool) -> dict:
     repo.require_merchant(conn, merchant_id)

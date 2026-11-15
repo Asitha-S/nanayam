@@ -1,18 +1,17 @@
 """Payments, questions, confirmation, preview (contract sections 3-4).
 
-REAL: POST /payments, GET /payments/{txn}, payments list, GET questions, POST confirm.
-STUB (fixtures): refund, reversal, classify preview (services exist; routes switch after the classifier).
+All real: POST /payments, GET /payments/{txn}, payments list, refund, reversal, questions, confirm, preview.
 """
 import sqlite3
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query, Response
 
-from .. import periods
+from .. import clock, periods, repo
+from ..classifier.decide import decide
 from ..deps import get_conn
 from ..schemas import Classification, ConfirmIn, Language, PaymentIn, PreviewIn, QuestionStatus, RefundIn, ReversalIn
 from ..services import payments as svc
-from ..stubs import fixture, require_merchant_422
 
 router = APIRouter(tags=["payments"])
 
@@ -44,13 +43,17 @@ def list_payments(
 
 
 @router.post("/payments/{transaction_id}/refund", status_code=201)
-def refund(transaction_id: str, body: RefundIn):
-    return fixture("refund")  # STUB
+def refund(transaction_id: str, body: RefundIn, response: Response, conn: sqlite3.Connection = Depends(get_conn)):
+    status, out = svc.refund(conn, transaction_id, body)
+    response.status_code = status
+    return out
 
 
 @router.post("/payments/{transaction_id}/reversal", status_code=201)
-def reversal(transaction_id: str, body: ReversalIn):
-    return fixture("reversal")  # STUB
+def reversal(transaction_id: str, body: ReversalIn, response: Response, conn: sqlite3.Connection = Depends(get_conn)):
+    status, out = svc.reverse(conn, transaction_id, body)
+    response.status_code = status
+    return out
 
 
 @router.get("/merchants/{merchant_id}/questions")
@@ -73,6 +76,17 @@ def confirm(transaction_id: str, body: ConfirmIn, response: Response, conn: sqli
 
 
 @router.post("/classify/preview")
-def classify_preview(body: PreviewIn):
-    require_merchant_422(body.merchant_id)  # STUB
-    return fixture("classify_preview_remembered")
+def classify_preview(body: PreviewIn, conn: sqlite3.Connection = Depends(get_conn)):
+    """The full decision procedure for a hypothetical payment. Writes nothing."""
+    repo.require_merchant_in_body(conn, body.merchant_id)
+    d = decide(conn, merchant_id=body.merchant_id, payer_id=body.payer_id, payer_vpa_kind=_payer_kind(conn, body.payer_id),
+               amount_paise=body.amount_paise, payment_type=body.payment_type,
+               timestamp=clock.iso(clock.parse(body.timestamp)))
+    return {"suggested_classification": d.suggested, "confidence": d.confidence, "confidence_kind": d.confidence_kind,
+            "action": d.action, "classification_source": d.source, "reasons": d.reasons, "written": False}
+
+
+def _payer_kind(conn: sqlite3.Connection, payer_id: str) -> str:
+    """The preview request has no payer_vpa_kind: use the known payer's, else PERSONAL (as a new payer)."""
+    row = conn.execute("SELECT payer_vpa_kind FROM payers WHERE payer_id = ?", (payer_id,)).fetchone()
+    return row["payer_vpa_kind"] if row else "PERSONAL"
