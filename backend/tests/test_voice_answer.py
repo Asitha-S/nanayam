@@ -1,5 +1,6 @@
 """POST /voice/answer: fixed templates, positional slot check, TTS (VOICE_AND_NOTICE 6, contract 6)."""
 import base64
+from types import SimpleNamespace
 
 import httpx
 import pytest
@@ -62,6 +63,24 @@ def test_slot_check_catches_template_bugs(monkeypatch, broken):
     monkeypatch.setattr(voice_answer, "templates", lambda lang: {**good, "profit_answer": broken})
     with pytest.raises(voice_answer.SlotCheckFailed):
         voice_answer.compose(FACTS, "ta")
+
+
+@pytest.mark.parametrize("figure", voice_answer.FIGURES)
+@pytest.mark.parametrize("how", ["none", "absent"])
+def test_missing_figure_is_a_500_and_never_spoken(real, monkeypatch, figure, how):
+    facts = dict(FACTS)
+    if how == "none":
+        facts[figure] = None
+    else:
+        del facts[figure]
+    monkeypatch.setattr(voice_answer, "compute", lambda *a: SimpleNamespace(**facts))
+    called = []
+    monkeypatch.setattr(voice_answer.sarvam, "tts", lambda *a: called.append(a))
+    r = real.post("/api/voice/answer", json=BODY)
+    assert r.status_code == 500, r.text
+    error = r.json()["error"]
+    assert error["code"] == "INTERNAL_ERROR" and figure in error["message"]
+    assert not called  # never spoken, not even a partial answer
 
 
 def test_template_bug_is_a_500_and_never_spoken(real, monkeypatch):

@@ -3,7 +3,8 @@
 Money is spoken only through the fixed templates in templates/{lang}.json, filled with facts from
 finance.summary.compute. A positional slot check runs before TTS: each template key has a fixed slot order, the
 text in every slot must equal the speech form of its own fact, and no other digits may appear. A failed check is a
-template bug: 500, never speech. The LLM is not involved.
+template bug: 500, never speech. A missing figure (absent, None, or not integer paise / a count) is also a 500 and
+never spoken: nothing is said unless every backend value is there. The LLM is not involved.
 """
 from __future__ import annotations
 
@@ -30,10 +31,16 @@ SLOT_ORDER = {
     "profit_pending_suffix": ("pending_count",),
 }
 DIGITS = re.compile(r"\d")
+# every figure finance.summary.compute must supply before anything is spoken
+FIGURES = ("business_sales", "expenses", "profit", "family_transfers", "pending_count")
 
 
 class SlotCheckFailed(Exception):
     pass
+
+
+class MissingFigure(SlotCheckFailed):
+    """A backend figure is absent, None, or not an int (paise, or a count)."""
 
 
 @lru_cache
@@ -81,7 +88,11 @@ def slot_check(parts: list[tuple[str, str, list]], values: dict, lang: str) -> N
 
 
 def compose(facts: dict, lang: str) -> tuple[str, dict]:
-    """(text, slot values in paise / count). Raises SlotCheckFailed on a template bug."""
+    """(text, slot values in paise / count). Raises MissingFigure before rendering anything when a figure is
+    missing, SlotCheckFailed on a template bug."""
+    missing = [k for k in FIGURES if type(facts.get(k)) is not int]  # bool and float are not figures either
+    if missing:
+        raise MissingFigure(f"missing figure(s): {', '.join(missing)}")
     t = templates(lang)
     values = {"sales": facts["business_sales"], "expenses": facts["expenses"], "family": facts["family_transfers"],
               "pending_count": facts["pending_count"]}
@@ -104,30 +115,6 @@ def compose(facts: dict, lang: str) -> tuple[str, dict]:
                                                                     "pending_count") if s in used}
 
 
-def compose_answer(template_key: str, facts: dict, lang: str = "ta") -> str:
-    """Fill a single fixed template with the given facts and enforce the positional slot guard."""
-    t = templates(lang)
-    if template_key not in t:
-        raise SlotCheckFailed(f"{template_key}: template missing")
-    values: dict[str, int] = {}
-    if template_key in {"profit_answer", "profit_answer_loss"}:
-        values["sales"] = facts.get("sales", facts.get("business_sales", 0))
-        values["expenses"] = facts.get("expenses", 0)
-        values["profit"] = facts.get("profit", 0)
-        values["loss"] = facts.get("loss", 0)
-        if "profit" in values and values["profit"] < 0:
-            values["profit"] = 0
-    if template_key == "profit_family_suffix":
-        values["family"] = facts.get("family", facts.get("family_transfers", 0))
-    if template_key == "profit_pending_suffix":
-        values["pending_count"] = facts.get("pending_count", 0)
-    if not values:
-        raise SlotCheckFailed(f"{template_key}: no recognized slots for facts {facts!r}")
-    text, spans = render(t[template_key], template_key, values, lang)
-    slot_check([(template_key, text, spans)], values, lang)
-    return text
-
-
 def daily_profit(conn: sqlite3.Connection, *, merchant_id: str, language: str, day: date | None = None) -> dict:
     repo.require_merchant_in_body(conn, merchant_id)
     day = day or clock.today()
@@ -135,10 +122,11 @@ def daily_profit(conn: sqlite3.Connection, *, merchant_id: str, language: str, d
         raise errors.validation_error("Only today's profit has a spoken template so far (VOICE_AND_NOTICE 7)",
                                       field="date")
     b = compute(conn, merchant_id, day, day)
-    facts = {"business_sales": b.business_sales, "expenses": b.expenses, "profit": b.profit,
-             "family_transfers": b.family_transfers, "pending_count": b.pending_count}
+    facts = {k: getattr(b, k, None) for k in FIGURES}  # an absent figure is caught by compose, not here
     try:
         text, slots = compose(facts, language)
+    except MissingFigure as exc:
+        raise errors.ApiError(500, "INTERNAL_ERROR", f"Slot check failed ({exc}); nothing was spoken")
     except SlotCheckFailed as exc:
         raise errors.ApiError(500, "INTERNAL_ERROR", f"Slot check failed (template bug): {exc}")
     audio_id, from_cache, audio_error = None, False, None
