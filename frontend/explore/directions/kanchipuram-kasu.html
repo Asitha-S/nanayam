@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Naanayam</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anek+Latin:wdth,wght@75..125,400..800&family=Noto+Sans+Tamil:wght@600..900&display=swap" rel="stylesheet">
+<style>
+  :root { --body: #f4c21a; --border: #b0124f; --zari: #c9a227; --zari-hi: #f3dc7a; --green: #0e6b4e; --ink: #1a1a1a; }
+  * { box-sizing: border-box; margin: 0; }
+  body { min-height: 900px; overflow: hidden; color: var(--ink); font-family: "Anek Latin", sans-serif;
+    background: var(--body) repeating-linear-gradient(115deg, rgba(255,255,255,.07) 0 2px, transparent 2px 5px); }
+  ::selection { background: var(--border); color: #fff; }
+  .border { background: var(--border); height: 230px; position: relative; padding: 26px 96px 0;
+    background-image: repeating-linear-gradient(0deg, rgba(0,0,0,.06) 0 1px, transparent 1px 3px); }
+  .border header { display: flex; justify-content: space-between; align-items: center; color: var(--zari-hi); }
+  .border header b { font-size: 30px; font-weight: 800; letter-spacing: .08em; }
+  .border header b span { font-family: "Noto Sans Tamil", sans-serif; letter-spacing: 0; margin-left: 12px; font-size: 28px; }
+  .border nav { display: flex; gap: 30px; font-size: 19px; font-weight: 600; }
+  .border nav a { color: var(--zari-hi); text-decoration: none; }
+  .kasu { display: flex; justify-content: space-between; margin-top: 38px; }
+  .kasu i { width: 54px; height: 54px; border-radius: 50%; background: radial-gradient(circle at 38% 34%, var(--zari-hi), var(--zari) 55%, #8a6a12); box-shadow: inset 0 0 0 5px rgba(0,0,0,.12), 0 3px 4px rgba(0,0,0,.35); position: relative; }
+  .kasu i::after { content: ""; position: absolute; inset: 17px; border-radius: 50%; border: 2px solid rgba(90,60,0,.55); }
+  .kasu i.fam { background: radial-gradient(circle at 38% 34%, #6fd3a8, var(--green) 60%, #063d2c); }
+  .temple { position: absolute; left: 0; right: 0; bottom: -34px; height: 36px;
+    background: linear-gradient(135deg, var(--border) 25%, transparent 25%) -18px 0/36px 36px, linear-gradient(225deg, var(--border) 25%, transparent 25%) -18px 0/36px 36px; }
+  .zari-line { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: var(--zari); }
+  main { padding: 92px 96px 0; display: grid; grid-template-columns: 1fr 420px; gap: 80px; align-items: end; }
+  h1 { font-weight: 800; font-size: 104px; line-height: .92; letter-spacing: -0.03em; font-variation-settings: "wdth" 78; }
+  .lede { margin-top: 22px; font-size: 23px; line-height: 1.4; max-width: 44ch; }
+  .cta { margin-top: 30px; display: flex; gap: 24px; align-items: center; }
+  .btn { background: var(--border); color: #fff; font-weight: 700; font-size: 22px; padding: 18px 30px; text-decoration: none; border-radius: 3px; box-shadow: inset 0 -4px 0 rgba(0,0,0,.2), 0 0 0 3px var(--zari); }
+  .day { border-top: 6px double var(--border); padding-top: 16px; }
+  .day .ta { font-family: "Noto Sans Tamil", sans-serif; font-weight: 700; font-size: 24px; color: var(--border); }
+  .day .p { font-weight: 800; font-size: 92px; line-height: 1; font-variation-settings: "wdth" 80; }
+  .day .r { font-size: 21px; margin-top: 8px; }
+  .day .f { font-family: "Noto Sans Tamil", sans-serif; font-size: 22px; color: var(--green); font-weight: 700; margin-top: 4px; }
+</style>
+</head>
+<body>
+<section class="border">
+  <header><b>NAANAYAM<span>நாணயம்</span></b><nav><a href="#how">How it works</a><a href="#proofs">Three proofs</a><a href="#evaluation">Evaluation</a></nav></header>
+  <div class="kasu" aria-label="Fifteen payments today, one family payment"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="fam"></i></div>
+  <div class="temple"></div><div class="zari-line"></div>
+</section>
+<main>
+  <div>
+    <h1>Every coin that came in, accounted for.</h1>
+    <p class="lede">Naanayam sorts a small shop's UPI payments into sales and family money, asks in Tamil when unsure, and turns the day into proof.</p>
+    <div class="cta"><a class="btn" href="#demo">Open the live demo</a></div>
+  </div>
+  <div class="day">
+    <div class="ta">இன்னைக்கு மீதம் · Recorded profit</div>
+    <div class="p">₹1,720</div>
+    <div class="r">Sales ₹4,820 · Expenses ₹3,100</div>
+    <div class="f">வீட்டு பணம் ₹2,000 இதுல சேர்க்கல</div>
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Naanayam</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Noto+Sans+Tamil:wght@500..800&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #ffffff; --ink: #101828; --muted: #475467; --blue: #1f5eff; --soft: #f2f4f7; }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: Inter, sans-serif; min-height: 900px; overflow: hidden; }
+  header { display: flex; justify-content: space-between; align-items: center; padding: 24px 80px; border-bottom: 1px solid #eaecf0; }
+  header b { font-size: 24px; font-weight: 800; }
+  nav { display: flex; gap: 32px; align-items: center; font-size: 17px; color: var(--muted); }
+  nav a { color: inherit; text-decoration: none; }
+  .btn { background: var(--blue); color: #fff; padding: 14px 22px; border-radius: 10px; font-weight: 600; text-decoration: none; font-size: 18px; }
+  .ghost { color: var(--ink); padding: 14px 22px; border-radius: 10px; border: 1px solid #d0d5dd; font-weight: 600; text-decoration: none; font-size: 18px; }
+  .hero { display: grid; grid-template-columns: 1fr 460px; gap: 60px; padding: 80px 80px 0; align-items: center; }
+  h1 { font-size: 68px; line-height: 1.05; letter-spacing: -0.03em; font-weight: 800; }
+  .lede { margin-top: 22px; font-size: 22px; line-height: 1.5; color: var(--muted); max-width: 40ch; }
+  .ctas { display: flex; gap: 14px; margin-top: 34px; }
+  .phone { width: 360px; height: 680px; margin: 0 auto; border-radius: 46px; border: 12px solid #101828; background: var(--soft); padding: 26px 18px; box-shadow: 0 30px 60px -30px rgba(16,24,40,.45); }
+  .card { background: #fff; border-radius: 18px; padding: 18px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(16,24,40,.08); }
+  .card small { color: var(--muted); font-size: 15px; }
+  .card .big { font-size: 44px; font-weight: 800; margin-top: 4px; }
+  .rowx { display: flex; justify-content: space-between; font-size: 17px; padding: 6px 0; }
+  .q { font-family: "Noto Sans Tamil", sans-serif; font-size: 22px; line-height: 1.45; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .two span { text-align: center; font-family: "Noto Sans Tamil", sans-serif; font-size: 18px; padding: 12px 4px; border-radius: 12px; background: var(--blue); color: #fff; }
+  .two span + span { background: var(--soft); color: var(--ink); }
+</style>
+</head>
+<body>
+<header><b>Naanayam</b><nav><a href="#how">How it works</a><a href="#proofs">Proofs</a><a href="#evaluation">Evaluation</a><a class="btn" href="#demo">Open the live demo</a></nav></header>
+<section class="hero">
+  <div>
+    <h1>Know what your shop really earned.</h1>
+    <p class="lede">Naanayam separates sales from family money in a small merchant's UPI payments, asks in Tamil when unsure, and turns the ledger into proof.</p>
+    <div class="ctas"><a class="btn" href="#demo">Open the live demo</a><a class="ghost" href="#day">See how it works</a></div>
+  </div>
+  <div class="phone">
+    <div class="card"><small>Recorded profit today</small><div class="big">₹1,720</div>
+      <div class="rowx"><span>Sales</span><b>₹4,820</b></div><div class="rowx"><span>Expenses</span><b>₹3,100</b></div></div>
+    <div class="card"><div class="q">லக்ஷ்மி கிட்ட இருந்து 2,000 ரூபாய் வந்திருக்கு. இது கடை வியாபாரமா, வீட்டு பணமா?</div>
+      <div class="two"><span>கடை வியாபாரம்</span><span>வீட்டு பணம்</span></div></div>
+  </div>
+</section>
+</body>
+</html>

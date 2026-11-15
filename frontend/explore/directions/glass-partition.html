@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Naanayam</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anek+Latin:wdth,wght@75..125,400..800&family=Noto+Sans+Tamil:wght@600..800&display=swap" rel="stylesheet">
+<style>
+  :root { --glass: #f4f6f5; --bar: #111111; --cobalt: #1d4ed8; --amber: #e0a21a; --oxblood: #7a1f2b; }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bar); min-height: 900px; overflow: hidden; font-family: "Anek Latin", sans-serif; color: #111; }
+  .wall { display: grid; height: 900px; padding: 12px; gap: 12px; grid-template-columns: 2.1fr 1fr 1fr; grid-template-rows: 90px 1fr 1fr 150px; }
+  .pane { background: var(--glass); padding: 26px 30px; position: relative;
+    background-image: radial-gradient(rgba(255,255,255,.9) 1px, transparent 1.5px), radial-gradient(rgba(0,0,0,.035) 1px, transparent 1.5px); background-size: 23px 19px, 31px 27px; }
+  .nav { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; }
+  .nav b { font-size: 30px; font-weight: 800; } .nav b span { font-family: "Noto Sans Tamil", sans-serif; margin-left: 12px; font-size: 26px; }
+  .nav nav { display: flex; gap: 32px; font-size: 19px; font-weight: 600; } .nav a { color: #111; text-decoration: none; }
+  .hero { grid-row: 2 / 4; display: flex; flex-direction: column; justify-content: flex-end; }
+  h1 { font-weight: 750; font-size: 92px; line-height: .95; letter-spacing: -0.03em; font-variation-settings: "wdth" 82; }
+  .lede { margin-top: 20px; font-size: 23px; line-height: 1.4; max-width: 44ch; }
+  .btn { margin-top: 28px; align-self: flex-start; background: var(--bar); color: #fff; font-weight: 700; font-size: 22px; padding: 18px 30px; text-decoration: none; }
+  .fig { display: flex; flex-direction: column; justify-content: space-between; color: #fff; }
+  .fig small { font-size: 19px; font-weight: 600; letter-spacing: .04em; }
+  .fig b { font-size: 64px; font-weight: 800; line-height: 1; font-variation-settings: "wdth" 80; }
+  .fig .ta { font-family: "Noto Sans Tamil", sans-serif; font-size: 22px; }
+  .amber { background: var(--amber); color: #111; } .ox { background: var(--oxblood); } .co { background: var(--cobalt); grid-column: 2 / 4; }
+  .profit { grid-column: 2 / 4; } .profit b { color: #111; } .profit small { color: #111; }
+  .foot { display: flex; align-items: center; font-size: 19px; color: #444; }
+</style>
+</head>
+<body>
+<div class="wall">
+  <div class="pane nav"><b>Naanayam<span>நாணயம்</span></b><nav><a href="#how">How it works</a><a href="#proofs">Three proofs</a><a href="#evaluation">Evaluation</a></nav></div>
+  <div class="pane hero"><h1>Sales and family money, finally apart.</h1><p class="lede">Naanayam sorts a small shop's UPI payments, asks in Tamil when unsure, and turns the day into proof.</p><a class="btn" href="#demo">Open the live demo</a></div>
+  <div class="pane fig amber"><small>Sales today</small><b>₹4,820</b><span class="ta">கடை வியாபாரம்</span></div>
+  <div class="pane fig ox"><small>Expenses</small><b>₹3,100</b><span class="ta">செலவு</span></div>
+  <div class="pane fig co"><small>Family money, kept separate</small><b>₹2,000</b><span class="ta">வீட்டு பணம் · Lakshmi R, 19:42</span></div>
+  <div class="pane foot">Synthetic demo data · UPI payments only</div>
+  <div class="pane fig profit"><small>Recorded profit</small><b>₹1,720</b></div>
+</div>
+</body>
+</html>

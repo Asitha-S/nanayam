@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Naanayam</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anek+Latin:wdth,wght@75..125,300..800&family=Noto+Sans+Tamil:wght@500..900&display=swap" rel="stylesheet">
+<style>
+  :root { --gold: #f7c12b; --crimson: #b71c1c; --indigo: #1f2a6b; --ivory: #fff4d6; --ochre: #e88a1a; }
+  * { box-sizing: border-box; margin: 0; }
+  body { min-height: 900px; overflow: hidden; color: var(--indigo); font-family: "Anek Latin", sans-serif;
+    background: radial-gradient(120% 80% at 70% 0%, #ffd866 0%, var(--gold) 38%, var(--ochre) 72%, #d2541a 100%); }
+  ::selection { background: var(--crimson); color: var(--ivory); }
+  .rays { position: fixed; inset: 0; background: repeating-conic-gradient(from 0deg at 72% -10%, rgba(255,244,214,.18) 0 4deg, transparent 4deg 11deg); }
+  header { position: relative; display: flex; justify-content: space-between; align-items: center; padding: 26px 64px; }
+  header .m { font-weight: 800; font-size: 26px; letter-spacing: .14em; color: var(--crimson); }
+  nav { display: flex; gap: 30px; font-weight: 700; font-size: 19px; letter-spacing: .06em; text-transform: uppercase; }
+  nav a { color: var(--indigo); text-decoration: none; }
+  .bill { position: relative; text-align: center; padding-top: 16px; }
+  .ta { font-family: "Noto Sans Tamil", sans-serif; font-weight: 900; font-size: 200px; line-height: 1.05; color: var(--gold);
+    -webkit-text-stroke: 6px var(--crimson); paint-order: stroke fill;
+    text-shadow: 0 2px 0 var(--crimson), 6px 8px 0 var(--indigo), 8px 14px 18px rgba(31,42,107,.45); }
+  .en { font-weight: 800; font-size: 92px; line-height: .9; letter-spacing: .06em; font-variation-settings: "wdth" 78; color: var(--ivory);
+    -webkit-text-stroke: 4px var(--indigo); paint-order: stroke fill; text-shadow: 5px 6px 0 var(--crimson); }
+  .tag { margin-top: 20px; font-weight: 700; font-size: 26px; letter-spacing: .08em; text-transform: uppercase; color: var(--indigo); }
+  .billing { margin-top: 12px; font-size: 20px; font-weight: 600; color: #3a2a12; }
+  .vignettes { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; padding: 34px 64px 0; }
+  .v { height: 190px; padding: 22px 26px; color: var(--ivory); display: flex; flex-direction: column; justify-content: flex-end; box-shadow: 0 14px 26px -14px rgba(31,42,107,.7); }
+  .v:nth-child(1) { background: var(--crimson); clip-path: polygon(0 6%, 100% 0, 96% 100%, 3% 94%); }
+  .v:nth-child(2) { background: var(--indigo); clip-path: polygon(2% 0, 100% 5%, 98% 96%, 0 100%); }
+  .v:nth-child(3) { background: #0f5f4a; clip-path: polygon(0 0, 97% 6%, 100% 100%, 4% 95%); }
+  .v small { font-family: "Noto Sans Tamil", sans-serif; font-size: 22px; font-weight: 700; color: var(--gold); }
+  .v b { font-weight: 800; font-size: 46px; line-height: 1; font-variation-settings: "wdth" 80; }
+  .v span { font-size: 19px; }
+  .ticket { position: absolute; right: 64px; top: 330px; transform: rotate(4deg); background: var(--ivory); color: var(--crimson); border: 3px dashed var(--crimson);
+    padding: 16px 26px; font-weight: 800; font-size: 26px; letter-spacing: .06em; text-transform: uppercase; text-decoration: none; box-shadow: 0 10px 20px -8px rgba(31,42,107,.6); }
+</style>
+</head>
+<body>
+<div class="rays"></div>
+<header><span class="m">NAANAYAM</span><nav><a href="#how">How it works</a><a href="#proofs">Proofs</a><a href="#evaluation">Evaluation</a></nav></header>
+<section class="bill">
+  <div class="ta">நாணயம்</div>
+  <div class="en">NAANAYAM</div>
+  <div class="tag">From payment collections to financial proof</div>
+  <div class="billing">Starring Murugan Kaaikari Kadai, Chennai · 15 Nov · Recorded profit ₹1,720</div>
+</section>
+<a class="ticket" href="#demo">★ Open the live demo ★</a>
+<section class="vignettes">
+  <div class="v"><small>லாபம்</small><b>Proof of profit</b><span>Daily profit, spoken in Tamil</span></div>
+  <div class="v"><small>வரி</small><b>Proof for the taxman</b><span>Evidence for a GST notice</span></div>
+  <div class="v"><small>கடன்</small><b>Proof for the lender</b><span>A credit passport</span></div>
+</section>
+</body>
+</html>

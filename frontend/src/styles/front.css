@@ -1,0 +1,67 @@
+/* Landing page (#/): standalone front door, no app chrome. */
+.front {
+  min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto;
+  background:
+    radial-gradient(circle at 78% 46%, color-mix(in srgb, var(--sky) 80%, transparent) 0 34%, transparent 34.2%),
+    var(--paper);
+  overflow: hidden;
+}
+.front-head { display: flex; align-items: center; justify-content: space-between; padding: 26px 56px; }
+.front-head .brand { margin-right: 0; }
+.front-skip { display: inline-flex; align-items: center; gap: 8px; font: 800 13px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; padding: 12px 4px; border-bottom: 2px solid var(--ink); }
+.front-skip svg { width: 16px; height: 16px; transition: translate 0.2s var(--ease); }
+.front-skip:hover svg { translate: 4px 0; }
+
+.front-main { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); align-items: center; gap: 40px; padding: 0 56px; }
+.front-copy h1 {
+  font: 400 clamp(72px, 9.2vw, 150px)/0.84 var(--font-display); letter-spacing: -0.065em;
+  animation: rise 0.7s var(--ease) both;
+}
+.front-lede { margin-top: 26px; max-width: 50ch; font-size: clamp(18px, 1.45vw, 22px); line-height: 1.5; color: var(--ink-2); animation: rise 0.7s 0.08s var(--ease) both; }
+.front-cta { margin-top: 34px; min-height: 72px; padding: 0 34px; font-size: 19px; animation: rise 0.7s 0.16s var(--ease) both; }
+.front-cta svg { width: 22px; height: 22px; transition: translate 0.2s var(--ease); }
+.front-cta:hover svg { translate: 5px 0; }
+.front-points { list-style: none; margin: 40px 0 0; padding: 22px 0 0; border-top: 1.5px solid var(--ink); display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 760px; counter-reset: pt; animation: rise 0.7s 0.24s var(--ease) both; }
+.front-points li { display: grid; gap: 6px; counter-increment: pt; }
+.front-points li::before { content: counter(pt, decimal-leading-zero); font: 800 12px/1 var(--font-mono); color: var(--ink-soft); }
+.front-points b { font-size: 17px; line-height: 1.25; }
+.front-points span { font-size: 15px; color: var(--ink-soft); }
+
+.front-coin { position: relative; justify-self: center; width: min(40vw, 560px); aspect-ratio: 1; animation: rise 0.9s 0.1s var(--ease) both; }
+.front-coin-art { width: 100%; height: 100%; display: block; filter: drop-shadow(0 34px 40px rgba(16, 35, 41, 0.18)); }
+.front-coin-art .spin { transform-origin: 260px 260px; animation: spin 60s linear infinite; }
+.front-coin-ta { font: 700 96px/1 var(--font-tamil); fill: var(--lime); }
+.front-chip {
+  position: absolute; display: grid; grid-template-columns: auto auto; column-gap: 8px; row-gap: 2px; align-items: baseline;
+  padding: 11px 15px 12px; background: var(--card); border: 1.5px solid var(--ink); border-radius: 14px;
+  box-shadow: 0 16px 26px -18px rgba(16, 35, 41, 0.7); white-space: nowrap; font-size: 14px;
+  animation: float 6s ease-in-out infinite;
+}
+.front-chip b { font: 800 12px/1 var(--font-mono); color: var(--ink-soft); }
+.front-chip strong { grid-column: 1 / -1; font: 800 26px/1.05 var(--font-mono); letter-spacing: -0.03em; }
+.front-chip em { grid-column: 1 / -1; font: 800 10.5px/1.2 var(--font-mono); font-style: normal; letter-spacing: 0.1em; text-transform: uppercase; color: var(--lime-deep); }
+.front-chip.is-ask { background: var(--signal); }
+.front-chip.is-ask em, .front-chip.is-ask b { color: var(--ink); }
+.front-chip.p1 { left: -6%; top: 14%; animation-delay: -1s; }
+.front-chip.p2 { right: -8%; top: 6%; animation-delay: -3s; }
+.front-chip.p3 { left: -12%; bottom: 22%; animation-delay: -2s; }
+.front-chip.p4 { right: -10%; bottom: 16%; animation-delay: -4s; }
+.front-chip.p5 { left: 34%; bottom: -5%; animation-delay: -5s; }
+
+.front-foot { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 22px 56px 26px; font-size: 13.5px; color: var(--ink-soft); }
+
+@keyframes rise { from { opacity: 0; translate: 0 18px; } to { opacity: 1; translate: 0 0; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -8px; } }
+
+@media (max-width: 1100px) {
+  .front-main { grid-template-columns: 1fr; padding-bottom: 40px; }
+  .front-coin { width: min(80vw, 480px); margin-top: 30px; }
+  .front-points { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .front-head, .front-main, .front-foot { padding-left: 16px; padding-right: 16px; }
+  .front-head .brand-ta { display: none; }
+  .front-chip { font-size: 12px; padding: 8px 10px; }
+  .front-chip strong { font-size: 19px; }
+}

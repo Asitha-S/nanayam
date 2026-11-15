@@ -31,6 +31,8 @@ logs/
 # Frontend
 node_modules/
 frontend/dist/
+# Impeccable: catalogue images downloaded as a quality bar are third-party, not ours to commit
+frontend/.impeccable/reference/
 
 # OS / editors
 .DS_Store
