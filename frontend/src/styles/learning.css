@@ -82,6 +82,8 @@
 .lr-tool { display: grid; align-content: start; gap: 14px; padding: 28px 30px 30px; scroll-margin-top: calc(var(--ticker-h) + var(--top-h) + 16px); }
 .lr-form { display: grid; gap: 14px; margin-top: 4px; }
 .lr-form-row { display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 12px; }
+/* an input's default width is wider than the amount column on a 1366 screen: let it fill its column instead */
+.lr-form-row .field input { width: 100%; min-width: 0; }
 .lr-form .note { margin-top: -6px; }
 .lr-onfile { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: -4px; font-size: 15px; color: var(--ink-soft); }
 .lr-seg { flex-wrap: wrap; width: max-content; max-width: 100%; }

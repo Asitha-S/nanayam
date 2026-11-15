@@ -164,7 +164,8 @@
 .detail { position: sticky; top: calc(var(--ticker-h) + var(--top-h) + 20px); display: grid; gap: 14px; border-radius: var(--r-lg); padding: 24px 26px; max-height: calc(100vh - var(--ticker-h) - var(--top-h) - 40px); overflow: auto; }
 .detail.is-empty p { color: var(--ink-soft); font-size: 16px; }
 .detail-amt { font-size: 52px; line-height: 1; letter-spacing: -0.05em; }
-.detail-sub { margin-top: 8px; font: 800 12px/1.2 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; }
+/* .panel prefix: otherwise `.panel h3` (28px display type) wins and "Source record" shouts */
+.panel .detail-sub { margin-top: 8px; font: 800 12px/1.2 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; }
 /* narrower screens: drop the hash column first (the detail panel shows the full hashes), then put the detail panel
    under the table rather than squeezing the table */
 @media (max-width: 1400px) {

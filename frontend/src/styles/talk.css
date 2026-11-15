@@ -146,6 +146,12 @@
   border: 1.5px solid var(--ink); border-radius: var(--r-lg); background: var(--card);
   box-shadow: 0 -18px 40px -10px var(--paper), var(--shadow);
 }
+/* Short laptop screens (1366x768, 1536x864, a browser window on 1080p): the box is ~40% of the visible height, so
+   pinned to the bottom it covered the start card's two big buttons and the lower half of a card the tour highlights.
+   There it stays under the conversation instead; each new turn still scrolls it into view (Talk.jsx pins the end). */
+@media (min-width: 761px) and (max-height: 940px) {
+  .talk .talk-composer { position: static; }
+}
 .talk .talk-composer.is-bound { border-color: var(--signal-deep); box-shadow: 0 -18px 40px -10px var(--paper), 0 0 0 3px color-mix(in srgb, var(--signal) 45%, transparent), var(--shadow); }
 .talk .talk-bound { display: flex; align-items: center; gap: 10px; font-size: 16px; }
 .talk .talk-bound svg { flex: none; width: 20px; height: 20px; color: var(--signal-deep); }
