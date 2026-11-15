@@ -102,7 +102,8 @@ naanayam/
 │   │   ├── voice/              (Charulatha: interpret.py (LLM), templates; answer.py, interpreter.py, rules.py: Asitha;
 │   │   │                        rules.py KEYWORDS: Tamil rows Charulatha, Telugu rows Nagasai Sree)
 │   │   │   └── templates/ta.json (Charulatha), templates/te.json (Nagasai Sree)
-│   │   └── notice/             (Charulatha: extraction (analyse), Tamil explanation; evidence.py, store.py: Asitha since 2026-11-14)
+│   │   ├── notice/             (Charulatha: extraction (analyse), Tamil explanation; evidence.py, store.py: Asitha since 2026-11-14)
+│   │   └── udhari/             (Asitha since 2026-11-15: credit book behind the UDHARI flag; texts.py Tamil for Charulatha, Telugu for Nagasai Sree to check)
 │   └── tests/                  (Asitha; Charulatha adds voice tests)
 ├── data/
 │   ├── generator/              (Asitha)

@@ -122,28 +122,48 @@ def test_article_one_is_not_the_amount(real):
     assert r["entities"]["amount_paise"] == 20000 and r["entities"]["category"] == "TRANSPORT"
 
 
-# ---- the LLM path ------------------------------------------------------------------------------------------
+# ---- the LLM path: only for sentences the rules can't read --------------------------------------------------
+SENT = "Lakshmi-ku 500 anuppunen"  # "I sent Lakshmi 500": money words the rules leave alone (UNKNOWN)
 
-def test_llm_answer_is_used_when_it_validates(real, monkeypatch):
+
+def _llm_says(monkeypatch, **out):
     from app.voice import interpret as llm
 
-    monkeypatch.setattr(llm, "interpret_utterance", lambda text, **kw: {
-        "intent": "LOG_EXPENSE", "amount_rupees": 3100, "amount_text_span": "3,100", "category": "STOCK_PURCHASE",
-        "description": "Kaaikari, Koyambedu", "day": "today", "confirmed_category": None, "remember_payer": False,
-        "status": "SUCCESS"})
+    base = {"intent": None, "amount_rupees": None, "amount_text_span": None, "category": None, "description": None,
+            "day": "today", "confirmed_category": None, "remember_payer": False, "status": "SUCCESS"}
+    monkeypatch.setattr(llm, "interpret_utterance", lambda text, **kw: {**base, **out})
+
+
+def test_rules_read_first_and_the_llm_is_not_asked(real, monkeypatch):
+    def never(text, **kw):
+        raise AssertionError("the LLM was asked about a sentence the rules read")
+
+    from app.voice import interpret as llm
+    monkeypatch.setattr(llm, "interpret_utterance", never)
     r = say(real, "Koyambedu-la 3,100 rupees-ku kaaikari vaanginen")
-    assert r["interpreter"] == "LLM" and r["entities"]["amount_paise"] == 310000
-    assert r["entities"]["description"] == "Kaaikari, Koyambedu"
+    assert r["interpreter"] == "RULES" and r["entities"]["amount_paise"] == 310000
+
+
+def test_llm_answer_is_used_when_the_rules_cant_read_it(real, monkeypatch):
+    assert say(real, SENT)["intent"] == "UNKNOWN"  # the rules alone
+    _llm_says(monkeypatch, intent="LOG_EXPENSE", amount_rupees=500, amount_text_span="500", category="OTHER",
+              description="Lakshmi")
+    r = say(real, SENT)
+    assert r["interpreter"] == "LLM" and r["entities"]["amount_paise"] == 50000 and r["entities"]["description"] == "Lakshmi"
 
 
 def test_llm_amount_not_in_the_text_is_not_trusted(real, monkeypatch):
-    from app.voice import interpret as llm
-
-    monkeypatch.setattr(llm, "interpret_utterance", lambda text, **kw: {
-        "intent": "LOG_EXPENSE", "amount_rupees": 9999, "amount_text_span": "9,999", "category": "STOCK_PURCHASE",
-        "description": "", "day": "today", "confirmed_category": None, "remember_payer": False, "status": "SUCCESS"})
-    r = say(real, "Koyambedu-la 3,100 rupees-ku kaaikari vaanginen")
+    _llm_says(monkeypatch, intent="LOG_EXPENSE", amount_rupees=9999, amount_text_span="9,999", category="OTHER")
+    r = say(real, SENT)
     assert r["interpreter"] == "LLM" and r["needs_clarification"] is True and r["entities"]["amount_paise"] is None
+
+
+def test_llm_profit_with_a_sum_and_no_profit_word_is_not_trusted(real, monkeypatch):
+    _llm_says(monkeypatch, intent="ASK_DAILY_PROFIT")
+    r = say(real, SENT)
+    assert r["intent"] == "UNKNOWN" and r["interpreter"] == "RULES"
+    r = say(real, "business eppadi irukku")  # no figure: the LLM's profit reading stands
+    assert r["intent"] == "ASK_DAILY_PROFIT" and r["interpreter"] == "LLM"
 
 
 def test_llm_failure_falls_back_to_rules(real, monkeypatch):
@@ -153,8 +173,27 @@ def test_llm_failure_falls_back_to_rules(real, monkeypatch):
         raise RuntimeError("Sarvam down")
 
     monkeypatch.setattr(llm, "interpret_utterance", boom)
-    r = say(real, "auto-ku 200 rupees")
-    assert r["interpreter"] == "RULES" and r["entities"]["amount_paise"] == 20000
+    r = say(real, SENT)
+    assert r["interpreter"] == "RULES" and r["intent"] == "UNKNOWN"
+
+
+def test_slow_llm_never_holds_the_answer(real, monkeypatch):
+    import time
+
+    from app.voice import interpret as llm
+    from app.voice import interpreter
+
+    monkeypatch.setattr(interpreter, "LLM_BUDGET_S", 0.3)
+
+    def slow(text, **kw):
+        time.sleep(1.5)
+        return {"intent": "ASK_DAILY_PROFIT", "status": "SUCCESS"}
+
+    monkeypatch.setattr(llm, "interpret_utterance", slow)
+    t0 = time.monotonic()
+    r = say(real, "hello there")
+    assert time.monotonic() - t0 < 1.2
+    assert r["intent"] == "UNKNOWN" and r["interpreter"] == "RULES"
 
 
 # ---- parse_amount forms (VOICE_AND_NOTICE 5.2) --------------------------------------------------------------

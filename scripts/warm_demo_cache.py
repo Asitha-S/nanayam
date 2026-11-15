@@ -5,7 +5,8 @@
 
 Warm: starts the backend on a throwaway database with DEMO_MODE=cache_first and SARVAM_CACHE_DIR=demo, and plays each
 merchant's demo day (data/demo/{M}_demo_day.json: M001 Tamil, M002 Telugu) through the real API, so every scripted
-Sarvam call is made once and written to cache/sarvam_demo/: the question card's speech, every recorded demo clip
+Sarvam call is made once and written to cache/sarvam_demo/: the Soundbox's announcement of every scripted payment and
+its question (/voice/speak), the question card's speech, every recorded demo clip
 (assets/demo_audio/{ta,te}/*.wav: transcribe, then interpret), the day's spoken profit answer, and the sample notice.
 Commit cache/sarvam_demo/ afterwards.
 Verify: the same day with DEMO_MODE=cache_only (never calls Sarvam). Every speech/voice step must come from the cache.
@@ -55,6 +56,15 @@ class Run:
         print(f"\n{merchant} ({lang})")
         sent = [http.post("/demo/next-payment", json={"merchant_id": merchant}).json() for _ in day["payments"]]
         asked = sent[day["answer"]["demo_index"] - 1]
+        # what the Soundbox says for every scripted payment (and the question), in the Sarvam voice
+        spoken, total = 0, 0
+        for p in sent:
+            a = http.get(f"/payments/{p['transaction_id']}/announcement?language={lang}").json()
+            for text in [a["text"]] + ([a["question"]["text"]] if a.get("question") else []):
+                total += 1
+                r = http.post("/voice/speak", json={"merchant_id": merchant, "language": lang, "text": text})
+                spoken += r.status_code == 200
+        self.row("speech: Soundbox announcements", "ok" if spoken == total else "FAIL", f"{spoken} of {total} in the Sarvam voice")
         qs = http.get(f"/merchants/{merchant}/questions?status=OPEN&date={day['demo_date']}").json()["items"]
         q = next((x for x in qs if x["transaction_id"] == asked.get("transaction_id")), None)
         if q is None:

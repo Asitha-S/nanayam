@@ -194,27 +194,61 @@ def find_amount(text: str) -> tuple[str, int] | None:
 
 # ---------------------------------------------------------------------------------------------------------------
 # Keyword tables (VOICE_AND_NOTICE 5.4). Matching: a word of the text starts with the keyword (case-insensitive),
-# so suffixes like வாங்கினேன் / Koyambedu-la still match.
+# so suffixes like வாங்கினேன் / Koyambedu-la still match. A keyword written "=word" must be the whole word, or the word
+# plus a case ending (பை, பைக்கு: a bag; never பையன், a boy).
 KEYWORDS: dict[str, tuple[str, ...]] = {
-    "STOCK_PURCHASE": ("காய்கறி", "சரக்கு", "வாங்கி", "கோயம்பேடு", "kaaikari", "kaykari", "sarakku", "vaangi",
-                       "koyambedu", "కూరగాయలు", "పండ్లు", "సరుకు", "కొన్నాను", "kooragayalu", "pandlu", "konnanu"),
-    "TRANSPORT": ("வண்டி", "ஆட்டோ", "லாரி", "vandi", "auto", "lorry", "ఆటో", "లారీ", "బండి"),
-    "PACKAGING": ("கவர்", "பை", "cover", "pai", "కవర్", "సంచి"),
-    "RENT": ("வாடகை", "vaadagai", "అద్దె", "adde"),
-    "WAGES": ("கூலி", "சம்பளம்", "kooli", "sambalam", "కూలి", "జీతం"),
-    "UTILITIES": ("கரண்ட்", "தண்ணி", "eb", "current", "కరెంట్", "నీళ్లు"),
+    "STOCK_PURCHASE": ("காய்கறி", "சரக்கு", "வாங்கி", "கோயம்பேடு", "தக்காளி", "வெங்காய", "உருளை", "பழம்", "பழங்", "கீரை",
+                       "மார்க்கெட்", "மண்டி", "kaaikari", "kaykari", "sarakku", "vaangi", "koyambedu", "thakkali",
+                       "vengayam", "market", "stock", "vegetable", "fruit", "tomato", "onion",
+                       "కూరగాయలు", "పండ్లు", "సరుకు", "కొన్నాను", "టమాట", "ఉల్లి", "మార్కెట్", "kooragayalu", "pandlu",
+                       "konnanu"),
+    "TRANSPORT": ("வண்டி", "ஆட்டோ", "லாரி", "பெட்ரோல்", "டீசல்", "பஸ்", "டெம்போ", "vandi", "auto", "lorry",
+                  "petrol", "diesel", "=bus", "tempo", "transport", "fare", "ఆటో", "లారీ", "బండి", "పెట్రోల్", "డీజిల్",
+                  "బస్"),
+    "PACKAGING": ("கவர்", "=பை", "பேப்பர்", "பாக்கெட்", "cover", "=pai", "bag", "packing", "packaging", "=box",
+                  "కవర్", "సంచి", "ప్యాకింగ్"),
+    "RENT": ("வாடகை", "vaadagai", "=rent", "అద్దె", "adde"),
+    "WAGES": ("கூலி", "சம்பளம்", "பையன்", "வேலைக்கார", "kooli", "sambalam", "paiyan", "salary", "wage", "helper",
+              "కూలి", "జీతం", "పనివాడు"),
+    "UTILITIES": ("கரண்ட்", "தண்ணி", "தண்ணீர்", "கேஸ்", "=eb", "current", "water", "=gas", "electricity",
+                  "కరెంట్", "నీళ్లు", "గ్యాస్"),
     "FAMILY": ("வீட்டு", "வீடு", "குடும்ப", "அக்கா", "அண்ணன்", "தம்பி", "அம்மா", "அப்பா", "veettu", "veedu", "akka",
-               "anna", "thambi", "amma", "appa", "ఇంటి", "ఇల్లు", "కుటుంబం", "అక్క", "అన్న", "తమ్ముడు", "అమ్మ"),
+               "=anna", "thambi", "amma", "appa", "ఇంటి", "ఇల్లు", "ఇంట్లో", "కుటుంబం", "అక్క", "అన్న", "తమ్ముడు",
+               "అమ్మ"),
     "SALE": ("கடை", "வியாபாரம்", "விற்பனை", "கஸ்டமர்", "kadai", "vyaabaaram", "viyabaram", "customer", "షాప్",
              "కొట్టు", "అమ్మకం", "వ్యాపారం", "కస్టమర్"),
-    "YES": ("ஆமா", "ஆம்", "சரி", "ஓகே", "கரெக்ட்", "aamaa", "aama", "sari", "ok", "okay", "అవును", "సరే", "ఓకే"),
+    "YES": ("ஆமா", "ஆம்", "சரி", "ஓகே", "கரெக்ட்", "aamaa", "aama", "sari", "=ok", "okay", "అవును", "సరే", "ఓకే"),
     "NO": ("இல்ல", "வேண்டாம்", "தப்பு", "illa", "vendaam", "కాదు", "వద్దు", "తప్పు"),
     "REMEMBER": ("எப்பவும்", "இனிமே", "எல்லாமே", "eppavum", "inime", "ఎప్పుడూ", "ఇకపై", "అన్నీ"),
-    "YESTERDAY": ("நேத்து", "nethu", "నిన్న", "ninna"),
+    "YESTERDAY": ("நேத்து", "நேற்று", "nethu", "yesterday", "నిన్న", "ninna"),
     # intent words (5.3)
-    "PROFIT": ("லாபம்", "மீதம்", "கணக்கு", "labham", "laabam", "meedham", "lābhaṁ", "profit", "లాభం"),
-    "EXPENSE": ("வாங்கி", "வாங்கினேன்", "செலவு", "kharchu", "selavu", "vaangi", "ఖర్చు", "konnanu", "కొన్నాను"),
+    "PROFIT": ("லாபம்", "மீதம்", "கணக்கு", "labham", "laabam", "meedham", "lābhaṁ", "profit", "లాభం", "మిగిలింది"),
+    # money going out. Stems, so every form matches: செலவு, செலவானது, செலவாச்சு, செலவழிச்சேன்; ఖర్చు, ఖర్చైంది
+    "EXPENSE": ("வாங்கி", "வாங்கின", "வாங்க", "செலவ", "கொடுத்", "குடுத்", "கட்டின", "போட்டேன்", "kharch", "selav",
+                "vaangi", "vaangu", "kuduth", "koduth", "kattin", "potten", "spent", "spend", "=paid", "=pay",
+                "bought", "=buy", "=gave", "purchase", "expense", "ఖర్చ", "konnanu", "కొన్నాను", "ఇచ్చాను",
+                "కట్టాను", "పెట్టాను"),
+    # money coming in: never an expense ("லட்சுமி 2000 அனுப்புனாங்க")
+    "INCOME": ("வந்து", "வந்த", "வந்திருக்கு", "அனுப்பு", "அனுப்பின", "கிடைச்ச", "கிடைத்த", "வித்தேன்", "vandhu",
+               "vanthu", "anuppu", "kedachu", "received", "=got", "came", "sold", "వచ్చ", "పంపా", "పంపించ"),
+    # how much did I earn / how was business (with a question word, and no rupee figure): a profit question
+    "EARN": ("சம்பாதி", "வருமான", "வசூல்", "கல்லா", "sambadh", "sambaadh", "varumaan", "=earn", "earned", "=make",
+             "=made", "income", "సంపాద", "ఆదాయం"),
+    "QUESTION": ("எவ்வளவு", "எப்படி", "evlo", "evvalavu", "eppadi", "=how", "=what", "ఎంత", "ఎలా"),
+    # udhari (UDHARI flag only): credit given, and "who owes me"
+    "CREDIT": ("கடன்", "கடனா", "கடனு", "உதாரி", "உத்தாரி", "பாக்கி", "எழுது", "எழுதி", "kadan", "udhari", "udhaar",
+               "=udhar", "baaki", "=baki", "ezhuth", "ezhudh", "=credit", "=tab", "=dues", "అప్పు", "ఉద్దెర", "ఉద్దర",
+               "బాకీ", "=appu", "uddera", "రాయి", "రాసు"),
+    "OWE": ("தரணும்", "குடுக்கணும்", "கொடுக்கணும்", "tharanum", "tharanam", "kudukkanum", "kodukkanum", "=owe", "owes",
+            "=owed", "=owing", "ఇవ్వాలి", "ivvali"),
+    "WHO": ("யார்", "யாரு", "யாரெல்லாம்", "yaar", "yaaru", "yaarellam", "=who", "ఎవరు", "ఎవరెవరు", "evaru", "evarevaru"),
 }
+# words that are never a person's name in "ரமேஷ் 300 கடன்" (amount words and keywords are skipped too)
+NAME_FILLERS = {"ரூபாய்", "ரூபா", "ரூ", "கணக்குல", "கணக்கில்", "கணக்கு", "பேர்ல", "rupees", "rupee", "rs", "ku", "kku",
+                "la", "le", "kanakku", "kanakkula", "account", "on", "to", "for", "his", "her", "the", "a", "an", "in",
+                "write", "put", "add", "give", "gave", "please", "இன்னைக்கு", "இன்னிக்கு", "innaiku", "today",
+                "రూపాయలు", "రూ", "ఖాతాలో", "ఖాతా", "ఈరోజు"}
+_CASE_ENDINGS = ("", "க்கு", "கு", "ல", "ல்", "யில", "யில்", "ku", "kku", "la", "s", "కి", "లో")
 EXPENSE_CATEGORIES = ("STOCK_PURCHASE", "TRANSPORT", "PACKAGING", "RENT", "WAGES", "UTILITIES", "OTHER")
 _VERBS = set(KEYWORDS["EXPENSE"])  # matched words that describe the act, not the thing (kept out of descriptions)
 
@@ -223,10 +257,17 @@ def _words(text: str) -> list[str]:
     return _TOKEN.findall(text)
 
 
+def _hit(word: str, key: str) -> bool:
+    if key.startswith("="):
+        k = key[1:]
+        return word.startswith(k) and word[len(k):] in _CASE_ENDINGS
+    return word.startswith(key)
+
+
 def matches(text: str, group: str) -> list[str]:
     """Words of the text (as written) that match a keyword group, in text order."""
-    keys = tuple(k.casefold() for k in KEYWORDS[group])
-    return [w for w in _words(text) if w.casefold().startswith(keys)]
+    keys = [k.casefold() for k in KEYWORDS[group]]
+    return [w for w in _words(text) if any(_hit(w.casefold(), k) for k in keys)]
 
 
 def category_of(text: str) -> str | None:
@@ -280,13 +321,32 @@ class Reading:
     day: date | None = None
     confirmed_category: str | None = None
     remember_payer: bool = False
+    payer_heard: str | None = None  # ADD_CREDIT: the name as said
     needs_clarification: bool = False
     clarification_key: str | None = None
     notes: list[str] = field(default_factory=list)
 
 
-def interpret(text: str, *, today: date, open_question: OpenQuestion | None = None) -> Reading:
-    """Rule-based interpreter (5.3) with the 5.2 checks. Deterministic."""
+def heard_name(text: str, amount_span: str | None) -> str | None:
+    """The first word that is not the amount, a keyword or a filler: the person in "ரமேஷ் 300 கடன்"."""
+    skip = {w.casefold() for w in _words(amount_span or "")}
+    for w in _words(text):
+        f = w.casefold()
+        if f in skip or f in NAME_FILLERS or any(ch.isdigit() for ch in w):
+            continue
+        if any(_hit(f, k.casefold()) for group in KEYWORDS.values() for k in group):
+            continue
+        try:
+            parse_amount(w)
+            continue  # a number word
+        except ValueError:
+            pass
+        return w
+    return None
+
+
+def interpret(text: str, *, today: date, open_question: OpenQuestion | None = None, udhari: bool = False) -> Reading:
+    """Rule-based interpreter (5.3) with the 5.2 checks. Deterministic. udhari: the UDHARI flag (two more intents)."""
     day = today - timedelta(days=1) if matches(text, "YESTERDAY") else today
     fam, sale = matches(text, "FAMILY"), matches(text, "SALE")
     remember = bool(matches(text, "REMEMBER"))
@@ -307,9 +367,33 @@ def interpret(text: str, *, today: date, open_question: OpenQuestion | None = No
     found = find_amount(text)
     category = category_of(text)
     expense_words = matches(text, "EXPENSE")
+    income = matches(text, "INCOME")
+    asks = bool(matches(text, "QUESTION")) or "?" in text
+    if udhari:
+        credit, who, owe = matches(text, "CREDIT"), matches(text, "WHO"), matches(text, "OWE")
+        # "யாரெல்லாம் பணம் தரணும்?", "who owes me", "baaki evlo?"
+        if not found and ((who and (owe or credit)) or (asks and credit) or (owe and asks)):
+            return Reading("ASK_DUES", day=day)
+        # "ரமேஷ் 300 கடன்", "Ramesh 300 udhari", "ரமேஷுக்கு 300 கடன் குடுத்தேன்": credit wins over the giving verb
+        if credit and not income:
+            span, rupees = found if found else (None, None)
+            name = heard_name(text, span)
+            if not found:
+                return Reading("ADD_CREDIT", payer_heard=name, day=day, needs_clarification=True,
+                               clarification_key="clarify_amount", notes=["no amount in the text"])
+            if not (MIN_RUPEES <= rupees <= MAX_RUPEES):
+                return Reading("ADD_CREDIT", amount_span=span, payer_heard=name, day=day, needs_clarification=True,
+                               clarification_key="clarify_amount", notes=[f"amount {rupees} out of range"])
+            return Reading("ADD_CREDIT", amount_span=span, amount_rupees=rupees, payer_heard=name, day=day,
+                           needs_clarification=name is None, clarification_key=None if name else "clarify_payer")
     if matches(text, "PROFIT") and not (found and (expense_words or category)):
         return Reading("ASK_DAILY_PROFIT", day=day)
-    if expense_words or (found and category):
+    # "இன்னைக்கு எவ்வளவு சம்பாதிச்சேன்?", "how much did I make today", "இன்னைக்கு வியாபாரம் எப்படி?"
+    if not found and not expense_words and (matches(text, "EARN") or (asks and sale)):
+        return Reading("ASK_DAILY_PROFIT", day=day)
+    # Read generously: every expense goes to a confirmation card and nothing is saved until the merchant says yes.
+    # A rupee figure is an expense unless the money came in or the sentence asks about it.
+    if expense_words or (found and category) or (found and not income and not asks):
         desc_words = [w for w in matches(text, category) if not w.casefold().startswith(tuple(v.casefold() for v in _VERBS))] if category else []
         description = ", ".join(_clean(w) for w in desc_words)
         if not found:

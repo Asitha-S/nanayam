@@ -44,6 +44,7 @@
 | 422 | `VALIDATION_ERROR` | Field missing, wrong type, enum not allowed, amount ≤ 0 |
 | 503 | `SARVAM_UNAVAILABLE` | Sarvam call failed or timed out (live / cache_first modes) |
 | 503 | `CACHE_MISS` | `DEMO_MODE=cache_only` and no cached response for this exact input |
+| 429 | `RATE_LIMITED` | The customer /pay page sent a second payment within 2 s from the same device (`details.retry_after_s`) |
 | 500 | `INTERNAL_ERROR` | Anything else (log it) |
 
 ### Enums (exact strings)
@@ -77,8 +78,25 @@ All `/demo/*` endpoints exist only when `ENABLE_DEMO_TOOLS=true`; otherwise they
 ### GET `/health`
 `200`
 ```json
-{ "status": "ok", "demo_mode": "cache_only", "demo_date": "2026-11-15", "db": "ok", "model_version": "clf-2026-11-14-01", "threshold": 0.9, "demo_tools": true, "tampered": false }
+{ "status": "ok", "now": "2026-11-15T14:05:12+05:30", "demo_mode": "cache_only", "demo_date": "2026-11-15", "db": "ok", "model_version": "clf-2026-11-14-01", "threshold": 0.9, "demo_tools": true, "tampered": false }
 ```
+`now` (additive): the backend's current time (IST): the real time of day on `DEMO_DATE`, or `DEMO_TIME` when pinned. A payment made from the customer /pay page uses it as its `timestamp`.
+
+### Live mode (demo tools; added 2026-11-15)
+Payments that arrive on their own and from phones, alongside the scripted day. Nothing here changes how a payment is
+classified: every payment goes through the `POST /payments` path.
+- `POST /demo/live-payment` `{ "merchant_id": "M001" }` → `201`: one payment sampled from the merchant's own payers
+  with the generator's patterns (mostly small P2M sales from regular customers, sometimes the bulk buyer, walk-ins,
+  rarely a round P2P transfer from family or someone new), `transaction_id` `LIVE-{merchant}-{yyyymmdd}-{hhmmss}-{hex}`,
+  `timestamp` = the backend's now. Body: the `POST /payments` response plus `payer_name`, `timestamp`, `payment_type`.
+- `GET /demo/pay-options?merchant_id=M001` → `{ merchant_id, display_name, payers: [{ payer_id, payer_name,
+  payer_vpa_kind, role: CUSTOMER|BUSINESS|PERSON, usual_payment_type: P2M|P2P }] }` for the /pay page. No
+  classification hints (the customer's phone sees it).
+- `GET /demo/network` → `{ lan_ips: ["192.168.43.120"] }`: this laptop's private LAN addresses, for the QR code that
+  opens `http://<lan ip>:<frontend port>/#/pay` on a phone.
+- `POST /payments` with header `X-Naanayam-Client: pay-page` (the /pay page): at most one per 2 s per device, else
+  `429 RATE_LIMITED`.
+- CORS allows the laptop (localhost, 127.0.0.1) and private LAN origins (192.168.x.x, 10.x.x.x, 172.16-31.x.x).
 
 ### POST `/demo/reset`
 Restores the database to the committed seed state: all history before `DEMO_DATE`, nothing on `DEMO_DATE` (demo-day payments are injected live). Clears feedback created on `DEMO_DATE`.
@@ -457,7 +475,19 @@ If `pending_count > 0`, the text must say how many payments are still unconfirme
 { "merchant_id": "M001", "language": "ta", "text": "₹3,100 kaaikari selavu save pannitten." }
 ```
 `200`: `{ "audio_id": "AUD-...", "audio_url": "/api/audio/AUD-...", "from_cache": false }`
-`503` → frontend shows the text only.
+`503` → frontend shows the text only. Real Sarvam Bulbul TTS through the client, cached by text (a repeat is a cache
+hit). Languages `ta`, `te`.
+
+### GET `/payments/{transaction_id}/announcement?language=ta`  (added 2026-11-15)
+What the Soundbox says when the payment arrives: the fixed template `payment_announce` (VOICE_AND_NOTICE 7) with the
+amount in speech form, no LLM.
+`200`
+```json
+{ "transaction_id": "TXN-M001-20261115-015", "language": "ta", "text": "2,000 ரூபாய் வந்திருக்கு.", "text_en": "Received 2,000 rupees.",
+  "question": { "question_id": "Q-M001-000055", "text": "லக்ஷ்மி கிட்ட இருந்து 2,000 ரூபாய் வந்திருக்கு. இது கடை வியாபாரமா, வீட்டு பணமா?", "text_en": "₹2,000 received from Lakshmi R. Is this a shop sale or family money?" } }
+```
+`question` is `null` unless that payment's question is open. `text_en` is for a device voice without the language.
+The Soundbox plays the payment first, then the question, never overlapping. `404` for an unknown transaction.
 
 ### GET `/audio/{audio_id}`
 Returns the audio file (`audio/wav` or `audio/mpeg`). `404` if unknown.
@@ -707,3 +737,100 @@ Query: `months` (default 3, max 3; uses complete calendar months before `DEMO_DA
 | Passport | `GET /merchants/{id}/passport` |
 | Export buttons | `GET .../export/csv`, `GET .../export/pdf` |
 | Demo panel (hidden) | `POST /demo/reset`, `GET /demo/script`, `POST /demo/tamper`, `GET /health` |
+
+## 13. Udhari: the credit book (added 2026-11-15; feature flag `UDHARI`, off by default)
+
+Goods given on credit ("udhari") to known payers, and what they paid back. A book **beside** the ledger: tab entries
+never create ledger entries and never change a payment's classification, the decision procedure, the finance buckets or
+the summary. Tables `tabs` (one per merchant and payer) and `tab_entries` are append-only (`ADD`, `SETTLE`, `ADJUST`;
+`ADJUST` is reserved: no endpoint yet). With `UDHARI` off every endpoint below returns `404 NOT_FOUND`, `/voice/interpret`
+never returns the two udhari intents, and `tab_offer` is absent from announcements. `GET /health` says which:
+`"features": { "udhari": true }`.
+
+A balance (`due_paise`) = sum of ADD − sum of SETTLE (+/− ADJUST), never below 0. Money is integer paise with the
+backend's display strings; the frontend never computes a balance or a settle amount.
+
+### GET `/merchants/{merchant_id}/tabs?language=ta`
+`language` (`ta|te`) only picks the spoken summary; default: the merchant's language.
+`200`
+```json
+{
+  "merchant_id": "M001",
+  "as_of": "2026-11-15T12:10:00+05:30",
+  "total_due_paise": 481000, "total_due_display": "₹4,810", "open_count": 4,
+  "items": [
+    { "payer_id": "P10001", "payer_name": "Bhuvana", "due_paise": 120000, "due_display": "₹1,200",
+      "opened_at": "2026-11-03T19:10:00+05:30",
+      "entries": [
+        { "tab_entry_id": "TAB-M001-000001", "kind": "ADD", "amount_paise": 120000, "amount_display": "₹1,200",
+          "balance_after_paise": 120000, "balance_after_display": "₹1,200", "created_at": "2026-11-03T19:10:00+05:30",
+          "note": "Function order",
+          "source": { "type": "SEED", "transaction_id": null, "ledger_entry_id": null, "utterance_text": null, "voice_log_id": null } } ] } ],
+  "offers": [
+    { "transaction_id": "LIVE-M001-20261115-121003-ab12", "payer_id": "P10006", "payer_name": "Ramesh N",
+      "timestamp": "2026-11-15T12:10:03+05:30", "amount_paise": 200000, "amount_display": "₹2,000",
+      "ledger_entry_id": "LE-M001-000812", "due_paise": 230000, "due_display": "₹2,300",
+      "settle_paise": 200000, "settle_display": "₹2,000" } ],
+  "spoken": { "language": "ta", "text": "4 பேர் மொத்தம் 4,810 ரூபாய் தரணும். ..." }
+}
+```
+- `items`: open tabs (due > 0) first, oldest `opened_at` first (`opened_at` = the oldest ADD not yet paid off,
+  first-in first-out); then settled tabs. `entries` oldest first, each with the balance after it.
+- `source.type`: `SEED` (demo data), `VOICE` (said on Talk: `utterance_text`, `voice_log_id`), `MANUAL` (typed),
+  `PAYMENT` (a SETTLE: the payment's `transaction_id` and its PAYMENT ledger entry `ledger_entry_id`).
+- `offers`: today's payments from payers whose tab is open that no SETTLE uses yet, newest first; `settle_paise` =
+  min(payment, due). The same thing the Soundbox offers when the payment arrives.
+- `spoken`: fixed template (no LLM) naming who owes what, for the Talk answer to "யாரெல்லாம் பணம் தரணும்?".
+
+### POST `/tabs/{payer_id}/add`
+Write an amount on a payer's tab. Idempotent on `client_request_id`, like `/expenses`.
+```json
+{ "client_request_id": "b3c1...", "merchant_id": "M001", "amount_paise": 30000, "note": null,
+  "input_source": "VOICE", "language": "ta", "utterance_text": "ரமேஷ் 300 கடன்", "voice_log_id": "VL-M001-000120" }
+```
+`amount_paise` 100 to 50,000,000 (₹1 to ₹5,00,000). `input_source`: `VOICE|MANUAL`.
+`201` (`200` with `idempotent_replay: true` for the same body again)
+```json
+{ "tab_entry_id": "TAB-M001-000007", "payer_id": "P10006", "payer_name": "Ramesh N", "kind": "ADD",
+  "amount_paise": 30000, "amount_display": "₹300", "due_paise": 260000, "due_display": "₹2,600", "idempotent_replay": false }
+```
+`409 DUPLICATE_CONFLICT` same `client_request_id`, different body · `404 NOT_FOUND` unknown merchant or payer ·
+`422 VALIDATION_ERROR`.
+
+### POST `/tabs/{payer_id}/settle`
+Take a payment off the payer's tab. The backend computes the amount: min(payment amount, due now). Idempotent on
+`client_request_id`; a payment settles a tab at most once.
+```json
+{ "client_request_id": "9f2e...", "merchant_id": "M001", "transaction_id": "LIVE-M001-20261115-121003-ab12" }
+```
+`201` (`200` replay)
+```json
+{ "tab_entry_id": "TAB-M001-000008", "payer_id": "P10006", "payer_name": "Ramesh N", "kind": "SETTLE",
+  "transaction_id": "LIVE-M001-20261115-121003-ab12", "amount_paise": 200000, "amount_display": "₹2,000",
+  "payment_amount_display": "₹2,000", "due_before_display": "₹2,300", "due_paise": 30000, "due_display": "₹300",
+  "idempotent_replay": false }
+```
+`404 NOT_FOUND` unknown merchant, payer or payment · `422 VALIDATION_ERROR` the payment is another payer's or another
+merchant's · `409 INVALID_STATE` with `details.reason` `NOTHING_DUE` or `PAYMENT_ALREADY_USED` · `409 DUPLICATE_CONFLICT`.
+The payment's classification and ledger entries are unchanged (normally SALE).
+
+### Announcement: `tab_offer` (UDHARI on)
+`GET /payments/{transaction_id}/announcement` adds `tab_offer` (else `null`) when the payer's tab is open and no SETTLE
+uses this payment yet:
+```json
+"tab_offer": { "payer_id": "P10006", "payer_name": "Ramesh N", "payment_display": "₹2,000", "due_paise": 230000,
+  "due_display": "₹2,300", "settle_paise": 200000, "settle_display": "₹2,000",
+  "text": "Ramesh N 2,000 ரூபாய் கொடுத்திருக்காங்க. கடன் கணக்குல கழிக்கவா? பாக்கி 2,300 ரூபாய்.",
+  "text_en": "Ramesh N paid 2,000 rupees. Take it off the tab? 2,300 rupees due." }
+```
+The Soundbox shows it as a second card after the payment (and its question, if any): Yes → `POST /tabs/{payer_id}/settle`.
+
+### Voice (UDHARI on): two more intents for `/voice/interpret`
+- `ADD_CREDIT` ("ரமேஷ் 300 கடன்", "Ramesh 300 udhari"): `entities` = `payer_heard` (the name as said),
+  `payer_id` / `payer_name` (best match among the merchant's tab payers and regular customers, or `null`),
+  `payer_candidates` ([{`payer_id`, `payer_name`}], up to 6, best first), `amount_paise`, `amount_display`, `date`;
+  `confirmation_text` = fixed template ("Ramesh N கணக்குல 300 ரூபாய் கடன் எழுதவா?"). `needs_clarification` with
+  `clarification_text` when the amount or the name is missing. Nothing is saved until the merchant confirms the card
+  (and picks the payer if `payer_id` is null) → `POST /tabs/{payer_id}/add`.
+- `ASK_DUES` ("யாரெல்லாம் பணம் தரணும்?", "who owes me"): `entities` = `date`. The answer is
+  `GET /merchants/{id}/tabs` → `spoken.text` (and `POST /voice/speak` for audio).

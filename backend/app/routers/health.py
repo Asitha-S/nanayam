@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from .. import db
+from .. import clock, db
 from ..classifier.decide import active_model_version, threshold
 from ..config import get_settings
 from ..demo.service import is_tampered
@@ -21,6 +21,7 @@ def health():
             conn.close()
     return {
         "status": "ok",
+        "now": clock.iso(clock.now()),
         "demo_mode": settings.demo_mode,
         "demo_date": settings.demo_date.isoformat(),
         "db": "ok" if db_ok else "error",
@@ -28,4 +29,5 @@ def health():
         "threshold": threshold(),
         "demo_tools": settings.enable_demo_tools,
         "tampered": tampered,
+        "features": {"udhari": settings.udhari},
     }

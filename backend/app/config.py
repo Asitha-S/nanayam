@@ -35,6 +35,7 @@ class Settings:
     cache_root: Path
     logs_dir: Path
     demo_seed_db: Path
+    udhari: bool = False  # UDHARI=true: the credit book (contract section 13)
 
 
 def _bool(value: str) -> bool:
@@ -66,4 +67,5 @@ def get_settings() -> Settings:
         cache_root=_path(os.getenv("SARVAM_CACHE_ROOT", "cache")),
         logs_dir=_path(os.getenv("LOGS_DIR", "logs")),
         demo_seed_db=_path(os.getenv("DEMO_SEED_DB", "data/demo/seed.db")),
+        udhari=_bool(os.getenv("UDHARI", "false")),
     )

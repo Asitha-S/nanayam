@@ -48,6 +48,10 @@ def cache_miss(message: str, **details) -> ApiError:
     return ApiError(503, "CACHE_MISS", message, details)
 
 
+def rate_limited(message: str, **details) -> ApiError:
+    return ApiError(429, "RATE_LIMITED", message, details)
+
+
 def error_body(code: str, message: str, details: dict | None = None) -> dict:
     return {"error": {"code": code, "message": message, "details": details or {}}}
 

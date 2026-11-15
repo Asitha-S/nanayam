@@ -129,6 +129,25 @@ class ExpenseIn(Strict):
     voice_log_id: str | None = None
 
 
+class TabAddIn(Strict):
+    """POST /tabs/{payer_id}/add (contract section 13)."""
+    client_request_id: UUID
+    merchant_id: NonEmpty
+    amount_paise: Annotated[int, Field(strict=True, ge=EXPENSE_MIN_PAISE, le=EXPENSE_MAX_PAISE)]
+    note: str | None = None
+    input_source: Literal["VOICE", "MANUAL"]
+    language: Language | None = None
+    utterance_text: str | None = None
+    voice_log_id: str | None = None
+
+
+class TabSettleIn(Strict):
+    """POST /tabs/{payer_id}/settle: the backend computes the amount (min of the payment and the due)."""
+    client_request_id: UUID
+    merchant_id: NonEmpty
+    transaction_id: NonEmpty
+
+
 class ExpenseVoidIn(Strict):
     merchant_id: NonEmpty
     reason: str | None = None

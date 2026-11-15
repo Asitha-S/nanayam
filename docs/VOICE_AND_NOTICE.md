@@ -67,7 +67,7 @@ Pick one Tamil TTS voice and one Telugu TTS voice that sound like a friendly sho
 ### 4.1 Shared mic flow (frontend, Nagasai Sree)
 
 ```
-[Mic tap] → record (max 15 s, auto-stop after 1.5 s silence)
+[Mic tap] → record (max 15 s; Stop tap, or auto-stop after 2.5 s silence measured against the room's noise floor, never before 3 s)
    → POST /voice/transcribe  → show transcript in small text ("Naan kettadhu: ...")
    → POST /voice/interpret   (with open_question_id if a question card is open)
    → branch on intent

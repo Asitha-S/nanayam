@@ -24,7 +24,7 @@ def test_smoke_passes_at_any_time_of_day_with_demo_time(env, wall_clock):
     smoke = _smoke(env, wall_clock, DEMO_TIME)
     failed = [r for r in smoke.rows if not r[1]]
     assert DEMO_TIME == "21:30" and not failed, failed
-    assert len(smoke.rows) == 22
+    assert len(smoke.rows) == 26  # 22 + live payment, Soundbox announcement, /pay rate limit, udhari off by default
 
 
 def test_without_demo_time_the_morning_expense_is_in_the_future(env, wall_clock):

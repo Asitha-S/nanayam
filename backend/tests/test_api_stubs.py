@@ -1,4 +1,4 @@
-"""Endpoints still on fixtures (Charulatha's voice transcribe/speak, notice analyse) and the
+"""Speak/transcribe go through the Sarvam client (no canned answers), notice analyse fallback, and the
 contract error shape and request validation. Real endpoints are covered in the other test files."""
 import json
 
@@ -11,10 +11,13 @@ def fx(name):
     return json.loads((FIXTURES_DIR / f"{name}.json").read_text(encoding="utf-8"))
 
 
-def test_voice_stubs(client):
-    assert client.post("/api/voice/speak", json={"merchant_id": "M001", "language": "ta", "text": "சரி"}).json() == fx("voice_speak")
+def test_speak_and_transcribe_are_real_never_canned(client):
+    # tests run DEMO_MODE=cache_only with an empty cache: Sarvam is never called, so both are an honest 503
+    speak = client.post("/api/voice/speak", json={"merchant_id": "M001", "language": "ta", "text": "சரி"})
+    assert speak.status_code == 503 and speak.json()["error"]["code"] == "CACHE_MISS"
+    assert speak.json() != fx("voice_speak")
     live = client.post("/api/voice/transcribe", data={"language": "ta", "merchant_id": "M001"}, files={"audio": ("a.webm", b"bytes")})
-    assert live.json()["recognition_mode"] == "LIVE"
+    assert live.status_code == 503 and live.json()["error"]["code"] == "CACHE_MISS"
 
 
 def test_transcribe_demo_key_wrong_bytes_is_422(client):
@@ -30,10 +33,12 @@ def test_transcribe_demo_key_wrong_bytes_is_422(client):
 def test_health(client):
     body = client.get("/api/health").json()
     assert body == {
-        "status": "ok", "demo_mode": "cache_only", "demo_date": "2026-11-15", "db": "ok",
+        "status": "ok", "now": body["now"], "demo_mode": "cache_only", "demo_date": "2026-11-15", "db": "ok",
         "model_version": body["model_version"], "threshold": body["threshold"], "demo_tools": True, "tampered": False,
+        "features": {"udhari": False},  # contract section 13: off by default
     }
     assert body["threshold"] >= 0.90
+    assert body["now"].startswith("2026-11-15T") and body["now"].endswith("+05:30")  # the backend's IST now on DEMO_DATE
 
 
 def test_health_threshold_is_effective_max(make_client):

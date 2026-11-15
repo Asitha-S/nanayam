@@ -19,6 +19,8 @@ APPEND_ONLY_TABLES = (
     "expenses",
     "expense_voids",
     "ledger_entries",
+    "tabs",
+    "tab_entries",
 )
 
 SCHEMA = """
@@ -190,6 +192,38 @@ CREATE TABLE IF NOT EXISTS notices (
     explanation_text TEXT,
     created_at       TEXT NOT NULL
 );
+
+-- Udhari (contract section 13, flag UDHARI): a credit book beside the ledger. Never creates ledger entries.
+CREATE TABLE IF NOT EXISTS tabs (
+    tab_id      TEXT PRIMARY KEY,
+    merchant_id TEXT NOT NULL REFERENCES merchants(merchant_id),
+    payer_id    TEXT NOT NULL REFERENCES payers(payer_id),
+    created_at  TEXT NOT NULL,
+    UNIQUE (merchant_id, payer_id)
+);
+
+CREATE TABLE IF NOT EXISTS tab_entries (
+    tab_entry_id      TEXT PRIMARY KEY,
+    tab_id            TEXT NOT NULL REFERENCES tabs(tab_id),
+    merchant_id       TEXT NOT NULL REFERENCES merchants(merchant_id),
+    payer_id          TEXT NOT NULL REFERENCES payers(payer_id),
+    kind              TEXT NOT NULL CHECK (kind IN ('ADD','SETTLE','ADJUST')),
+    amount_paise      INTEGER NOT NULL CHECK (amount_paise > 0),
+    direction         INTEGER NOT NULL CHECK (direction IN (1, -1)),
+    transaction_id    TEXT REFERENCES payments(transaction_id),
+    client_request_id TEXT NOT NULL UNIQUE,
+    input_source      TEXT NOT NULL CHECK (input_source IN ('VOICE','MANUAL','PAYMENT','SEED')),
+    note              TEXT,
+    language          TEXT,
+    utterance_text    TEXT,
+    voice_log_id      TEXT,
+    payload_hash      TEXT NOT NULL,
+    effective_at      TEXT NOT NULL,
+    created_at        TEXT NOT NULL,
+    CHECK ((kind = 'SETTLE') = (transaction_id IS NOT NULL))
+);
+CREATE INDEX IF NOT EXISTS ix_tab_entries_tab ON tab_entries(tab_id, effective_at);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_tab_entries_settle_txn ON tab_entries(transaction_id) WHERE kind = 'SETTLE';
 
 CREATE TABLE IF NOT EXISTS demo_state (
     merchant_id     TEXT PRIMARY KEY REFERENCES merchants(merchant_id),

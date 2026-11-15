@@ -3,6 +3,7 @@
 Starts the real backend (uvicorn) on a free port with a throwaway database, restores the committed seed via
 /demo/reset, drives the M001 demo journey over HTTP and checks every number (DATA_AND_LOGIC 3.3). Prints a
 pass/fail table and exits non-zero on any failure. The server is always stopped at the end.
+Then a second server with UDHARI=true runs the credit-book journey (contract section 13).
 The server runs with DEMO_TIME=21:30, so every scripted demo-day event is in the past at any real time of day.
 """
 from __future__ import annotations
@@ -14,6 +15,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import uuid
 from pathlib import Path
 
 import httpx
@@ -128,41 +130,104 @@ class Smoke:
         ve = self.http.post("/voice/interpret", json={"merchant_id": "M001", "language": "ta",
                                                       "text": "Koyambedu-la 3,100 rupees-ku kaaikari vaanginen",
                                                       "voice_log_id": None, "open_question_id": None}).json()
+        lp = self.http.post("/demo/live-payment", json={"merchant_id": "M001"})
+        lpj = lp.json()
+        self.check("live payment (POST /payments path)", lp.status_code == 201 and lpj["transaction_id"].startswith("LIVE-M001-"),
+                   f'{lpj.get("payer_name")} {lpj.get("amount_display")} {lpj.get("action")}')
+        an = self.http.get(f"/payments/{lpj['transaction_id']}/announcement?language=ta").json()
+        self.check("Soundbox announcement (template)", an["text"].endswith("வந்திருக்கு."), an["text"])
+        now = self.http.get("/health").json()["now"]
+        pay = {"merchant_id": "M001", "payer_id": "P10411", "payer_name": "Senthil K", "payer_vpa_kind": "PERSONAL",
+               "amount_paise": 5000, "payment_type": "P2M", "timestamp": now, "description": None}
+        hdr = {"X-Naanayam-Client": "pay-page"}
+        p1 = self.http.post("/payments", json={**pay, "transaction_id": "PAY-SMOKE-1"}, headers=hdr)
+        p2 = self.http.post("/payments", json={**pay, "transaction_id": "PAY-SMOKE-2"}, headers=hdr)
+        self.check("/pay page: one payment per 2 s", p1.status_code == 201 and p2.status_code == 429,
+                   f"{p1.status_code} then {p2.status_code}")
         self.check("voice interpret reads the text",
                    vi.get("intent") == "ASK_DAILY_PROFIT" and ve.get("intent") == "LOG_EXPENSE"
                    and ve["entities"]["amount_display"] == "₹3,100" and ve["entities"]["category"] == "STOCK_PURCHASE",
                    f'{ve.get("interpreter")}: {ve["entities"].get("amount_display")} {ve["entities"].get("category")}')
+        off = self.http.get("/merchants/M001/tabs")
+        self.check("udhari off by default", off.status_code == 404 and h.get("features") == {"udhari": False},
+                   f"tabs HTTP {off.status_code}")
+
+    def run_udhari(self) -> None:
+        """UDHARI=true: seeded tabs, a customer paying part of the tab in live mode, voice credit, dues."""
+        h = self.http.get("/health").json()
+        self.check("udhari on", h.get("features") == {"udhari": True}, "UDHARI=true")
+        self.http.post("/demo/reset", json={})
+        t = self.http.get("/merchants/M001/tabs").json()
+        self.check("udhari seed: 4 open tabs", (t["open_count"], t["total_due_display"]) == (4, "₹4,810"),
+                   ", ".join(f'{i["payer_name"]} {i["due_display"]}' for i in t["items"]))
+        lp = self.http.post("/demo/live-payment", json={"merchant_id": "M001"}).json()
+        offer = self.http.get(f"/payments/{lp['transaction_id']}/announcement?language=ta").json().get("tab_offer") or {}
+        self.check("udhari: live payment offers the tab", lp["payer_name"] == "Ramesh N" and lp["action"] == "AUTO_CLASSIFY"
+                   and offer.get("due_display") == "₹2,300" and offer.get("settle_display") == "₹2,000",
+                   f'{lp["payer_name"]} {lp["amount_display"]} {lp.get("classification")}, due {offer.get("due_display")}')
+        before = self.totals()
+        st = self.http.post("/tabs/P10006/settle", json={"client_request_id": str(uuid.uuid4()), "merchant_id": "M001",
+                                                         "transaction_id": lp["transaction_id"]})
+        stj = st.json()
+        self.check("udhari: settle takes it off", st.status_code == 201 and stj["amount_display"] == "₹2,000"
+                   and stj["due_display"] == "₹300", f'{stj.get("amount_display")} off, {stj.get("due_display")} due')
+        self.check("udhari: ledger and summary untouched", self.totals() == before, "summary identical after settle")
+        vi = self.http.post("/voice/interpret", json={"merchant_id": "M001", "language": "ta", "text": "ரமேஷ் 300 கடன்"}).json()
+        e = vi.get("entities") or {}
+        ad = self.http.post(f"/tabs/{e.get('payer_id')}/add", json={
+            "client_request_id": str(uuid.uuid4()), "merchant_id": "M001", "amount_paise": e.get("amount_paise"),
+            "input_source": "VOICE", "language": "ta", "utterance_text": "ரமேஷ் 300 கடன்"})
+        self.check("udhari: voice credit (ADD_CREDIT)", vi.get("intent") == "ADD_CREDIT" and e.get("payer_name") == "Ramesh N"
+                   and ad.status_code == 201 and ad.json()["due_display"] == "₹600",
+                   f'{e.get("payer_name")} {e.get("amount_display")} -> due {ad.json().get("due_display")}')
+        vd = self.http.post("/voice/interpret", json={"merchant_id": "M001", "language": "ta", "text": "யாரெல்லாம் பணம் தரணும்?"}).json()
+        spoken = self.http.get("/merchants/M001/tabs?language=ta").json()["spoken"]["text"]
+        self.check("udhari: who owes (ASK_DUES)", vd.get("intent") == "ASK_DUES" and spoken.startswith("4 பேர்"), spoken[:60])
+        v = self.http.get("/merchants/M001/ledger/verify").json()
+        self.check("udhari: ledger verify", v["status"] == "VALID", v["status"])
 
 
-def main() -> int:
+def serve(smoke: Smoke | None, step: str, **extra_env) -> Smoke | None:
+    """Start a backend on a fresh database, run Smoke.<step> against it, stop it. None if it never started."""
     port = free_port()
     tmp = Path(tempfile.mkdtemp(prefix="naanayam_smoke_"))
     env = {**os.environ, "DB_PATH": str(tmp / "smoke.db"), "ENABLE_DEMO_TOOLS": "true", "DEMO_MODE": "cache_only",
-           "LOGS_DIR": str(tmp / "logs"), "DEMO_TIME": DEMO_TIME, "PYTHONIOENCODING": "utf-8"}
+           "LOGS_DIR": str(tmp / "logs"), "DEMO_TIME": DEMO_TIME, "PYTHONIOENCODING": "utf-8", "UDHARI": "false",
+           **extra_env}
     server = subprocess.Popen([sys.executable, "-m", "uvicorn", "app.main:app", "--port", str(port)],
                               cwd=REPO / "backend", env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    smoke = Smoke(httpx.Client(base_url=f"http://127.0.0.1:{port}/api", timeout=30))
-    started = time.monotonic()
+    http = httpx.Client(base_url=f"http://127.0.0.1:{port}/api", timeout=30)
+    if smoke is None:
+        smoke = Smoke(http)
+    smoke.http = http
     try:
         for _ in range(120):
             try:
-                if smoke.http.get("/health").status_code == 200:
+                if http.get("/health").status_code == 200:
                     break
             except httpx.HTTPError:
                 time.sleep(0.5)
         else:
             print("server did not start")
-            return 1
+            return None
         try:
-            smoke.run()
+            getattr(smoke, step)()
         except Exception as exc:  # report the step that crashed instead of a traceback only
-            smoke.check("unexpected error", False, f"{type(exc).__name__}: {exc}")
+            smoke.check(f"unexpected error ({step})", False, f"{type(exc).__name__}: {exc}")
     finally:
         server.terminate()
         try:
             server.wait(timeout=10)
         except subprocess.TimeoutExpired:
             server.kill()
+    return smoke
+
+
+def main() -> int:
+    started = time.monotonic()
+    smoke = serve(None, "run")
+    if smoke is None or serve(smoke, "run_udhari", UDHARI="true") is None:
+        return 1
     print(f"\n{'check':32s} {'result':6s}  detail")
     for name, ok, detail in smoke.rows:
         print(f"{name:32s} {'pass' if ok else 'FAIL':6s}  {detail}")
