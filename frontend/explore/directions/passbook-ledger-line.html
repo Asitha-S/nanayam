@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Naanayam</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anek+Latin:wdth,wght@75..125,300..800&family=Doto:wght@500..900&family=Noto+Sans+Tamil:wght@500..800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #e4eee7;
+    --paper-line: #c3d9cb;
+    --bank: #0f4a3a;
+    --bank-soft: #3d6b5c;
+    --carbon: #1c1e1d;
+    --stamp: #5a2d8c;
+    --debit: #b42318;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--paper);
+    color: var(--carbon);
+    font-family: "Anek Latin", sans-serif;
+    font-variation-settings: "wdth" 100;
+    overflow: hidden;
+    min-height: 900px;
+  }
+  ::selection { background: var(--stamp); color: #fff; }
+  #guilloche { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; }
+  .page { position: relative; z-index: 1; padding: 0 64px; height: 900px; display: grid; grid-template-rows: 92px 1fr auto; }
+
+  header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px double var(--bank); }
+  .mark { display: flex; align-items: baseline; gap: 14px; color: var(--bank); }
+  .mark b { font-weight: 800; font-size: 34px; letter-spacing: -0.01em; font-variation-settings: "wdth" 88; }
+  .mark span { font-family: "Noto Sans Tamil", sans-serif; font-weight: 700; font-size: 24px; }
+  nav { display: flex; align-items: center; gap: 36px; font-size: 19px; font-weight: 500; color: var(--bank); }
+  nav a { color: inherit; text-decoration: none; }
+  .btn { display: inline-flex; align-items: center; gap: 12px; background: var(--bank); color: #f2f7f3; padding: 14px 24px; font-weight: 700; font-size: 19px; text-decoration: none; border-radius: 3px; box-shadow: 0 2px 0 #0a3328, 0 8px 18px -10px rgba(15,74,58,.6); }
+  .btn.big { font-size: 24px; padding: 20px 32px; }
+
+  .hero { padding-top: 46px; position: relative; }
+  .top { display: grid; grid-template-columns: 1fr 440px; align-items: end; gap: 48px; }
+  h1 { font-weight: 750; font-size: 96px; line-height: .94; letter-spacing: -0.03em; color: var(--bank); font-variation-settings: "wdth" 80; max-width: 15ch; }
+  .lede { font-size: 23px; line-height: 1.4; color: #24302b; padding-bottom: 8px; }
+
+  .ledger { margin-top: 44px; }
+  .cols, .line { display: grid; grid-template-columns: 170px 1fr auto; align-items: baseline; white-space: nowrap; }
+  .cols { font-size: 14px; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; color: var(--bank-soft); border-bottom: 1px solid var(--bank-soft); padding-bottom: 8px; }
+  .cols span:last-child, .line span:last-child { text-align: right; }
+  .line { font-family: "Doto", monospace; font-weight: 800; color: var(--carbon); }
+  .line.past { font-size: 26px; opacity: .34; padding: 9px 0; border-bottom: 1px solid var(--paper-line); }
+  .line.now { font-size: 80px; padding: 20px 0 16px; border-bottom: 1px solid var(--bank-soft); position: relative; }
+  .line.now .t { font-size: 34px; align-self: center; }
+  .rs { display: inline-block; width: .62em; height: .78em; margin-right: .06em; vertical-align: -0.02em; }
+  .line.now .who { white-space: nowrap; }
+
+  .stamp {
+    position: absolute; right: 360px; top: 86px; transform: rotate(-7deg);
+    color: var(--stamp); border: 4px solid var(--stamp); outline: 2px solid var(--stamp); outline-offset: 5px;
+    padding: 10px 22px 12px; text-align: center; font-family: "Anek Latin", sans-serif; mix-blend-mode: multiply; filter: url(#ink);
+    background: rgba(90,45,140,.04);
+  }
+  .stamp .ta { font-family: "Noto Sans Tamil", sans-serif; font-weight: 800; font-size: 44px; line-height: 1.2; }
+  .stamp .en { font-size: 17px; letter-spacing: .16em; font-weight: 700; text-transform: uppercase; }
+  .stamp .by { font-size: 15px; letter-spacing: .06em; margin-top: 4px; font-weight: 600; }
+
+  .foot { display: flex; align-items: center; justify-content: space-between; padding: 0 0 52px; }
+  .foot .left { display: flex; align-items: center; gap: 30px; }
+  .foot a.more { color: var(--bank); font-size: 21px; font-weight: 600; text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 2px; }
+  .honest { font-size: 16px; color: var(--bank-soft); letter-spacing: .04em; border: 1px solid var(--bank-soft); padding: 6px 12px; border-radius: 2px; }
+</style>
+</head>
+<body>
+<svg id="guilloche" aria-hidden="true"></svg>
+<svg width="0" height="0" style="position:absolute">
+  <filter id="ink"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="3"/></filter>
+</svg>
+<div class="page">
+  <header>
+    <div class="mark"><b>Naanayam</b><span>நாணயம்</span></div>
+    <nav><a href="#how">How it works</a><a href="#proofs">Three proofs</a><a href="#evaluation">Evaluation</a><a class="btn" href="#demo">Open the live demo</a></nav>
+  </header>
+  <section class="hero">
+    <div class="top"><h1>Not every rupee in the passbook is a sale.</h1>
+    <p class="lede">Naanayam reads a small shop's UPI payments, keeps family money out of sales, asks in Tamil when it isn't sure, and turns the rest into proof.</p></div>
+    <div class="ledger">
+      <div class="cols"><span>15 Nov 2026</span><span>Particulars</span><span>Deposit</span></div>
+      <div class="line past"><span>18:20</span><span>UPI/CR/BALA</span><span><i class="rs"></i>905</span></div>
+      <div class="line past"><span>19:05</span><span>UPI/CR/ANBU MESS</span><span><i class="rs"></i>900</span></div>
+      <div class="line now"><span class="t">19:42</span><span class="who">UPI/CR/LAKSHMI R</span><span><i class="rs"></i>2,000</span>
+        <div class="stamp"><div class="ta">வீட்டு பணம்</div><div class="en">Family money · not a sale</div><div class="by">Murugan's answer · 19:43</div></div>
+      </div>
+    </div>
+  </section>
+  <div class="foot">
+    <div class="left"><a class="btn big" href="#demo">Open the live demo</a><a class="more" href="#day">Watch Murugan's day</a></div>
+    <span class="honest">Synthetic demo data · UPI payments only</span>
+  </div>
+</div>
+<script>
+  // Guilloche: interlaced sine bands, like security-printed passbook paper.
+  const svg = document.getElementById('guilloche');
+  const W = 1440, H = 900; svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('preserveAspectRatio', 'none');
+  const band = (y0, amp, f, n, col, w) => {
+    for (let i = 0; i < n; i++) {
+      let d = '';
+      for (let x = 0; x <= W; x += 6) {
+        const y = y0 + amp * Math.sin(x * f + i * 0.42) + amp * 0.45 * Math.sin(x * f * 2.7 - i * 0.31);
+        d += (x ? 'L' : 'M') + x + ' ' + y.toFixed(1);
+      }
+      const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      p.setAttribute('d', d); p.setAttribute('fill', 'none'); p.setAttribute('stroke', col); p.setAttribute('stroke-width', w);
+      svg.appendChild(p);
+    }
+  };
+  // Rupee sign drawn on the same dot grid as the printer face (Doto has no U+20B9).
+  const RS = ['#####', '...#.', '#####', '...#.', '###..', '..#..', '...##'];
+  const dots = RS.flatMap((r, y) => [...r].map((c, x) => c === '#' ? `<rect x="${x * 10 + 1.5}" y="${y * 10 + 1.5}" width="7" height="7"/>` : '')).join('');
+  const rsSvg = `<svg viewBox="0 0 50 70" width="100%" height="100%" fill="currentColor">${dots}</svg>`;
+  document.querySelectorAll('.rs').forEach(el => el.innerHTML = rsSvg);
+  band(250, 46, 0.006, 16, '#c9ddd0', 0.9);
+  band(780, 30, 0.009, 12, '#cfe1d5', 0.8);
+</script>
+</body>
+</html>

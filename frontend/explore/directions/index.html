@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Naanayam directions</title>
+<style>
+  :root { --bg: #f6f6f4; --ink: #161616; --muted: #555; --line: #d9d9d4; --card: #ffffff; --accent: #0f4a3a; }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 17px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; padding: 48px 16px 80px; }
+  ::selection { background: var(--accent); color: #fff; }
+  .wrap { max-width: 1360px; margin: 0 auto; }
+  h1 { font-size: 34px; line-height: 1.15; letter-spacing: -0.01em; }
+  .intro { margin-top: 12px; max-width: 72ch; color: var(--muted); }
+  .intro b { color: var(--ink); }
+  h2 { margin: 56px 0 18px; font-size: 22px; }
+  h2 span { font-weight: 400; color: var(--muted); font-size: 17px; margin-left: 8px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 28px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; }
+  .frame { position: relative; aspect-ratio: 1440 / 900; overflow: hidden; background: #ddd; border-bottom: 1px solid var(--line); }
+  .frame iframe { position: absolute; left: 0; top: 0; width: 1440px; height: 900px; border: 0; transform-origin: 0 0; pointer-events: none; }
+  .body { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .role { font-size: 14px; color: var(--muted); }
+  .name { font-size: 21px; font-weight: 700; line-height: 1.2; }
+  .idea { color: var(--ink); }
+  .risk { color: var(--muted); font-size: 15px; }
+  .open { margin-top: auto; padding-top: 8px; }
+  .open a { color: var(--accent); font-weight: 600; text-underline-offset: 4px; }
+  .note { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); max-width: 72ch; font-size: 15px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Naanayam landing page: pick a direction</h1>
+  <p class="intro">Each card is a <b>sketch of the first screen only</b> (1440 × 900), not the finished page. Light theme only. The chosen direction becomes the landing page and then the look of every app screen. Click <b>Open full size</b> and press F11 to see it the way a projector would. Send Asitha the name of the one you want and one line on why.</p>
+
+  <h2>Round 2 <span>latest hand</span></h2>
+  <div class="grid">
+    <article class="card"><div class="frame"><iframe src="sivakasi-label.html" title="Sivakasi label sketch" loading="lazy" tabindex="-1"></iframe></div>
+      <div class="body"><span class="role">Assigned by the roll</span><span class="name">Sivakasi label press</span>
+      <p class="idea">An uncut press sheet of matchbox-style labels. Uncertain payments print out of register until the merchant answers; then the colours snap into line.</p>
+      <p class="risk">Risk: many small labels can clutter; the one big label must own the screen.</p>
+      <span class="open"><a href="sivakasi-label.html" target="_blank">Open full size</a></span></div></article>
+    <article class="card"><div class="frame"><iframe src="kanchipuram-kasu.html" title="Kanchipuram kasu border sketch" loading="lazy" tabindex="-1"></iframe></div>
+      <div class="body"><span class="role">Designer's pick</span><span class="name">Kanchipuram kasu border</span>
+      <p class="idea">Silk body with a border of gold kasu (coin) motifs: one coin per payment, Lakshmi's family payment woven in green.</p>
+      <p class="risk">Risk: silk and zari can read festive or bridal rather than a ledger.</p>
+      <span class="open"><a href="kanchipuram-kasu.html" target="_blank">Open full size</a></span></div></article>
+    <article class="card"><div class="frame"><iframe src="glass-partition.html" title="Glass partition sketch" loading="lazy" tabindex="-1"></iframe></div>
+      <div class="body"><span class="role">Alternate</span><span class="name">Glass colour-field partition</span>
+      <p class="idea">A wall of black-barred glass panes: one pane, one statement; colour means what the money is (sales, expenses, family).</p>
+      <p class="risk">Risk: cool and architectural; nothing in it comes from a Chennai shop.</p>
+      <span class="open"><a href="glass-partition.html" target="_blank">Open full size</a></span></div></article>
+  </div>
+
+  <h2>Round 1 <span>still available</span></h2>
+  <div class="grid">
+    <article class="card"><div class="frame"><iframe src="passbook-ledger-line.html" title="Passbook ledger line sketch" loading="lazy" tabindex="-1"></iframe></div>
+      <div class="body"><span class="role">Round 1, assigned by the roll</span><span class="name">Passbook: the ledger line</span>
+      <p class="idea">Security-tint passbook paper. One real UPI credit line printed huge (19:42 UPI/CR/LAKSHMI R ₹2,000), then a violet stamp lands on it: வீட்டு பணம், family money, not a sale.</p>
+      <p class="risk">Risk: ruled columns can slide back into a busy spreadsheet; the giant line must stay the only loud thing.</p>
+      <span class="open"><a href="passbook-ledger-line.html" target="_blank">Open full size</a></span></div></article>
+    <article class="card"><div class="frame"><iframe src="daily-calendar.html" title="Daily calendar sketch" loading="lazy" tabindex="-1"></iframe></div>
+      <div class="body"><span class="role">Round 1, designer's pick</span><span class="name">Daily sheet calendar</span>
+      <p class="idea">The tear-off calendar from every kadai: a giant red 15, சனி, and today's recorded profit where the festival line goes.</p>
+      <p class="risk">Risk: can read as a novelty prop more than a ledger.</p>
+      <span class="open"><a href="daily-calendar.html" target="_blank">Open full size</a></span></div></article>
+    <article class="card"><div class="frame"><iframe src="cinema-hoarding.html" title="Cinema hoarding sketch" loading="lazy" tabindex="-1"></iframe></div>
+      <div class="body"><span class="role">Round 1, alternate</span><span class="name">Painted cinema hoarding</span>
+      <p class="idea">நாணயம் in outlined gold lettering at hoarding scale; the three proofs as painted vignettes.</p>
+      <p class="risk">Risk: hides how the product works; no painted portraits available.</p>
+      <span class="open"><a href="cinema-hoarding.html" target="_blank">Open full size</a></span></div></article>
+    <article class="card"><div class="frame"><iframe src="plain-fintech.html" title="Plain fintech sketch" loading="lazy" tabindex="-1"></iframe></div>
+      <div class="body"><span class="role">Always available</span><span class="name">Plain fintech page</span>
+      <p class="idea">The category standard: headline and button on the left, a phone with the Today screen on the right.</p>
+      <p class="risk">Risk: looks like every other fintech page, by design.</p>
+      <span class="open"><a href="plain-fintech.html" target="_blank">Open full size</a></span></div></article>
+  </div>
+
+  <p class="note">All figures are from Murugan's synthetic demo day (contract/fixtures). Fonts load from Google Fonts, so the sketches need internet. The older boards in frontend/explore (a.html, b.html, c.html) were rejected and are kept only for reference.</p>
+</div>
+<script>
+  // Scale each 1440 × 900 sketch to its card width.
+  const fit = () => document.querySelectorAll('.frame').forEach(f => {
+    f.querySelector('iframe').style.transform = `scale(${f.clientWidth / 1440})`;
+  });
+  addEventListener('resize', fit); fit();
+</script>
+</body>
+</html>
