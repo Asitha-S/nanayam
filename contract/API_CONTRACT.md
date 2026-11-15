@@ -634,6 +634,30 @@ Query: `start_date`, `end_date` (default: 1 Aug 2026 to today).
 ```
 (Amounts shown as 0 here only for shape.) For `MIXED_KIRANA`: `gst_treatment: "UNKNOWN"`, `flags: ["MIXED_CATEGORY_SPLIT_UNKNOWN", "CA_REVIEW_REQUIRED"]`. No estimated split figures are returned.
 
+### GET `/merchants/{merchant_id}/threshold-watch`  (added 2026-11-15)
+This financial year's **business sales** (1 April to today, `finance.summary.compute`, unchanged) against the ₹40 lakh
+GST registration threshold for goods. Total UPI collections are shown beside them, labelled, and never used for the
+limit. The backend computes every figure (percent, remaining, months left); the frontend only draws them.
+`200`
+```json
+{ "merchant_id": "M001", "as_of": "2026-11-15T12:40:00+05:30", "financial_year": "2026-27",
+  "start_date": "2026-04-01", "end_date": "2026-11-15", "fy_end_date": "2027-03-31",
+  "business_sales": { "amount_paise": 90780900, "amount_display": "₹9,07,809", "label": "Business sales this financial year" },
+  "total_collections": { "amount_paise": 97252600, "amount_display": "₹9,72,526", "label": "All UPI money received (not used for this limit)" },
+  "threshold": { "amount_paise": 400000000, "amount_display": "₹40,00,000", "label": "GST registration threshold for goods" },
+  "used_percent": 22.7, "used_percent_display": "22.7%",
+  "remaining": { "amount_paise": 309219100, "amount_display": "₹30,92,191" }, "crossed": false,
+  "days_remaining": 136, "months_remaining": 4.5, "months_remaining_display": "4.5 months",
+  "business_category": "VEGETABLES",
+  "note": { "kind": "EXEMPT", "en": "You've declared tax-exempt goods. Sellers of only exempt goods usually don't need GST registration. Confirm with a CA.",
+            "ta": "(templates/ta.json threshold_exempt)", "te": null },
+  "pending_note": null }
+```
+`note.kind` by declared category: `VEGETABLES|FRUITS|FLOWERS` → `EXEMPT`, `MIXED_KIRANA` → `MIXED`, `TEA_STALL` →
+`TAXABLE`, anything else `null` (no text). Tamil lines are `templates/ta.json` keys `threshold_exempt|mixed|taxable`
+(fixed, no LLM); `te` stays `null` until `templates/te.json` has them. `pending_note` is set while payments still wait
+for an answer (they are not counted until answered). Not tax advice.
+
 ### POST `/notices/analyse`  (multipart)
 Fields: `merchant_id`, `file` (png/jpg/pdf), optional `demo_key` (`"sample_notice_v1"` for the committed sample).
 `201`

@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from .. import errors
 from ..config import REPO_ROOT
 from ..deps import get_conn
+from ..finance import threshold
 from ..notice.analyse import analyse
 from ..notice.evidence import evidence
 from ..services import insights as svc
@@ -32,6 +33,12 @@ def evaluation():
     if not path.exists():
         raise errors.not_found("No evaluation run yet. Run python -m ml.evaluate.")
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+@router.get("/merchants/{merchant_id}/threshold-watch")
+def threshold_watch(merchant_id: str, conn: sqlite3.Connection = Depends(get_conn)):
+    """This financial year's business sales against the ₹40 lakh GST threshold for goods (read-only)."""
+    return threshold.watch(conn, merchant_id)
 
 
 @router.get("/merchants/{merchant_id}/tax-summary")

@@ -1,8 +1,11 @@
 {
-  "_note": "MINIMAL placeholder by Asitha with only the profit keys of VOICE_AND_NOTICE section 7 (Claude-drafted Tamil). Charulatha owns this file: replace it with the full reviewed ta.json.",
+  "_note": "MINIMAL placeholder by Asitha with only the profit keys of VOICE_AND_NOTICE section 7 (Claude-drafted Tamil). Charulatha owns this file: replace it with the full reviewed ta.json. threshold_* keys (GST threshold watch card, no slots) added 2026-11-15 by Asitha: Charulatha to check.",
   "profit_answer": "இன்னைக்கு கடை வியாபாரம் {sales}. செலவு {expenses}. மீதம் {profit}.",
   "profit_answer_loss": "இன்னைக்கு கடை வியாபாரம் {sales}. செலவு {expenses}. இதுவரைக்கும் நஷ்டம் {loss}.",
   "profit_family_suffix": "வீட்டு பணம் {family} இதுல சேர்க்கல.",
   "profit_pending_suffix": "இன்னும் {pending_count} பணம் கடையா வீடா-ன்னு சொல்லல.",
-  "profit_upi_only": "UPI பணம் மட்டும். கையில வாங்கின காசு இதுல இல்ல."
+  "profit_upi_only": "UPI பணம் மட்டும். கையில வாங்கின காசு இதுல இல்ல.",
+  "threshold_exempt": "வரி இல்லாத பொருள்-னு நீங்க சொல்லியிருக்கீங்க. வரி இல்லாத பொருள் மட்டும் விக்கறவங்களுக்கு பொதுவா GST பதிவு தேவையில்ல. ஒரு ஆடிட்டர் கிட்ட உறுதி பண்ணிக்கோங்க.",
+  "threshold_mixed": "வரி இருக்கற பொருளும் இல்லாத பொருளும், ரெண்டு விற்பனையும் இந்த வரம்புல சேரும். வரம்பைத் தாண்டறதுக்கு முன்னாடி ஒரு ஆடிட்டர் கிட்ட பேசுங்க.",
+  "threshold_taxable": "வரி இருக்கற விற்பனை. வரம்பைத் தாண்டறதுக்கு முன்னாடி ஒரு ஆடிட்டர் கிட்ட பேசுங்க."
 }
