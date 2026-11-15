@@ -109,8 +109,8 @@ naanayam/
 │   ├── demo/                   (committed: demo-day fixtures, sample notice)
 │   └── voice_tests/ta.jsonl, te.jsonl   (Charulatha, Nagasai Sree)
 ├── ml/                         (Asitha: train, calibrate, evaluate)
-├── frontend/                   (Asitha since 2026-11-14: landing page, P1 screens (Soundbox simulator, question card,
-│                               Talk, Today, Ledger), DESIGN.md; Nagasai Sree: every other screen, on those components)
+├── frontend/                   (Asitha since 2026-11-14: all screens built on asitha/frontend, incl. learning, notice,
+│                               passport, demo panel and the Telugu flow; Telugu UI strings to be checked by Nagasai Sree)
 ├── assets/
 │   ├── demo_audio/ta/, te/     (Charulatha, Nagasai Sree)
 │   └── notice/sample_notice.png (Charulatha)

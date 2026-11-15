@@ -1,0 +1,129 @@
+/* Naanayam design tokens. Light theme only. Colour means what the money is:
+   lime = sales / proof, violet = family money, signal = asked / needs attention, sun = expenses / the taxman. */
+:root {
+  --paper: #f8f7f0;
+  --paper-2: #eeede3;
+  --card: #fffffb;
+  --ink: #102329;
+  --ink-2: #1a333b;
+  --ink-soft: #3b565e;
+  --sky: #dcf3fc;
+  --sky-2: #bce6f7;
+  --lime: #c6f24e;
+  --lime-deep: #2f7d14;
+  --violet: #8c6cff;
+  --violet-soft: #e7e0ff;
+  --signal: #ff6a3d;
+  --signal-deep: #c9300f;
+  --sun: #ffc93a;
+  --valid: #127a46;
+
+  --line: rgba(16, 35, 41, 0.16);
+  --line-strong: rgba(16, 35, 41, 0.42);
+  --shadow: 0 24px 60px -28px rgba(16, 35, 41, 0.32);
+  --shadow-lift: 0 10px 0 -2px rgba(16, 35, 41, 0.14);
+
+  --r-xl: 36px;
+  --r-lg: 26px;
+  --r-md: 16px;
+  --r-sm: 10px;
+
+  --font-display: 'Archivo Black', 'Inter Variable', system-ui, sans-serif;
+  --font-body: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'Cascadia Mono', monospace;
+  --font-tamil: 'Noto Sans Tamil Variable', 'Noto Sans Tamil', sans-serif;
+  --font-telugu: 'Noto Sans Telugu Variable', 'Noto Sans Telugu', sans-serif;
+
+  --ticker-h: 38px;
+  --top-h: 84px;
+  --rail-w: 112px;
+  --ease: cubic-bezier(0.2, 0.85, 0.25, 1);
+}
+
+* { box-sizing: border-box; }
+html { background: var(--paper); scroll-behavior: smooth; scroll-padding-top: calc(var(--ticker-h) + var(--top-h) + 16px); }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 17px/1.5 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+h1, h2, h3, p { margin: 0; }
+a { color: inherit; }
+button { font: inherit; color: inherit; cursor: pointer; }
+::selection { background: var(--lime); color: var(--ink); }
+:focus-visible { outline: 3px solid var(--violet); outline-offset: 3px; border-radius: 6px; }
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: var(--paper-2); }
+::-webkit-scrollbar-thumb { background: var(--ink-soft); border-radius: 10px; border: 3px solid var(--paper-2); }
+html { scrollbar-color: var(--ink-soft) var(--paper-2); }
+
+/* Tamil and Telugu are never smaller than 22px (projector rule). */
+.ta, [lang='ta'] { font-family: var(--font-tamil); font-size: max(22px, 1em); line-height: 1.45; }
+.te, [lang='te'] { font-family: var(--font-telugu); font-size: max(22px, 1em); line-height: 1.45; }
+
+/* Shared atoms */
+.label {
+  font: 800 12px/1.2 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.figure { font-family: var(--font-mono); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+.money {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  text-underline-offset: 0.18em;
+  transition: text-decoration-color 0.2s var(--ease);
+}
+.money:hover { text-decoration-color: currentColor; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font: 700 12px/1.2 var(--font-mono);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.badge svg { width: 13px; height: 13px; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 22px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font: 800 15px/1 var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease), background 0.18s var(--ease);
+}
+.btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
+.btn:active { transform: translateY(1px); box-shadow: none; }
+.btn svg { width: 18px; height: 18px; }
+.btn.primary { background: var(--violet); color: #fff; border-color: var(--ink); }
+.btn.lime { background: var(--lime); }
+.btn.ink { background: var(--ink); color: var(--paper); }
+.btn.big { min-height: 64px; padding: 0 30px; font-size: 18px; }
+
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+}

@@ -1,0 +1,221 @@
+/* Talk (#/talk): a column of turns (what the merchant said -> Naanayam's card), input fixed below, side column with
+   today's open questions. Colours keep their meaning: sun = expense, lime = profit / proof, signal = asked,
+   violet = family money, sky = neutral. */
+
+.talk { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 380px); gap: 28px; align-items: start; }
+.talk .talk-main { display: grid; gap: 22px; min-width: 0; }
+.talk .talk-end { height: 1px; }
+
+/* ---- the conversation ---- */
+.talk .talk-thread { list-style: none; margin: 0; padding: 0; display: grid; gap: 26px; }
+.talk .turn { display: grid; gap: 12px; animation: talk-in 0.3s var(--ease) both; }
+.talk .reply { justify-self: start; width: min(100%, 780px); }
+@keyframes talk-in { from { opacity: 0; translate: 0 8px; } to { opacity: 1; translate: 0 0; } }
+
+.talk .said {
+  justify-self: end; display: grid; gap: 6px; justify-items: end; max-width: min(78%, 720px);
+  padding: 12px 20px 14px; border-radius: 24px 24px 6px 24px; background: var(--ink); color: var(--paper);
+}
+.talk .said p { font-size: 21px; line-height: 1.4; text-align: right; overflow-wrap: anywhere; }
+.talk .said p[lang] { font-size: 24px; }
+.talk .said-src { font: 800 11px/1.2 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--lime); }
+.talk .said .badge { color: var(--sun); }
+.talk .said-wait { color: rgba(248, 247, 240, 0.78); font-style: italic; }
+.talk .said-wait [lang] { font-style: normal; }
+
+/* ---- Naanayam's cards ---- */
+.talk .tcard {
+  display: grid; gap: 16px; padding: 0 26px 24px; border: 1.5px solid var(--ink); border-radius: var(--r-lg);
+  background: var(--card); box-shadow: 0 22px 40px -32px rgba(16, 35, 41, 0.7); overflow: hidden;
+}
+.talk .tcard.is-pending {
+  display: inline-flex; align-items: center; gap: 12px; width: auto; padding: 14px 22px; border-radius: 999px;
+  font: 800 13px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft);
+  box-shadow: none; border-color: var(--line-strong);
+}
+.talk .spin { width: 20px; height: 20px; animation: talk-spin 0.9s linear infinite; }
+@keyframes talk-spin { to { rotate: 360deg; } }
+.talk .tcard.is-done { opacity: 0.62; box-shadow: none; }
+.talk .tcard.is-done .tcard-head { filter: saturate(0.4); }
+
+.talk .tcard-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin: 0 -26px; padding: 12px 26px; border-bottom: 1.5px solid var(--ink); background: var(--sky);
+}
+.talk .tcard-head .label { color: var(--ink); }
+.talk .tcard-head.sun { background: var(--sun); }
+.talk .tcard-head.lime { background: var(--lime); }
+.talk .tcard-head.signal { background: var(--signal); }
+.talk .tcard-head.violet { background: var(--violet); color: #fff; }
+.talk .tcard-head.violet .label { color: #fff; }
+.talk .tcard-head .badge { background: var(--card); color: var(--ink); border-color: var(--ink); }
+.talk .tcard-date { font: 800 13px/1.2 var(--font-mono); letter-spacing: 0.04em; }
+.talk .tcard-date.is-other { padding: 3px 10px; border-radius: 999px; background: var(--ink); color: var(--sun); }
+
+.talk .tcard-say { font-size: 22px; line-height: 1.45; font-weight: 600; }
+.talk .tcard-say[lang] { font-size: 26px; }
+.talk .tcard-say .money { font-size: inherit; }
+.talk .tcard-en { font-size: 16px; color: var(--ink-soft); }
+.talk .tcard-en b { color: var(--ink); }
+.talk .tcard-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.talk .tcard .kv dd { font-size: 16px; }
+.talk .tcard .kv dd [lang] { font-size: 22px; }
+.talk .tcard .error-banner { margin: 0; }
+
+/* big tap answers (the tap path for every voice path) */
+.talk .bigtaps { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.talk .bigtaps.n3 { grid-template-columns: 1.3fr 1fr 1fr; }
+.talk .bigtap {
+  display: grid; gap: 4px; justify-items: center; align-content: center; min-height: 92px; padding: 14px 10px;
+  border: 1.5px solid var(--ink); border-radius: var(--r-md); background: var(--paper); color: var(--ink);
+  transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease);
+}
+.talk .bigtap span { font-size: 22px; font-weight: 700; line-height: 1.3; text-align: center; }
+.talk .bigtap span[lang] { font-size: 25px; }
+.talk .bigtap small { font: 800 11.5px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+.talk .bigtap:hover:not(:disabled) { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
+.talk .bigtap:active:not(:disabled) { transform: translateY(1px); box-shadow: none; }
+.talk .bigtap:disabled { opacity: 0.45; cursor: default; }
+.talk .bigtap.sun { background: var(--sun); }
+.talk .bigtap.lime { background: var(--lime); }
+.talk .bigtap.violet { background: var(--violet-soft); }
+.talk .bigtap.ink { background: var(--ink); color: var(--paper); }
+.talk .bigtap.ink small { color: var(--lime); }
+.talk .bigtap.muted { background: var(--paper-2); }
+
+/* expense card */
+.talk .exp-main { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 26px; padding-top: 4px; }
+.talk .tcard-amount { font-size: clamp(56px, 5vw, 76px); line-height: 0.95; letter-spacing: -0.05em; text-decoration-thickness: 4px; }
+.talk .tcard-amount.typed { font-family: var(--font-mono); font-weight: 800; }
+.talk .tcard-amount.typed small { font-size: 15px; letter-spacing: 0.02em; color: var(--ink-soft); }
+.talk .exp-what { display: grid; gap: 4px; padding-bottom: 4px; }
+.talk .catword { display: inline-flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.talk .catword [lang] { font-size: 24px; font-weight: 700; }
+.talk .catword small { font: 800 11.5px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+.talk .exp-desc { font-size: 17px; color: var(--ink-2); }
+.talk .exp-confirm { display: grid; gap: 10px; justify-items: start; padding: 14px 18px; border-radius: var(--r-md); background: color-mix(in srgb, var(--sun) 22%, var(--card)); }
+.talk .small-btn { min-height: 40px; padding: 0 16px; font-size: 13px; }
+.talk .exp-large { padding: 10px 16px; border-radius: var(--r-sm); background: var(--sun); border: 1.5px solid var(--ink); font-weight: 700; }
+.talk .exp-cats { display: grid; gap: 10px; }
+.talk .catchips { display: flex; flex-wrap: wrap; gap: 8px; }
+.talk .catchip {
+  display: inline-grid; justify-items: center; gap: 2px; min-height: 58px; padding: 6px 14px; border: 1.5px solid var(--ink);
+  border-radius: var(--r-sm); background: var(--card);
+}
+.talk .catchip [lang] { font-size: 22px; font-weight: 600; line-height: 1.2; }
+.talk .catchip small { font: 800 10px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+.talk .catchip[aria-checked='true'] { background: var(--sun); box-shadow: inset 0 0 0 2px var(--ink); }
+.talk .catchip:disabled { opacity: 0.5; cursor: default; }
+.talk .exp-form { display: grid; gap: 16px; }
+.talk .exp-form .field input { font-size: 22px; }
+.talk .exp-form .note .money { font-size: inherit; }
+.talk .void-ask { display: grid; gap: 10px; }
+
+/* profit card */
+.talk .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; margin: 0; border: 1.5px solid var(--ink); border-radius: var(--r-md); overflow: hidden; }
+.talk .facts > div { display: grid; gap: 4px; align-content: space-between; padding: 14px 16px; border-right: 1px solid var(--line); background: var(--card); }
+.talk .facts > div:last-child { border-right: 0; }
+.talk .facts > div.is-key { background: var(--lime); }
+.talk .facts dt { font: 800 11px/1.25 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+.talk .facts dd { margin: 0; font-size: 28px; line-height: 1.1; }
+.talk .facts dd.figure { font-size: 22px; }
+.talk .numcheck { display: flex; gap: 10px; align-items: start; font-size: 15.5px; }
+.talk .numcheck svg { flex: none; width: 20px; height: 20px; margin-top: 2px; }
+.talk .numcheck.is-ok svg { color: var(--valid); }
+.talk .numcheck.is-bad { color: var(--signal-deep); }
+.talk .scope { display: flex; gap: 10px; align-items: start; padding: 12px 16px; border-radius: var(--r-sm); background: var(--ink); color: var(--paper); font-size: 15px; }
+.talk .scope svg { flex: none; width: 18px; height: 18px; margin-top: 2px; color: var(--lime); }
+.talk .spoken { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.talk .spoken audio { display: none; }
+.talk .spoken .btn[aria-pressed='true'] { background: var(--lime); }
+.talk .spoken-none { font-style: italic; }
+
+/* question card */
+.talk .q-who { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; padding-top: 4px; }
+.talk .q-who b { display: block; font-size: 20px; }
+.talk .q-who small { font-size: 14.5px; color: var(--ink-soft); }
+.talk .q-avatar { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--violet); color: #fff; font: 400 22px/1 var(--font-display); border: 1.5px solid var(--ink); }
+.talk .q-amt { font-size: 40px; letter-spacing: -0.04em; }
+.talk .q-note { padding: 10px 16px; border-left: 5px solid var(--signal); background: color-mix(in srgb, var(--signal) 12%, var(--card)); font-weight: 600; }
+.talk .q-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 12px; border-top: 1.5px dashed var(--line-strong); }
+.talk .q-foot .linkish { font: 800 13px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ---- the input, fixed below the conversation ---- */
+.talk .talk-composer {
+  position: sticky; bottom: 14px; z-index: 6; display: grid; gap: 12px; padding: 16px 18px;
+  border: 1.5px solid var(--ink); border-radius: var(--r-lg); background: var(--card);
+  box-shadow: 0 -18px 40px -10px var(--paper), var(--shadow);
+}
+.talk .talk-composer.is-bound { border-color: var(--signal-deep); box-shadow: 0 -18px 40px -10px var(--paper), 0 0 0 3px color-mix(in srgb, var(--signal) 45%, transparent), var(--shadow); }
+.talk .talk-bound { display: flex; align-items: center; gap: 10px; font-size: 16px; }
+.talk .talk-bound svg { flex: none; width: 20px; height: 20px; color: var(--signal-deep); }
+.talk .talk-bound .money { font-size: 16px; }
+.talk .talk-inputrow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: stretch; }
+.talk .talk-inputrow textarea {
+  min-height: 76px; padding: 12px 16px; resize: none; border: 1.5px solid var(--ink); border-radius: var(--r-md);
+  background: var(--paper); color: var(--ink); font: 500 22px/1.4 var(--font-body);
+}
+.talk .talk-inputrow textarea[lang='ta'], .talk .talk-inputrow textarea[lang='te'] { font-size: 24px; }
+.talk .talk-inputrow textarea::placeholder { color: var(--ink-soft); opacity: 0.75; font-size: 20px; }
+.talk .talk-inputrow textarea:focus-visible { outline: 3px solid var(--violet); outline-offset: 2px; background: var(--card); }
+.talk .talk-send { min-height: 76px; }
+.talk .talk-mic {
+  display: grid; justify-items: center; align-content: center; gap: 4px; min-width: 104px; min-height: 76px; padding: 8px 14px;
+  border: 1.5px solid var(--ink); border-radius: var(--r-md); background: var(--violet); color: #fff;
+  font: 800 12.5px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase;
+  transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease);
+}
+.talk .talk-mic svg { width: 26px; height: 26px; }
+.talk .talk-mic:hover:not(:disabled) { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
+.talk .talk-mic:disabled { opacity: 0.5; cursor: default; }
+.talk .talk-mic.is-on { background: var(--signal); color: var(--ink); animation: talk-pulse 1.2s ease-in-out infinite; }
+@keyframes talk-pulse { 50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--signal) 30%, transparent); } }
+.talk .talk-tries { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.talk .talk-tries .label { margin-right: 4px; }
+.talk .try {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 14px; border: 1px solid var(--line-strong);
+  border-radius: 999px; background: var(--paper); color: var(--ink); text-align: left;
+}
+.talk .try [lang] { font-size: 22px; line-height: 1.3; }
+.talk .try:hover:not(:disabled) { border-color: var(--ink); background: var(--sky); }
+.talk .try:disabled { opacity: 0.5; cursor: default; }
+.talk .try.clip { border-color: var(--ink); background: color-mix(in srgb, var(--sun) 35%, var(--paper)); }
+
+/* ---- side column ---- */
+.talk .talk-side { position: sticky; top: calc(var(--ticker-h) + var(--top-h) + 20px); display: grid; gap: 16px; }
+.talk .talk-side .panel { display: grid; gap: 12px; padding: 22px 24px; border-radius: var(--r-lg); }
+.talk .talk-waiting ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.talk .talk-waiting li {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 12px; padding: 12px 14px;
+  border: 1.5px solid var(--ink); border-radius: var(--r-md); background: var(--card);
+}
+.talk .talk-waiting li b { display: block; font-size: 17px; }
+.talk .talk-waiting li small { font-size: 13.5px; color: var(--ink-soft); }
+.talk .talk-waiting li .money { font-size: 24px; }
+.talk .talk-waiting li .btn { grid-column: 1 / -1; justify-content: center; min-height: 44px; font-size: 13px; }
+.talk .talk-waiting li .btn[aria-pressed='true'] { background: var(--ink); color: var(--paper); opacity: 1; }
+.talk .talk-heard dl { display: grid; gap: 4px 0; margin: 0; }
+.talk .talk-heard dt { margin-top: 8px; font: 800 12px/1.2 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.talk .talk-heard dt:first-child { margin-top: 0; }
+.talk .talk-heard dd { margin: 0; font-size: 15px; color: var(--ink-soft); }
+.talk .talk-heard .note b { color: var(--ink); }
+
+@media (max-width: 1180px) {
+  .talk { grid-template-columns: 1fr; }
+  .talk .talk-side { position: static; grid-row: 1; }
+  .talk .talk-heard { display: none; }
+}
+@media (max-width: 760px) {
+  .talk .said { max-width: 92%; }
+  .talk .tcard { padding: 0 18px 20px; }
+  .talk .tcard-head { margin: 0 -18px; padding: 10px 18px; }
+  .talk .bigtaps, .talk .bigtaps.n3 { grid-template-columns: 1fr; }
+  .talk .talk-inputrow { grid-template-columns: 1fr 1fr; }
+  .talk .talk-inputrow textarea { grid-column: 1 / -1; }
+  .talk .q-who { grid-template-columns: auto 1fr; }
+  .talk .q-amt { grid-column: 1 / -1; }
+  .talk .talk-composer { bottom: 8px; padding: 10px; gap: 8px; }
+  .talk .talk-inputrow textarea { min-height: 60px; }
+  .talk .talk-send, .talk .talk-mic { min-height: 52px; }
+  .talk .talk-tries { display: none; }
+}
