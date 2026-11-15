@@ -43,7 +43,8 @@ def test_morning_loss_and_pending_wording(real):
 
 
 def test_other_languages_dates_and_intents_are_rejected(real):
-    assert real.post("/api/voice/answer", json=BODY | {"language": "te"}).status_code == 422  # no te.json yet
+    te_ready = (voice_answer.TEMPLATES_DIR / "te.json").exists()
+    assert real.post("/api/voice/answer", json=BODY | {"language": "te"}).status_code == (200 if te_ready else 422)
     assert real.post("/api/voice/answer", json=BODY | {"date": "2026-11-14"}).status_code == 422
     assert real.post("/api/voice/answer", json=BODY | {"intent": "LOG_EXPENSE"}).status_code == 422
     assert real.post("/api/voice/answer", json=BODY | {"merchant_id": "M999"}).status_code == 422

@@ -9,6 +9,7 @@ from ..classifier.decide import decide
 from ..feedback.memory import payer_counts
 from ..ledger import writer as ledger
 from ..questions_text import question_text, question_text_en
+from ..sarvam import client as sarvam
 from ..schemas import ConfirmIn, PaymentIn, RefundIn, ReversalIn
 
 
@@ -171,8 +172,10 @@ def list_questions(conn: sqlite3.Connection, merchant_id: str, *, status: str, d
         sql += " AND substr(p.timestamp, 1, 10) = ?"
         args.append(date)
     sql += " ORDER BY p.timestamp DESC, q.question_id DESC"
-    items = [
-        {
+    items = []
+    for r in conn.execute(sql, args).fetchall():
+        text = question_text(r["payer_name"], r["amount_paise"], lang)
+        items.append({
             "question_id": r["question_id"],
             "transaction_id": r["transaction_id"],
             "payer_name": r["payer_name"],
@@ -181,14 +184,22 @@ def list_questions(conn: sqlite3.Connection, merchant_id: str, *, status: str, d
             "timestamp": r["timestamp"],
             "suggested_classification": r["suggested_classification"],
             "confidence": r["confidence"],
-            "question_text": question_text(r["payer_name"], r["amount_paise"], lang),
+            "question_text": text,
             "question_text_en": question_text_en(r["payer_name"], r["amount_paise"]),
-            "question_audio_id": None,  # TTS wiring comes with the voice module
+            "question_audio_id": _question_audio(text, lang),
             "status": r["status"],
-        }
-        for r in conn.execute(sql, args)
-    ]
+        })
     return {"merchant_id": merchant_id, "items": items}
+
+
+def _question_audio(text: str, lang: str) -> str | None:
+    """Speech for the question card through the Sarvam client (cached per DEMO_MODE). None when speech is not
+    available (cache miss in cache_only, Sarvam down): the contract lets question_audio_id be null and the card
+    falls back to text."""
+    try:
+        return sarvam.tts(text, lang).audio_id
+    except errors.ApiError:
+        return None
 
 
 # --- confirm (correction workflow, contract section 4) -------------------------------
