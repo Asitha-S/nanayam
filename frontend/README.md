@@ -1,47 +1,22 @@
 # Frontend: start here
 
-Status on 14 Nov 2026: we are choosing the visual direction for the landing page. Nothing in React exists yet; it is built once a direction is picked.
+Status on 14 Nov 2026: the visual direction is decided. We are building from a reference UI that Asitha chose (light theme). Nothing in React exists yet.
 
-## 1. Look at the directions and pick one
+## 1. The design reference
 
-1. Get the branch:
+- The UI follows one existing light-theme interface, used as the reference for layout, type and feel. Asitha will add screenshots of it to this folder; until they are in, ask her to show you the reference.
+- The direction sketches in `frontend/explore/directions/` are **no longer being picked from**. They stay only as a record of what was explored.
+- Get the branch to see everything:
 
-   ```bash
-   git fetch origin
-   git checkout asitha/frontend
-   git pull
-   ```
+  ```bash
+  git fetch origin
+  git checkout asitha/frontend
+  git pull
+  ```
 
-2. Open `frontend/explore/directions/index.html` in Chrome (double-click it in the file explorer). It needs internet for the fonts.
+## 2. What happens next
 
-   If double-clicking shows blank cards, serve the folder instead:
-
-   ```bash
-   cd frontend/explore/directions
-   python -m http.server 5500
-   ```
-
-   and open http://localhost:5500
-
-3. Each card is a sketch of the **first screen only** (1440 × 900), not the finished page. Click **Open full size**, then press F11 to see it the way the projector will.
-
-4. Send Asitha the name of the direction you want (for example "Passbook: the ledger line" or "Sivakasi label press") and one line on what you like or dislike. Mixing is fine to suggest ("Passbook, but with the Sivakasi colours"); she decides.
-
-The seven directions:
-
-| Round | Name | Idea in one line |
-|---|---|---|
-| 2 | Sivakasi label press | Matchbox-label press sheet; uncertain payments print out of register until answered |
-| 2 | Kanchipuram kasu border | Silk border of gold coin motifs, one per payment; family money woven in green |
-| 2 | Glass colour-field partition | Black-barred glass panes; colour means sales, expenses or family |
-| 1 | Passbook: the ledger line | One UPI credit line printed huge, stamped வீட்டு பணம் (family money, not a sale) |
-| 1 | Daily sheet calendar | The kadai tear-off calendar with today's profit on the sheet |
-| 1 | Painted cinema hoarding | நாணயம் in billboard lettering, three proofs as vignettes |
-| 1 | Plain fintech page | The safe standard: headline left, phone right |
-
-## 2. What happens after the pick
-
-1. Asitha builds the landing page and the P1 screens (Soundbox simulator, question card, Talk, Today, Ledger) in React (Vite) in this folder, on the chosen direction.
+1. Asitha builds the landing page and the P1 screens (Soundbox simulator, question card, Talk, Today, Ledger) in React (Vite) in this folder, following the reference.
 2. The colours, fonts, spacing and components are written down in `frontend/DESIGN.md`. Every later screen follows it.
 3. Nagasai builds the remaining screens on those same components: learning / evaluation, notice mode, credit passport, the Telugu flow.
 4. Run steps for the React app (`npm install`, `npm run dev`, `VITE_API_BASE`) are added to this README when the app exists.
@@ -59,5 +34,5 @@ Product facts the design must keep are in `frontend/PRODUCT.md`.
 
 ## Notes
 
-- The older boards in `frontend/explore` (`a.html`, `b.html`, `c.html`) were rejected and are kept only for reference.
-- `frontend/.impeccable/` holds working files from the Impeccable design tool. Its live decision page runs only on Asitha's laptop; you don't need it, the gallery above shows the same directions.
+- Everything in `frontend/explore` (the `a.html` / `b.html` / `c.html` boards and the `directions/` gallery) is earlier exploration, kept only as a record. Don't build from it.
+- `frontend/.impeccable/` holds local working files from the Impeccable design tool; you don't need them.
