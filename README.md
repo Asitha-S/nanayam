@@ -20,6 +20,8 @@ Plan and checkpoints: [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md). Contract change 
 
 **Still fixture stubs** (return `contract/fixtures/`, always M001-shaped): refund, reversal, classify preview, expense void, tamper, merchants, voice, learning, evaluation, tax summary, notices, passport, export.
 
+`GET /evaluation` serves `data/eval/latest.json` from `python -m ml.evaluate` (conditions A–E, never hand-edited).
+
 `/demo/reset` restores the committed `data/demo/seed.db`. Release gate (DATA §3.6): `python -m data.generator.run --seed 42`, `python -m ml.train`, `python -m data.seed_demo`, `pytest backend/tests/test_demo_day.py`; commit `seed.db`, `seed_meta.json` and `ml/artifacts/` together.
 
 ## Setup

@@ -195,7 +195,7 @@ Spoken Tamil answer at the end must contain exactly the numbers 4,820 / 3,100 / 
 
 After the answer with `remember_payer: true`: `POST /classify/preview` for P90001, ₹2,000, P2P at 20:30 returns `FAMILY`, `AUTO_CLASSIFY`, source `MERCHANT_CONFIG`, `confidence: null`. This is the "it remembers your instruction" moment. We never call it "the model became 99% sure". The Learning screen shows "Lakshmi: always family (your instruction) · Change".
 
-Without `remember_payer` (also tested): preview returns `ASK_MERCHANT` with a higher confidence than the first time (payer memory moves it toward FAMILY but one answer is not enough to stop asking). This is intentional and is what we say if asked.
+Without `remember_payer` (also tested): preview returns a **higher confidence than at the first payment, with source `PAYER_MEMORY`** (payer memory moves it toward FAMILY). Whether that next payment is asked or decided automatically depends on the model's score; both are correct. (An earlier version said one answer is never enough; that assumed q = 0.71.)
 
 > If the trained model ever gives a demo sale `ASK`, the test fails. Do not hard-code outcomes and do not tune the model on the demo day. Investigate the feature or generator bug. If it is a genuinely ambiguous payment, replace that scripted payment with a different realistic one and record it in CHANGES.md.
 
@@ -278,13 +278,14 @@ Evaluation categories keep the original 12/10/6/6/6 proportions within each grou
 
 | role | label | count per merchant | behaviour |
 |---|---|---|---|
-| regular customer | SALE | pool of 300 | Zipf repeat (s=1.1); 85% P2M, 15% P2P; 97% PERSONAL; amount from category distribution; 60% rounded to ₹5 |
+| regular customer | SALE | pool of 300 | Zipf repeat (s=1.1); 85% P2M, 15% P2P; 97% PERSONAL; amount from category distribution; 60% rounded to ₹5. **3% of their payments are P2P with a round amount (₹500–₹2,000, rounded to ₹100): paying for a bigger order** |
 | walk-in | SALE | new each time, 35% of customer txns | as above |
 | business buyer | SALE | 0–3 | every 1–3 days; ₹600–₹3,000; 90% P2M; 70% BUSINESS |
 | big one-off order | SALE | ~1 per 14 days | new payer; ₹2,000–₹8,000; 50% P2P; 70% round to ₹500. **Hard negatives: look like family money.** |
-| family | FAMILY | 1–4 | P2P 95%; PERSONAL; amounts from {500, 1000, 1500, 2000, 3000, 5000}; every 5–30 days; 70% after 18:00 |
-| friend / loan repayment | FAMILY | 0–2 | P2P; round; 2–4 times over the period |
+| family | FAMILY | 1–4 | PERSONAL; **85% P2P, 15% P2M (the relative scans the shop QR)**; amounts from {500, 1000, 1500, 2000, 3000, 5000}, **25% non-round instead (multiples of ₹50 that are not multiples of ₹100, ₹500–₹5,000, e.g. ₹750, ₹1,250, ₹2,350)**; every 5–30 days; **65% after 18:00, 35% during shop hours before 18:00**. (Karthik, M001, stays as in 3.2.) |
+| friend / loan repayment | FAMILY | 0–2 | P2P; round, **30% non-round (as for family)**; 2–4 times over the period |
 | mixed relative | 30% SALE / 70% FAMILY | 1 in 3 merchants | SALE ones are non-round P2M, FAMILY ones round P2P |
+| **credit-settlement customer** | **SALE** | **3–8** | **A regular who settles a tab weekly (every 6–8 days) or monthly (every 28–32 days) by P2P; round ₹500–₹3,000 (rounded to ₹100); 70% after 18:00. Hard negatives: look like family money.** |
 
 Overall label mix targets about **0.5% FAMILY by count** (the role behaviour above gives roughly one family transfer a week per merchant). FAMILY is a much larger share **by value**, because family transfers are large. The generator prints and saves both, overall and per split (demo, train+calibration, test merchants, test set), in `data/generated/label_mix.json`; `seed_demo` copies them into `seed_meta.json` and the evaluation into `latest.json` as `label_mix.count_share` and `label_mix.value_share` (value share = sum of FAMILY amounts / sum of all amounts). It also prints the number of FAMILY payments in the test set (target ≥ 500) and per-role counts; check them.
 
@@ -574,7 +575,7 @@ Every condition starts test merchants with empty memory and no configured family
 | confusion_matrix_auto | AUTO decisions only |
 | calibration | ECE + 10 bins of q_model on test |
 
-**Family-specific metrics are reported as counts with their denominators, not only rates**, because the FAMILY class is small: e.g. `"family_recall_final": {"count": 503, "of": 512, "rate": 0.9824}` and `"silent_family_errors": {"count": 9, "of": 31200}` (denominator = true SALE AUTO decisions). This applies to family_recall_final, silent_family_errors, silent_sale_errors and config_errors. The screen shows "9 of 31,200", never a bare rate.
+**Family-specific metrics are reported as counts with their denominators, not only rates**, because the FAMILY class is small: e.g. `"family_recall_final": {"count": 503, "of": 512, "rate": 0.9824}` and `"silent_family_errors": {"count": 6, "of": 152525}`. Denominators: family_recall_final and silent_sale_errors = all true FAMILY payments; silent_family_errors = all true SALE payments; config_errors = all MERCHANT_CONFIG decisions. This applies to family_recall_final, silent_family_errors, silent_sale_errors and config_errors. The screen shows "9 of 31,200", never a bare rate.
 
 Also: label mix (`label_mix.count_share`, `label_mix.value_share`), number of test payments, answer error rate.
 

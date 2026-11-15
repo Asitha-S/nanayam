@@ -85,30 +85,32 @@ def test_m001_demo_day_rows_1_to_4(demo):
 
 
 def _run_m001_with(demo, remember):
+    """Run M001 to payment 15, answer it, then decide a hypothetical next Lakshmi payment (preview)."""
     script = json.loads(json.dumps(M001))
     script["answer"]["remember_payer"] = remember
     ask = run_payments(demo, script, 15)[14]
     assert answer(demo, script, ask).status_code == 201
     conn = db_conn()
     try:
-        return decide(conn, merchant_id="M001", payer_id="P90001", payer_vpa_kind="PERSONAL", amount_paise=200000,
-                      payment_type="P2P", timestamp="2026-11-15T20:30:00+05:30")
+        d = decide(conn, merchant_id="M001", payer_id="P90001", payer_vpa_kind="PERSONAL", amount_paise=200000,
+                   payment_type="P2P", timestamp="2026-11-15T20:30:00+05:30")
     finally:
         conn.close()
+    return ask, d
 
 
 def test_after_remember_next_lakshmi_payment_is_merchant_config(demo):
-    d = _run_m001_with(demo, remember=True)
+    _, d = _run_m001_with(demo, remember=True)
     assert (d.suggested, d.action, d.source, d.confidence, d.confidence_kind) == (
         "FAMILY", "AUTO_CLASSIFY", "MERCHANT_CONFIG", None, "NONE")
 
 
-@pytest.mark.xfail(strict=True, reason="OPEN DECISION 2026-11-14: synthetic classes are near-perfectly separable, "
-                   "the isotonic calibrator outputs only 0/1, so one answer already makes p = 1 (AUTO). "
-                   "DATA 3.3 expects ASK with higher confidence. Waiting on generator/calibration decision.")
-def test_without_remember_next_lakshmi_payment_still_asks(demo):
-    d = _run_m001_with(demo, remember=False)
-    assert d.action == "ASK_MERCHANT" and d.suggested == "FAMILY" and d.source == "PAYER_MEMORY"
+def test_without_remember_payer_memory_raises_confidence(demo):
+    """DATA 3.3: higher confidence than at the first payment, source PAYER_MEMORY. Asked or automatic
+    depends on the model's score; both are correct."""
+    first, d = _run_m001_with(demo, remember=False)
+    assert d.suggested == "FAMILY" and d.source == "PAYER_MEMORY"
+    assert d.confidence > first["confidence"]
 
 
 def test_m002_demo_day(demo):

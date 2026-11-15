@@ -215,14 +215,18 @@ def _customers(ctx: _Ctx, scale: float, pool: list[str]) -> None:
         p2m = rng.random(n) < P.CUSTOMER_P2M
         amounts = customer_rupees(rng, cat, n)
         secs = shop_seconds(rng, n)
+        big = rng.random(n) < P.REGULAR_BIG_ORDER_SHARE
         for i in range(n):
+            ptype, rupees = ("P2M" if p2m[i] else "P2P"), int(amounts[i])
             if walk[i]:
                 kind = "PERSONAL" if rng.random() < P.CUSTOMER_PERSONAL else "BUSINESS"
                 pid = ctx.payer(ctx.ids.take("customer"), person_name(rng), kind)
                 role = "walk_in"
             else:
                 pid, role = pool[picks[i]], "regular_customer"
-            ctx.pay(pid, at(day, secs[i]), amounts[i], "P2M" if p2m[i] else "P2P", "SALE", role)
+                if big[i]:  # paying for a bigger order by P2P, round amount
+                    ptype, rupees = "P2P", int(round(rng.uniform(*P.REGULAR_BIG_ORDER_AMOUNT) / 100) * 100)
+            ctx.pay(pid, at(day, secs[i]), rupees, ptype, "SALE", role)
 
 
 def _regular_pool(ctx: _Ctx) -> list[str]:
@@ -267,12 +271,20 @@ def _family_time(rng, day: date) -> datetime:
     return at(day, window_seconds(rng, 1, time(8, 0), time(18, 0))[0])
 
 
-def _family(ctx: _Ctx, pid: str, amounts=P.FAMILY_AMOUNTS, gap=P.FAMILY_GAP_DAYS, p2p=P.FAMILY_P2P) -> None:
+def non_round_rupees(rng) -> int:
+    """A multiple of ₹50 that is not a multiple of ₹100, e.g. 750, 1250, 2350."""
+    lo, hi = P.NON_ROUND_RANGE
+    return int(rng.integers(lo // 100, hi // 100)) * 100 + 50
+
+
+def _family(ctx: _Ctx, pid: str, amounts=P.FAMILY_AMOUNTS, gap=P.FAMILY_GAP_DAYS, p2p=P.FAMILY_P2P,
+            non_round=P.FAMILY_NON_ROUND) -> None:
     rng = ctx.rng
     d = int(rng.integers(0, gap[1]))
     while d < len(DAYS):
         ptype = "P2P" if rng.random() < p2p else "P2M"
-        ctx.pay(pid, _family_time(rng, DAYS[d]), int(rng.choice(amounts)), ptype, "FAMILY", "family")
+        rupees = non_round_rupees(rng) if rng.random() < non_round else int(rng.choice(amounts))
+        ctx.pay(pid, _family_time(rng, DAYS[d]), rupees, ptype, "FAMILY", "family")
         d += int(rng.integers(gap[0], gap[1] + 1))
 
 
@@ -281,7 +293,8 @@ def _friend(ctx: _Ctx, pid: str) -> None:
     k = int(rng.integers(P.FRIEND_TIMES[0], P.FRIEND_TIMES[1] + 1))
     for d in sorted(rng.choice(len(DAYS), size=k, replace=False)):
         ts = at(DAYS[d], window_seconds(rng, 1, time(8, 0), P.SHOP_CLOSE)[0])
-        ctx.pay(pid, ts, int(rng.choice(P.FRIEND_AMOUNTS)), "P2P", "FAMILY", "friend_loan")
+        rupees = non_round_rupees(rng) if rng.random() < P.FRIEND_NON_ROUND else int(rng.choice(P.FRIEND_AMOUNTS))
+        ctx.pay(pid, ts, rupees, "P2P", "FAMILY", "friend_loan")
 
 
 def _mixed(ctx: _Ctx, pid: str) -> None:
@@ -296,6 +309,21 @@ def _mixed(ctx: _Ctx, pid: str) -> None:
         else:
             ctx.pay(pid, _family_time(rng, DAYS[d]), int(rng.choice(P.FAMILY_AMOUNTS)), "P2P", "FAMILY", "mixed_relative")
         d += int(rng.integers(P.MIXED_GAP_DAYS[0], P.MIXED_GAP_DAYS[1] + 1))
+
+
+def _credit_settlement(ctx: _Ctx, pid: str) -> None:
+    """A regular who settles a tab weekly or monthly by P2P, round amount, mostly in the evening (SALE)."""
+    rng = ctx.rng
+    gap = P.CREDIT_GAP_DAYS["weekly" if rng.random() < 0.5 else "monthly"]
+    d = int(rng.integers(0, gap[1]))
+    while d < len(DAYS):
+        rupees = int(round(rng.uniform(*P.CREDIT_AMOUNT) / 100) * 100)
+        if rng.random() < P.CREDIT_EVENING:
+            ts = at(DAYS[d], window_seconds(rng, 1, time(18, 0), P.SHOP_CLOSE)[0])
+        else:
+            ts = at(DAYS[d], window_seconds(rng, 1, P.SHOP_OPEN, time(18, 0))[0])
+        ctx.pay(pid, ts, rupees, "P2P", "SALE", "credit_settlement")
+        d += int(rng.integers(gap[0], gap[1] + 1))
 
 
 def _new_person(ctx: _Ctx, kind_label: str) -> str:
@@ -317,7 +345,8 @@ def _merchant_payments(ctx: _Ctx, scale: float) -> list[str]:
 
     if mid == "M001":
         _business_buyer(ctx, ctx.payer("P20001", *NAMED_PAYERS["P20001"]), amount=(600, 1500), p2m=1.0)
-        _family(ctx, ctx.payer("P90002", *NAMED_PAYERS["P90002"]), amounts=[1000, 1500, 2000, 3000], gap=(5, 9), p2p=1.0)
+        _family(ctx, ctx.payer("P90002", *NAMED_PAYERS["P90002"]), amounts=[1000, 1500, 2000, 3000], gap=(5, 9), p2p=1.0,
+                non_round=0.0)  # Karthik as in DATA 3.2
         ctx.payer("P90003", *NAMED_PAYERS["P90003"])
         for day, t, paise, ptype, label in SELVI_SCHEDULE:
             ctx.pay("P90003", datetime.combine(day, t, tzinfo=IST), paise, ptype, label, "mixed_relative", paise=True)
@@ -342,6 +371,8 @@ def _merchant_payments(ctx: _Ctx, scale: float) -> list[str]:
         _friend(ctx, _new_person(ctx, "family"))
     if has_mixed:
         _mixed(ctx, _new_person(ctx, "family"))
+    for _ in range(int(rng.integers(P.CREDIT_COUNT[0], P.CREDIT_COUNT[1] + 1))):
+        _credit_settlement(ctx, _new_person(ctx, "customer"))
     return pool
 
 

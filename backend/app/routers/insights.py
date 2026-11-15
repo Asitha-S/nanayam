@@ -2,11 +2,13 @@
 
 Notice extraction/evidence logic is Charulatha's backend/app/notice/ module.
 """
+import json
 from datetime import date
 
 from fastapi import APIRouter, File, Form, Query, UploadFile
 
 from .. import errors
+from ..config import REPO_ROOT
 from ..stubs import fixture, require_merchant, require_merchant_422
 
 router = APIRouter(tags=["insights"])
@@ -20,7 +22,11 @@ def learning(merchant_id: str):
 
 @router.get("/evaluation")
 def evaluation():
-    return fixture("evaluation")
+    """REAL: the latest run file written by python -m ml.evaluate (never hand-edited)."""
+    path = REPO_ROOT / "data" / "eval" / "latest.json"
+    if not path.exists():
+        raise errors.not_found("No evaluation run yet. Run python -m ml.evaluate.")
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 @router.get("/merchants/{merchant_id}/tax-summary")

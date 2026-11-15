@@ -1,0 +1,709 @@
+{
+  "run_id": "eval-2026-11-14-012438",
+  "created_at": "2026-11-14T01:24:38+05:30",
+  "data_label": "Synthetic data (generator seed 42)",
+  "model_version": "clf-20261114-ef61f9",
+  "threshold": 0.9,
+  "split": {
+    "train_merchants": 70,
+    "test_merchants": 110,
+    "test_period": "2026-10-16 to 2026-11-14",
+    "test_transactions": 153192
+  },
+  "baseline": {
+    "precision_auto": 0.9993,
+    "coverage": 0.9943,
+    "questions_per_merchant_per_day": 0.26,
+    "overall_accuracy": 0.9991
+  },
+  "with_feedback": {
+    "precision_auto": 0.9997,
+    "coverage": 0.9948,
+    "questions_per_merchant_per_day": 0.24,
+    "overall_accuracy": 0.9996
+  },
+  "questions_per_day_by_week": {
+    "labels": [
+      "Days 1–7",
+      "Days 8–14",
+      "Days 15–21",
+      "Days 22–30"
+    ],
+    "baseline": [
+      0.26,
+      0.27,
+      0.27,
+      0.26
+    ],
+    "with_feedback": [
+      0.26,
+      0.27,
+      0.25,
+      0.19
+    ]
+  },
+  "pr_coverage_curve": [
+    {
+      "threshold": 0.5,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.51,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.52,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.53,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.54,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.55,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.56,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.57,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.58,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.59,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.6,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.61,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.62,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.63,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.64,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.65,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.66,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.67,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.68,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.69,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.7,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.71,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.72,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.73,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.74,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.75,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.76,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.77,
+      "coverage": 0.9955,
+      "precision_auto": 0.9986
+    },
+    {
+      "threshold": 0.78,
+      "coverage": 0.9948,
+      "precision_auto": 0.999
+    },
+    {
+      "threshold": 0.79,
+      "coverage": 0.9948,
+      "precision_auto": 0.999
+    },
+    {
+      "threshold": 0.8,
+      "coverage": 0.9948,
+      "precision_auto": 0.999
+    },
+    {
+      "threshold": 0.81,
+      "coverage": 0.9948,
+      "precision_auto": 0.999
+    },
+    {
+      "threshold": 0.82,
+      "coverage": 0.9948,
+      "precision_auto": 0.999
+    },
+    {
+      "threshold": 0.83,
+      "coverage": 0.9948,
+      "precision_auto": 0.999
+    },
+    {
+      "threshold": 0.84,
+      "coverage": 0.9946,
+      "precision_auto": 0.9991
+    },
+    {
+      "threshold": 0.85,
+      "coverage": 0.9946,
+      "precision_auto": 0.9991
+    },
+    {
+      "threshold": 0.86,
+      "coverage": 0.9944,
+      "precision_auto": 0.9993
+    },
+    {
+      "threshold": 0.87,
+      "coverage": 0.9943,
+      "precision_auto": 0.9993
+    },
+    {
+      "threshold": 0.88,
+      "coverage": 0.9943,
+      "precision_auto": 0.9993
+    },
+    {
+      "threshold": 0.89,
+      "coverage": 0.9943,
+      "precision_auto": 0.9993
+    },
+    {
+      "threshold": 0.9,
+      "coverage": 0.9943,
+      "precision_auto": 0.9993
+    },
+    {
+      "threshold": 0.91,
+      "coverage": 0.9943,
+      "precision_auto": 0.9993
+    },
+    {
+      "threshold": 0.92,
+      "coverage": 0.9943,
+      "precision_auto": 0.9993
+    },
+    {
+      "threshold": 0.93,
+      "coverage": 0.9943,
+      "precision_auto": 0.9993
+    },
+    {
+      "threshold": 0.94,
+      "coverage": 0.9928,
+      "precision_auto": 0.9996
+    },
+    {
+      "threshold": 0.95,
+      "coverage": 0.9928,
+      "precision_auto": 0.9996
+    },
+    {
+      "threshold": 0.96,
+      "coverage": 0.9928,
+      "precision_auto": 0.9996
+    },
+    {
+      "threshold": 0.97,
+      "coverage": 0.9918,
+      "precision_auto": 0.9998
+    },
+    {
+      "threshold": 0.98,
+      "coverage": 0.9918,
+      "precision_auto": 0.9998
+    },
+    {
+      "threshold": 0.99,
+      "coverage": 0.9902,
+      "precision_auto": 0.9999
+    }
+  ],
+  "confusion_matrix_auto": {
+    "labels": [
+      "SALE",
+      "FAMILY"
+    ],
+    "rows": "true label",
+    "columns": "decision",
+    "matrix": [
+      [
+        152201,
+        6
+      ],
+      [
+        43,
+        153
+      ]
+    ]
+  },
+  "calibration": {
+    "ece": 0.0011,
+    "bins": [
+      {
+        "p_mean": 0.0002,
+        "accuracy": 0.0007,
+        "count": 152430
+      },
+      {
+        "p_mean": 0.1517,
+        "accuracy": 0.48,
+        "count": 75
+      },
+      {
+        "p_mean": 0.2224,
+        "accuracy": 0.5727,
+        "count": 110
+      },
+      {
+        "p_mean": 0.4381,
+        "accuracy": 0.1667,
+        "count": 6
+      },
+      {
+        "p_mean": 0.5869,
+        "accuracy": 0.6316,
+        "count": 190
+      },
+      {
+        "p_mean": 0.6255,
+        "accuracy": 0.6842,
+        "count": 38
+      },
+      {
+        "p_mean": 0.7574,
+        "accuracy": 0.6232,
+        "count": 69
+      },
+      {
+        "p_mean": 0.8502,
+        "accuracy": 0.7778,
+        "count": 18
+      },
+      {
+        "p_mean": 0.9921,
+        "accuracy": 0.9883,
+        "count": 256
+      }
+    ]
+  },
+  "merchant_answer_error_rate": 0.02,
+  "label_mix": {
+    "count_share": {
+      "overall": 0.004213,
+      "demo": 0.006586,
+      "train_calibration": 0.004214,
+      "test_merchants_all_dates": 0.004157,
+      "test_set": 0.004354
+    },
+    "value_share": {
+      "overall": 0.044606,
+      "demo": 0.051878,
+      "train_calibration": 0.044152,
+      "test_merchants_all_dates": 0.044668,
+      "test_set": 0.045787
+    }
+  },
+  "conditions": {
+    "A": {
+      "name": "Always SALE",
+      "precision_auto": 0.9956,
+      "precision_auto_by_source": {},
+      "coverage": 1.0,
+      "auto_decisions": 153192,
+      "questions": 0,
+      "questions_per_merchant_per_day": 0.0,
+      "overall_accuracy": 0.9956,
+      "family_recall_final": {
+        "count": 0,
+        "of": 667,
+        "rate": 0.0
+      },
+      "silent_family_errors": {
+        "count": 0,
+        "of": 152525,
+        "rate": 0.0
+      },
+      "silent_sale_errors": {
+        "count": 667,
+        "of": 667,
+        "rate": 1.0
+      },
+      "config_errors": {
+        "count": 0,
+        "of": 0,
+        "rate": null
+      },
+      "questions_per_day_by_week": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "confusion_matrix_auto": {
+        "labels": [
+          "SALE",
+          "FAMILY"
+        ],
+        "rows": "true label",
+        "columns": "decision",
+        "matrix": [
+          [
+            152525,
+            0
+          ],
+          [
+            667,
+            0
+          ]
+        ]
+      }
+    },
+    "B": {
+      "name": "Naive rule (P2P + round ₹100 = FAMILY)",
+      "precision_auto": 0.966,
+      "precision_auto_by_source": {},
+      "coverage": 1.0,
+      "auto_decisions": 153192,
+      "questions": 0,
+      "questions_per_merchant_per_day": 0.0,
+      "overall_accuracy": 0.966,
+      "family_recall_final": {
+        "count": 442,
+        "of": 667,
+        "rate": 0.6627
+      },
+      "silent_family_errors": {
+        "count": 4987,
+        "of": 152525,
+        "rate": 0.0327
+      },
+      "silent_sale_errors": {
+        "count": 225,
+        "of": 667,
+        "rate": 0.3373
+      },
+      "config_errors": {
+        "count": 0,
+        "of": 0,
+        "rate": null
+      },
+      "questions_per_day_by_week": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "confusion_matrix_auto": {
+        "labels": [
+          "SALE",
+          "FAMILY"
+        ],
+        "rows": "true label",
+        "columns": "decision",
+        "matrix": [
+          [
+            147538,
+            4987
+          ],
+          [
+            225,
+            442
+          ]
+        ]
+      }
+    },
+    "C": {
+      "name": "Model, no feedback",
+      "precision_auto": 0.9993,
+      "precision_auto_by_source": {
+        "MODEL": {
+          "correct": 152214,
+          "of": 152325,
+          "precision": 0.9993
+        },
+        "PAYER_MEMORY": {
+          "correct": 0,
+          "of": 0,
+          "precision": null
+        },
+        "MERCHANT_CONFIG": {
+          "correct": 0,
+          "of": 0,
+          "precision": null
+        }
+      },
+      "coverage": 0.9943,
+      "auto_decisions": 152325,
+      "questions": 867,
+      "questions_per_merchant_per_day": 0.26,
+      "overall_accuracy": 0.9991,
+      "family_recall_final": {
+        "count": 543,
+        "of": 667,
+        "rate": 0.8141
+      },
+      "silent_family_errors": {
+        "count": 0,
+        "of": 152525,
+        "rate": 0.0
+      },
+      "silent_sale_errors": {
+        "count": 111,
+        "of": 667,
+        "rate": 0.1664
+      },
+      "config_errors": {
+        "count": 0,
+        "of": 0,
+        "rate": null
+      },
+      "questions_per_day_by_week": [
+        0.26,
+        0.27,
+        0.27,
+        0.26
+      ],
+      "confusion_matrix_auto": {
+        "labels": [
+          "SALE",
+          "FAMILY"
+        ],
+        "rows": "true label",
+        "columns": "decision",
+        "matrix": [
+          [
+            152214,
+            0
+          ],
+          [
+            111,
+            0
+          ]
+        ]
+      }
+    },
+    "D": {
+      "name": "Model + payer memory",
+      "precision_auto": 0.9997,
+      "precision_auto_by_source": {
+        "MODEL": {
+          "correct": 152183,
+          "of": 152225,
+          "precision": 0.9997
+        },
+        "PAYER_MEMORY": {
+          "correct": 75,
+          "of": 76,
+          "precision": 0.9868
+        },
+        "MERCHANT_CONFIG": {
+          "correct": 0,
+          "of": 0,
+          "precision": null
+        }
+      },
+      "coverage": 0.9942,
+      "auto_decisions": 152301,
+      "questions": 891,
+      "questions_per_merchant_per_day": 0.27,
+      "overall_accuracy": 0.9996,
+      "family_recall_final": {
+        "count": 610,
+        "of": 667,
+        "rate": 0.9145
+      },
+      "silent_family_errors": {
+        "count": 0,
+        "of": 152525,
+        "rate": 0.0
+      },
+      "silent_sale_errors": {
+        "count": 43,
+        "of": 667,
+        "rate": 0.0645
+      },
+      "config_errors": {
+        "count": 0,
+        "of": 0,
+        "rate": null
+      },
+      "questions_per_day_by_week": [
+        0.26,
+        0.28,
+        0.28,
+        0.26
+      ],
+      "confusion_matrix_auto": {
+        "labels": [
+          "SALE",
+          "FAMILY"
+        ],
+        "rows": "true label",
+        "columns": "decision",
+        "matrix": [
+          [
+            152201,
+            0
+          ],
+          [
+            43,
+            57
+          ]
+        ]
+      }
+    },
+    "E": {
+      "name": "Full system (payer memory + remember)",
+      "precision_auto": 0.9997,
+      "precision_auto_by_source": {
+        "MODEL": {
+          "correct": 152183,
+          "of": 152225,
+          "precision": 0.9997
+        },
+        "PAYER_MEMORY": {
+          "correct": 40,
+          "of": 41,
+          "precision": 0.9756
+        },
+        "MERCHANT_CONFIG": {
+          "correct": 131,
+          "of": 137,
+          "precision": 0.9562
+        }
+      },
+      "coverage": 0.9948,
+      "auto_decisions": 152403,
+      "questions": 789,
+      "questions_per_merchant_per_day": 0.24,
+      "overall_accuracy": 0.9996,
+      "family_recall_final": {
+        "count": 612,
+        "of": 667,
+        "rate": 0.9175
+      },
+      "silent_family_errors": {
+        "count": 6,
+        "of": 152525,
+        "rate": 0.0
+      },
+      "silent_sale_errors": {
+        "count": 43,
+        "of": 667,
+        "rate": 0.0645
+      },
+      "config_errors": {
+        "count": 6,
+        "of": 137,
+        "rate": 0.0438
+      },
+      "questions_per_day_by_week": [
+        0.26,
+        0.27,
+        0.25,
+        0.19
+      ],
+      "confusion_matrix_auto": {
+        "labels": [
+          "SALE",
+          "FAMILY"
+        ],
+        "rows": "true label",
+        "columns": "decision",
+        "matrix": [
+          [
+            152201,
+            6
+          ],
+          [
+            43,
+            153
+          ]
+        ]
+      }
+    }
+  },
+  "notes": {
+    "family_metric_denominators": "family_recall_final: of all true FAMILY payments; silent_family_errors: of all true SALE payments; silent_sale_errors: of all true FAMILY payments; config_errors: of all MERCHANT_CONFIG decisions.",
+    "confusion_matrix_auto": "Top-level matrix is condition E (the full system); each condition has its own.",
+    "reversals": "Ignored in the evaluation replay (0.1% of payments)."
+  },
+  "seed": 42,
+  "git_commit": "74439107bc0eb6455ad215ad7741464bf81580b7"
+}

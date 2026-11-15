@@ -60,11 +60,12 @@ def test_period_and_ids(pay):
 
 def test_shop_hours_and_category_clip(gen, pay):
     shop = pay[pay.payer_role.isin(["regular_customer", "walk_in"])]
+    bigger_order = (shop.payment_type == "P2P") & (shop.amount_paise % 10_000 == 0) & shop.amount_paise.between(50_000, 200_000)
     secs = shop.dt.map(lambda d: d.hour * 3600 + d.minute * 60 + d.second)
     assert secs.between(5 * 3600 + 1800, 21 * 3600 + 1800).all()
     cats = gen.merchants.set_index("merchant_id").business_category
     for cat, cfg in params.CATEGORY.items():
-        part = shop[shop.merchant_id.map(cats) == cat]
+        part = shop[(shop.merchant_id.map(cats) == cat) & ~bigger_order]  # bigger orders are outside the category clip
         assert part.amount_paise.between(cfg["lo"] * 100, cfg["hi"] * 100).all(), cat
 
 
@@ -236,3 +237,23 @@ def test_backend_never_reads_ground_truth():
     app = REPO / "backend" / "app"
     hits = [p for p in app.rglob("*.py") if re.search(r"labels\.parquet|true_label|payer_role", p.read_text(encoding="utf-8"))]
     assert hits == []
+
+
+def test_overlap_behaviours(pay):
+    """DATA 4.3 overlap roles (agreed 2026-11-14)."""
+    credit = pay[pay.payer_role == "credit_settlement"]
+    assert len(credit) > 0 and (credit.true_label == "SALE").all() and (credit.payment_type == "P2P").all()
+    assert (credit.amount_paise % 10_000 == 0).all() and credit.amount_paise.between(50_000, 300_000).all()
+    per_merchant = credit.groupby("merchant_id").payer_id.nunique()
+    assert per_merchant.between(3, 8).all()
+    assert 0.6 < (credit.dt.map(lambda d: d.hour) >= 18).mean() < 0.8
+    fam = pay[(pay.payer_role == "family") & (pay.payer_id != "P90002")]
+    non_round = fam.amount_paise % 10_000 != 0
+    assert 0.18 < non_round.mean() < 0.32 and (fam[non_round].amount_paise % 5_000 == 0).all()
+    assert 0.10 < (fam.payment_type == "P2M").mean() < 0.20
+    assert 0.28 < (fam.dt.map(lambda d: d.hour) < 18).mean() < 0.42
+    friends = pay[pay.payer_role == "friend_loan"]
+    assert 0.15 < (friends.amount_paise % 10_000 != 0).mean() < 0.45
+    regular = pay[pay.payer_role == "regular_customer"]
+    bigger = (regular.payment_type == "P2P") & (regular.amount_paise % 10_000 == 0) & (regular.amount_paise >= 50_000)
+    assert 0.02 < bigger.mean() < 0.04

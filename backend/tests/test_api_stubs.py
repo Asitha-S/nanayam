@@ -15,7 +15,6 @@ GET_CASES = [
     ("/api/merchants", "merchants"),
     ("/api/merchants/M001", "merchant_M001"),
     ("/api/merchants/M001/learning", "learning_M001"),
-    ("/api/evaluation", "evaluation"),
     ("/api/merchants/M001/tax-summary", "tax_summary_M001"),
     ("/api/merchants/M003/tax-summary", "tax_summary_M003"),
     ("/api/merchants/M001/notices/NTC-M001-001/evidence", "notice_evidence"),
@@ -150,3 +149,15 @@ def test_expense_amount_range(client, amount):
 
 def test_unknown_audio_404(client):
     assert client.get("/api/audio/AUD-0000000000000000").status_code == 404
+
+
+def test_evaluation_is_the_latest_run_file(client):
+    from app.config import REPO_ROOT
+
+    expected = json.loads((REPO_ROOT / "data" / "eval" / "latest.json").read_text(encoding="utf-8"))
+    body = client.get("/api/evaluation").json()
+    assert body == expected and body["data_label"].startswith("Synthetic data")
+    for key in ("baseline", "with_feedback", "split", "pr_coverage_curve", "calibration", "label_mix", "conditions"):
+        assert key in body
+    assert set(body["conditions"]) == {"A", "B", "C", "D", "E"}
+    assert set(body["conditions"]["E"]["family_recall_final"]) == {"count", "of", "rate"}

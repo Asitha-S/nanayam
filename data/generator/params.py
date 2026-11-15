@@ -39,6 +39,8 @@ CUSTOMER_P2M = 0.85
 CUSTOMER_PERSONAL = 0.97
 ROUND_TO_5 = 0.60
 WALKIN_SHARE = 0.35
+REGULAR_BIG_ORDER_SHARE = 0.03  # regulars: P2P with a round amount (paying for a bigger order)
+REGULAR_BIG_ORDER_AMOUNT = (500, 2000)  # rounded to ₹100
 
 BUSINESS_COUNT = (0, 3)
 BUSINESS_GAP_DAYS = (1, 3)
@@ -52,14 +54,22 @@ BIG_ORDER_P2P = 0.50
 BIG_ORDER_ROUND_500 = 0.70
 
 FAMILY_COUNT = (1, 4)
-FAMILY_P2P = 0.95
+FAMILY_P2P = 0.85  # 15% P2M: the relative scans the shop QR
+FAMILY_NON_ROUND = 0.25  # e.g. ₹750, ₹1,250, ₹2,350
 FAMILY_AMOUNTS = [500, 1000, 1500, 2000, 3000, 5000]
 FAMILY_GAP_DAYS = (5, 30)
-FAMILY_EVENING = 0.70  # share after 18:00
+FAMILY_EVENING = 0.65  # after 18:00; the other 35% during shop hours before 18:00
 
 FRIEND_COUNT = (0, 2)
 FRIEND_TIMES = (2, 4)
 FRIEND_AMOUNTS = [500, 1000, 1500, 2000, 2500, 3000, 4000, 5000]
+FRIEND_NON_ROUND = 0.30
+NON_ROUND_RANGE = (500, 5000)  # non-round family/friend amounts: multiples of ₹50 that are not multiples of ₹100
+
+CREDIT_COUNT = (3, 8)  # credit-settlement customers (SALE): settle a tab weekly or monthly by P2P
+CREDIT_GAP_DAYS = {"weekly": (6, 8), "monthly": (28, 32)}
+CREDIT_AMOUNT = (500, 3000)  # rounded to ₹100
+CREDIT_EVENING = 0.70
 
 MIXED_MERCHANT_SHARE = 1 / 3
 MIXED_SALE_SHARE = 0.30

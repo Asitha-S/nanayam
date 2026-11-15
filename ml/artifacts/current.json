@@ -1,5 +1,5 @@
 {
-  "model_version": "clf-20261114-4f6a96",
+  "model_version": "clf-20261114-ef61f9",
   "threshold": 0.9,
-  "artifact": "ml/artifacts/clf-20261114-4f6a96.joblib"
+  "artifact": "ml/artifacts/clf-20261114-ef61f9.joblib"
 }

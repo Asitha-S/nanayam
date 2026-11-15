@@ -21,6 +21,7 @@
 | Validation | The backend revalidates every field of every write (amount > 0 and ≤ ₹5,00,000 for expenses, enums, merchant exists, question belongs to the transaction and merchant). Frontend validation is a convenience only. |
 | Lists | Every list response with `count` reports the total number of items matching the filters, before `limit`/`offset`; `items` is the requested page. |
 | Confidence format | API: JSON number rounded to 4 dp (e.g. `0.98`, `0.7123`) or `null`. Database and hash canonicalisation: 4-decimal string (`"0.9800"`) or null. Conversion happens only in the repository layer: `f"{x:.4f}"` on write, `float(s)` on read. The fixture ledger hashes were computed this way. |
+| Confidence display | The API returns the real number. The frontend shows a confidence ≥ 0.995 as ">99%", never "100%"; `null` shows as "Your instruction". |
 | Confidence | `confidence` is a calibrated model probability (optionally adjusted by payer memory) when `confidence_kind` = `MODEL`. When the decision comes from the merchant's configuration, `confidence` = `null` and `confidence_kind` = `NONE`. The UI shows "Your instruction" instead of a percentage. |
 | Errors | Always this shape, with the HTTP status below: |
 
