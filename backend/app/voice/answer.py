@@ -104,6 +104,30 @@ def compose(facts: dict, lang: str) -> tuple[str, dict]:
                                                                     "pending_count") if s in used}
 
 
+def compose_answer(template_key: str, facts: dict, lang: str = "ta") -> str:
+    """Fill a single fixed template with the given facts and enforce the positional slot guard."""
+    t = templates(lang)
+    if template_key not in t:
+        raise SlotCheckFailed(f"{template_key}: template missing")
+    values: dict[str, int] = {}
+    if template_key in {"profit_answer", "profit_answer_loss"}:
+        values["sales"] = facts.get("sales", facts.get("business_sales", 0))
+        values["expenses"] = facts.get("expenses", 0)
+        values["profit"] = facts.get("profit", 0)
+        values["loss"] = facts.get("loss", 0)
+        if "profit" in values and values["profit"] < 0:
+            values["profit"] = 0
+    if template_key == "profit_family_suffix":
+        values["family"] = facts.get("family", facts.get("family_transfers", 0))
+    if template_key == "profit_pending_suffix":
+        values["pending_count"] = facts.get("pending_count", 0)
+    if not values:
+        raise SlotCheckFailed(f"{template_key}: no recognized slots for facts {facts!r}")
+    text, spans = render(t[template_key], template_key, values, lang)
+    slot_check([(template_key, text, spans)], values, lang)
+    return text
+
+
 def daily_profit(conn: sqlite3.Connection, *, merchant_id: str, language: str, day: date | None = None) -> dict:
     repo.require_merchant_in_body(conn, merchant_id)
     day = day or clock.today()

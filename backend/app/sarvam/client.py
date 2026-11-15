@@ -264,11 +264,25 @@ def stt(audio_bytes: bytes, lang: str, demo_key: str | None = None, filename: st
 def chat(messages: list[dict], schema: dict | None = None) -> ChatResult:
     params: dict = {"model": models.CHAT_MODEL, "temperature": 0}
     if schema is not None:
-        params["schema"] = schema
+        params["response_format"] = {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "intent_output",
+                "schema": schema,
+            },
+        }
     input_bytes = canonical_json(messages).encode("utf-8")
 
     def call():
         body = {"model": models.CHAT_MODEL, "messages": messages, "temperature": 0}
+        if schema is not None:
+            body["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "intent_output",
+                    "schema": schema,
+                },
+            }
         resp = _post("chat", models.CHAT_MODEL, models.CHAT_PATH, models.TIMEOUT_CHAT, json=body)
         return resp.json(), None
 
