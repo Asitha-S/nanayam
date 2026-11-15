@@ -5,6 +5,8 @@ number comes from the same code as the live API's procedure.run.
   A  always SALE                       C  model, no feedback (answers not stored)
   B  naive rule: P2P + round ₹100      D  model + payer memory
                                        E  full system: payer memory + "remember" with probability 0.5
+                                          after a FAMILY answer (-> family list) and after a SALE answer on a
+                                          P2P payment (-> customer list); one list per payer; guardrails apply
 """
 from __future__ import annotations
 
@@ -38,9 +40,12 @@ def replay(cond: str, t: pd.DataFrame, q: np.ndarray, tau: float, answers: np.nd
     suggested = np.empty(n, dtype=object)
     source = np.empty(n, dtype=object)
     final = np.empty(n, dtype=object)
+    rule = np.empty(n, dtype=object)  # first configuration / guardrail / override code, "" if none
     memory: dict = defaultdict(lambda: [0, 0])
     family_cfg: set = set()
+    customer_cfg: set = set()
     for i in range(n):
+        r = ""
         if cond == "A":
             a, s, src = "AUTO_CLASSIFY", "SALE", "BASELINE"
         elif cond == "B":
@@ -50,9 +55,11 @@ def replay(cond: str, t: pd.DataFrame, q: np.ndarray, tau: float, answers: np.nd
             nf, ns = memory[key] if cond in ("D", "E") else (0, 0)
             o = procedure.run(q=float(q[i]), n_family=nf, n_sale=ns, is_new_payer=bool(new[i]),
                               amount_paise=int(amount[i]), payment_type="P2P" if p2p[i] else "P2M", tau=tau, k=k,
-                              configured_family=cond == "E" and key in family_cfg)
+                              configured_family=cond == "E" and key in family_cfg,
+                              configured_customer=cond == "E" and key in customer_cfg)
             a, s, src = o.action, o.suggested, o.source
-        action[i], suggested[i], source[i] = a, s, src
+            r = o.rules[0] if o.rules else ""
+        action[i], suggested[i], source[i], rule[i] = a, s, src, r
         if a == "AUTO_CLASSIFY":
             final[i] = s
         else:
@@ -60,9 +67,14 @@ def replay(cond: str, t: pd.DataFrame, q: np.ndarray, tau: float, answers: np.nd
             if cond in ("D", "E"):
                 key = (merchant[i], payer[i])
                 memory[key][0 if answers[i] == "FAMILY" else 1] += 1
-                if cond == "E" and answers[i] == "FAMILY" and remember[i]:
-                    family_cfg.add(key)
-    return pd.DataFrame({"action": action, "suggested": suggested, "source": source, "final": final})
+                if cond == "E" and remember[i]:
+                    if answers[i] == "FAMILY":  # "Always family"
+                        family_cfg.add(key)
+                        customer_cfg.discard(key)
+                    elif p2p[i]:  # "Remember as customer" is offered only after a SALE answer on a P2P payment
+                        customer_cfg.add(key)
+                        family_cfg.discard(key)
+    return pd.DataFrame({"action": action, "suggested": suggested, "source": source, "final": final, "rule": rule})
 
 
 def silent_errors(d: pd.DataFrame, truth: np.ndarray) -> dict:

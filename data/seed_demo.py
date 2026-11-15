@@ -3,7 +3,8 @@
 Replays the generated history of M001-M003 (2026-08-01 to 2026-11-14) through the REAL backend
 services (classifier, questions, feedback, ledger) in time order, with a simulated merchant who
 answers every question correctly (0% error, DATA_AND_LOGIC 3.6), except the 3 fixed payments of
-29-31 Oct, which stay unanswered. Writes:
+29-31 Oct, which stay unanswered. Like evaluation condition E, after a FAMILY answer, or a SALE answer
+on a P2P payment, the merchant chooses "remember" with probability 0.5 (seeded RNG). Writes:
 
   data/demo/seed.db             the database /demo/reset restores
   data/demo/seed_meta.json      generator seed, model, threshold, git commit, label mix, counts, sha256
@@ -22,6 +23,7 @@ import sys
 from datetime import timedelta
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -37,6 +39,8 @@ GENERATED = REPO_ROOT / "data" / "generated"
 DEMO_DIR = REPO_ROOT / "data" / "demo"
 DEMO_MERCHANTS = ("M001", "M002", "M003")
 ANSWER_DELAY = timedelta(seconds=30)  # reversals come >= 60 s after a payment, so answers land first
+REMEMBER_PROBABILITY = 0.5  # same as evaluation condition E
+REMEMBER_SEED = (42, 3003)
 NOTICE_PERIOD = ("2026-08-01", "2026-10-31")
 
 # event priority when timestamps are equal
@@ -79,7 +83,9 @@ def build(out_path: Path) -> dict:
     db.init_db(out_path)
     conn = db.connect(out_path)
     conn.execute("PRAGMA synchronous = OFF")  # build speed; the file is finalised below
-    stats = {"answered": 0, "left_unanswered": 0, "answer_skipped_reversed": 0}
+    stats = {"answered": 0, "left_unanswered": 0, "answer_skipped_reversed": 0, "remembered_family": 0,
+             "remembered_customer": 0}
+    remember_rng = np.random.default_rng(list(REMEMBER_SEED))
     try:
         with db.write_tx(conn):
             for m in d["merchants"][d["merchants"].merchant_id.isin(DEMO_MERCHANTS)].to_dict("records"):
@@ -104,15 +110,19 @@ def build(out_path: Path) -> dict:
                             stats["left_unanswered"] += 1
                         else:
                             answer = {"merchant_id": req.merchant_id, "transaction_id": req.transaction_id,
-                                      "question_id": res["question_id"],
+                                      "question_id": res["question_id"], "payment_type": req.payment_type,
                                       "confirmed_category": labels.loc[req.transaction_id, "true_label"]}
                             heapq.heappush(events, (ts + ANSWER_DELAY, P_ANSWER, req.transaction_id, "answer", answer))
                 elif kind == "answer":
+                    offered = row["confirmed_category"] == "FAMILY" or row["payment_type"] == "P2P"
+                    remember = bool(offered and remember_rng.random() < REMEMBER_PROBABILITY)
                     try:
                         payment_svc.confirm(conn, row["transaction_id"], ConfirmIn(
                             merchant_id=row["merchant_id"], question_id=row["question_id"],
-                            confirmed_category=row["confirmed_category"], channel="TAP"))
+                            confirmed_category=row["confirmed_category"], channel="TAP", remember_payer=remember))
                         stats["answered"] += 1
+                        if remember:
+                            stats["remembered_family" if row["confirmed_category"] == "FAMILY" else "remembered_customer"] += 1
                     except errors.ApiError as exc:
                         if exc.code != "INVALID_STATE":
                             raise
@@ -153,6 +163,12 @@ def _counts(conn) -> dict:
             "reversals": q("SELECT COUNT(*) FROM reversals r JOIN payments p USING (transaction_id) WHERE p.merchant_id = ?"),
             "expenses": q("SELECT COUNT(*) FROM expenses WHERE merchant_id = ?"),
             "ledger_entries": q("SELECT COUNT(*) FROM ledger_entries WHERE merchant_id = ?"),
+            "family_payers": [r[0] for r in conn.execute(
+                "SELECT p.payer_name FROM merchant_family_payers f JOIN payers p USING (payer_id)"
+                " WHERE f.merchant_id = ? ORDER BY f.added_at, f.payer_id", (mid,))],
+            "customer_payers": [r[0] for r in conn.execute(
+                "SELECT p.payer_name FROM merchant_customer_payers c JOIN payers p USING (payer_id)"
+                " WHERE c.merchant_id = ? ORDER BY c.added_at, c.payer_id", (mid,))],
         }
     return out
 
@@ -209,7 +225,10 @@ def main() -> None:
         "demo_date": clock.today().isoformat(),
         "seed_db_sha256": hashlib.sha256(seed.read_bytes()).hexdigest(),
         "label_mix": {"count_share": mix["count_share"], "value_share": mix["value_share"]},
-        "replay": {k: stats[k] for k in ("answered", "left_unanswered", "answer_skipped_reversed")},
+        "replay": {k: stats[k] for k in ("answered", "left_unanswered", "answer_skipped_reversed",
+                                         "remembered_family", "remembered_customer")},
+        "remember": {"probability": REMEMBER_PROBABILITY, "seed": list(REMEMBER_SEED),
+                     "offered_after": "FAMILY answers, and SALE answers on P2P payments"},
         "counts": stats["counts"],
     }
     (DEMO_DIR / "seed_meta.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
