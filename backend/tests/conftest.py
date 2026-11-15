@@ -19,6 +19,7 @@ def env(tmp_path, monkeypatch):
         "LOGS_DIR": str(tmp_path / "logs"),
         "SARVAM_API_KEY": "",
         "DEMO_TIME": "",  # tests control the time of day with wall_clock; a developer's .env must not pin it
+        "UDHARI": "false",  # off unless a test turns it on (make_client(UDHARI="true")); .env may have it on
     }
 
     def apply(**overrides):
