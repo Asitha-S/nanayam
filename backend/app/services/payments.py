@@ -46,7 +46,8 @@ def create_payment(conn: sqlite3.Connection, req: PaymentIn) -> tuple[int, dict]
         repo.require_merchant_in_body(conn, req.merchant_id)
         repo.ensure_payer(conn, req.payer_id, req.payer_name, req.payer_vpa_kind)
         d = decide(conn, merchant_id=req.merchant_id, payer_id=req.payer_id, payer_vpa_kind=req.payer_vpa_kind,
-                   amount_paise=req.amount_paise, payment_type=req.payment_type, timestamp=body["timestamp"])
+                   amount_paise=req.amount_paise, payment_type=req.payment_type, timestamp=body["timestamp"],
+                   transaction_id=req.transaction_id)
         now = clock.iso(clock.now())
         conn.execute(
             "INSERT INTO payments (transaction_id, merchant_id, payer_id, amount_paise, payment_type, timestamp,"

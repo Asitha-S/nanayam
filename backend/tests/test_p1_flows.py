@@ -332,8 +332,10 @@ def test_m002_demo_day(seeded):
                           "pending": 0, "expenses": 420000, "profit": 215000, "pending_count": 0}
 
 
-def test_health_reports_placeholder_model(seeded):
-    assert seeded.get("/api/health").json()["model_version"] == "placeholder-rule-not-a-model"
+def test_health_reports_current_model(seeded):
+    from app.classifier.threshold import current_model
+
+    assert seeded.get("/api/health").json()["model_version"] == current_model().model_version
 
 
 # --- lists (count = total matching before limit/offset) ---------------------------------

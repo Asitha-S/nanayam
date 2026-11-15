@@ -404,7 +404,7 @@ Rule 5c is why Lakshmi's first ₹2,000 is always asked, regardless of the exact
 | 0.71 | 4 | 0 | 0.903 | 0.903 | AUTO FAMILY |
 | 0.30 | 3 | 0 | 0.72 | 0.72 | ASK |
 | 0.10 | 0 | 3 | 0.04 | 0.96 | AUTO SALE |
-| 0.60 | 2 | 2 | 0.55 | 0.55 | ASK (mixed payer rule) |
+| 0.60 | 2 | 2 | 0.533 | 0.533 | ASK (mixed payer rule) |
 
 **Explicit memory:** when the merchant confirms FAMILY with `remember_payer: true` (voice: "aamaa, eppavum veettu panam dhaan" / tap "Always family"), the payer is added to `merchant_family_payers` with `added_via=CONFIRMATION`. From then on rule 1 applies. Removing a payer from family is done via `PUT /merchants/{id}`. Neither rewrites past ledger entries.
 

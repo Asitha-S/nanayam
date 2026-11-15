@@ -1,28 +1,22 @@
-"""Decision procedure (DATA_AND_LOGIC 5.6), currently with the PLACEHOLDER score in place of the
-model. Step 5 replaces placeholder.score with features + calibrated model + payer memory + rules 5a-5c.
+"""Live decision for one payment (DATA_AND_LOGIC 5.6): merchant config, features from strictly earlier
+payments, calibrated model, payer memory, override rules 5a-5c, reasons.
 """
 from __future__ import annotations
 
 import sqlite3
 from dataclasses import dataclass, field
 
-from .. import repo
+from .. import clock, repo
 from ..config import get_settings
-from . import placeholder
+from ..feedback.memory import payer_counts
+from . import features, model, procedure
 from .threshold import current_model, effective_threshold
-
-REASON_TEXT = {
-    "CONFIGURED_FAMILY": "Marked as family by merchant",
-    "FAMILY_NEEDS_CONFIRMATION": "Family money is only excluded after the merchant confirms",
-    "P2P": "P2P transfer",
-    "ROUND_AMOUNT": "Round amount",
-}
 
 
 @dataclass(frozen=True)
 class Decision:
     suggested: str  # SALE | FAMILY
-    confidence: float | None
+    confidence: float | None  # 4 dp; None for MERCHANT_CONFIG
     confidence_kind: str  # MODEL | NONE
     action: str  # AUTO_CLASSIFY | ASK_MERCHANT
     source: str  # MERCHANT_CONFIG | PAYER_MEMORY | MODEL | RULE
@@ -37,14 +31,18 @@ class Decision:
         return self.suggested if self.action == "AUTO_CLASSIFY" else "PENDING"
 
 
-def active_model_version() -> str:
-    model = current_model()
-    return model.model_version if model else placeholder.MODEL_VERSION
+def active_model_version() -> str | None:
+    info = current_model()
+    return info.model_version if info else None
 
 
 def threshold() -> float:
-    model = current_model()
-    return effective_threshold(model.threshold if model else None, get_settings().conf_threshold)
+    info = current_model()
+    return effective_threshold(info.threshold if info else None, get_settings().conf_threshold)
+
+
+def _round(x: float | None) -> float | None:
+    return None if x is None else round(x, 4)
 
 
 def decide(
@@ -56,18 +54,26 @@ def decide(
     amount_paise: int,
     payment_type: str,
     timestamp: str,
+    transaction_id: str | None = None,
 ) -> Decision:
+    """transaction_id None = hypothetical payment (preview): history is every payment before timestamp."""
     tau = threshold()
     version = active_model_version()
-    # Rule 1: the merchant's own instruction. Not a probability.
     if repo.is_family_payer(conn, merchant_id, payer_id):
-        return Decision("FAMILY", None, "NONE", "AUTO_CLASSIFY", "MERCHANT_CONFIG",
-                        [REASON_TEXT["CONFIGURED_FAMILY"]], None, None, version, tau)
+        out = procedure.run(q=None, n_family=0, n_sale=0, configured=True, is_new_payer=False,
+                            amount_paise=amount_paise, tau=tau)
+        return Decision(out.suggested, None, "NONE", out.action, out.source,
+                        procedure.reasons(out, None, 0, 0), None, None, version, tau)
 
-    s = placeholder.score(payment_type=payment_type, payer_vpa_kind=payer_vpa_kind, amount_paise=amount_paise)
-    if s.looks_family:
-        reasons = [REASON_TEXT["FAMILY_NEEDS_CONFIRMATION"], REASON_TEXT["P2P"], REASON_TEXT["ROUND_AMOUNT"]]
-        return Decision("FAMILY", round(s.q_model, 4), "MODEL", "ASK_MERCHANT", "RULE", reasons,
-                        s.q_model, s.q_model, version, tau)
-    confidence = round(1 - s.q_model, 4)
-    return Decision("SALE", confidence, "MODEL", "AUTO_CLASSIFY", "MODEL", [], s.q_model, s.q_model, version, tau)
+    category = repo.merchant(conn, merchant_id)["business_category"]
+    pay = features.Pay(transaction_id or "", payer_id, amount_paise, payment_type, payer_vpa_kind,
+                       clock.parse(timestamp))
+    window, stats = features.history_from_db(conn, merchant_id, pay, hypothetical=transaction_id is None)
+    named = features.build(pay, category, window, stats)
+    q = model.q_model(features.vector(named))
+    n_family, n_sale = payer_counts(conn, merchant_id, payer_id)
+    out = procedure.run(q=q, n_family=n_family, n_sale=n_sale, configured=False,
+                        is_new_payer=bool(named["is_new_payer"]), amount_paise=amount_paise, tau=tau)
+    return Decision(out.suggested, _round(out.confidence), out.confidence_kind, out.action, out.source,
+                    procedure.reasons(out, named, n_family, n_sale), _round(out.q_model), _round(out.p_final),
+                    version, tau)

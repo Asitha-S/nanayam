@@ -9,8 +9,7 @@ answers every question correctly (0% error, DATA_AND_LOGIC 3.6), except the 3 fi
   data/demo/seed_meta.json      generator seed, model, threshold, git commit, label mix, counts, sha256
   data/demo/notice_numbers.json M001 gross UPI receipts 2026-08-01..2026-10-31 for the sample notice
 
-Refuses to run while the placeholder classifier is active unless --allow-placeholder is given
-(the placeholder must never ship; the release gate runs without the flag).
+Refuses to run without a trained model (ml/artifacts/current.json from python -m ml.train).
 """
 from __future__ import annotations
 
@@ -29,7 +28,6 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "backend"))  # import the backend exactly as uvicorn and pytest do
 
 from app import clock, db, errors, money, repo  # noqa: E402
-from app.classifier import placeholder  # noqa: E402
 from app.classifier.decide import active_model_version, threshold  # noqa: E402
 from app.schemas import ConfirmIn, ExpenseIn, PaymentIn, RefundIn, ReversalIn  # noqa: E402
 from app.services import expenses as expense_svc  # noqa: E402
@@ -188,14 +186,10 @@ def _git() -> tuple[str | None, bool | None]:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--allow-placeholder", action="store_true",
-                    help="build with the placeholder classifier (integration only; never for the demo)")
-    args = ap.parse_args()
+    ap.parse_args()
     version = active_model_version()
-    is_placeholder = version == placeholder.MODEL_VERSION
-    if is_placeholder and not args.allow_placeholder:
-        sys.exit("The placeholder classifier is active (no ml/artifacts/current.json). Train the model first "
-                 "(python -m ml.train), or pass --allow-placeholder for an integration-only seed.")
+    if version is None:
+        sys.exit("No trained model (ml/artifacts/current.json). Run python -m ml.train first.")
 
     DEMO_DIR.mkdir(parents=True, exist_ok=True)
     tmp = DEMO_DIR / "seed.db.building"
@@ -207,7 +201,7 @@ def main() -> None:
     meta = {
         "generator_seed": mix["seed"],
         "model_version": version,
-        "placeholder_classifier": is_placeholder,
+        "placeholder_classifier": False,
         "threshold": threshold(),
         "git_commit": commit,
         "git_dirty": dirty,
@@ -222,8 +216,7 @@ def main() -> None:
     notice = stats["notice"] | {"seed_db_sha256": meta["seed_db_sha256"]}
     (DEMO_DIR / "notice_numbers.json").write_text(json.dumps(notice, ensure_ascii=False, indent=2) + "\n",
                                                   encoding="utf-8")
-    print(f"Wrote {seed} ({seed.stat().st_size / 1e6:.1f} MB), model {version}"
-          + ("  ** PLACEHOLDER CLASSIFIER: integration only, never for the demo **" if is_placeholder else ""))
+    print(f"Wrote {seed} ({seed.stat().st_size / 1e6:.1f} MB), model {version}")
     print(json.dumps({"replay": meta["replay"], "counts": meta["counts"]}, indent=2))
     print(f"Notice amount (M001 gross UPI receipts {NOTICE_PERIOD[0]}..{NOTICE_PERIOD[1]}): "
           f"{notice['amount_questioned_display']}")

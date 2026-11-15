@@ -79,8 +79,25 @@ def build_test_seed(path):
 
 
 @pytest.fixture
-def seeded(make_client, tmp_path, wall_clock):
-    """Client on a database restored from a small test seed via POST /demo/reset. Wall clock 21:00."""
+def fake_q(monkeypatch):
+    """Deterministic stand-in for the trained model in persistence tests (the real model is tested on the
+    real seed in test_demo_day.py): P2P + personal + multiple of Rs 500 -> q 0.6, else 0.02."""
+    from app.classifier import model
+    from app.classifier.features import FEATURES
+
+    idx = {n: i for i, n in enumerate(FEATURES)}
+
+    def q(vec):
+        looks_family = vec[idx["is_p2p"]] and not vec[idx["is_business_vpa"]] and vec[idx["is_round_500"]]
+        return 0.6 if looks_family else 0.02
+
+    monkeypatch.setattr(model, "q_model", q)
+
+
+@pytest.fixture
+def seeded(make_client, tmp_path, wall_clock, fake_q):
+    """Client on a database restored from a small test seed via POST /demo/reset. Wall clock 21:00.
+    Uses the fake_q stand-in model so these tests check persistence, not model quality."""
     wall_clock("21:00:00")
     seed = tmp_path / "seed.db"
     with make_client(DEMO_SEED_DB=str(seed)) as c:
