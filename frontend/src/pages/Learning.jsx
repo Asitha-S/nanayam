@@ -254,7 +254,7 @@ function EvalHeadline({ evaluation }) {
   const h = e?.headline
   const split = e?.split || {}
   return (
-    <section className="panel ink lr-eval" aria-labelledby="lr-eval-h">
+    <section className="panel ink lr-eval" aria-labelledby="lr-eval-h" data-tour="eval-headline">
       <h2 id="lr-eval-h">Does it find the family money?</h2>
       <Status state={evaluation} what="the evaluation" hint="Run python -m ml.evaluate to write data/eval/latest.json, then try again." />
       {e && (
@@ -400,7 +400,7 @@ function PreviewResult({ result, payers, owner }) {
   )
 }
 
-function WhatIf({ learning, merchantId, demoDate, owner, pickRequest, wanted, panelRef }) {
+function WhatIf({ learning, merchantId, demoDate, owner, pickRequest, wanted, panelRef, autoRun }) {
   const payers = useMemo(() => learning.data?.payers || [], [learning.data])
   const [choice, setChoice] = useState(null)
   const [typed, setTyped] = useState('')
@@ -425,6 +425,14 @@ function WhatIf({ learning, merchantId, demoDate, owner, pickRequest, wanted, pa
     setError(null)
     runRef.current?.focus({ preventScroll: true })
   }, [pickRequest])
+
+  // ?run=<nonce> (judge tour): run the preview once, as if "See what happens" was pressed
+  const ranFor = useRef(null)
+  useEffect(() => {
+    if (!autoRun || ranFor.current === autoRun || !learning.data || !demoDate || choice === null || choice === OTHER) return
+    ranFor.current = autoRun
+    run({ preventDefault() {} })
+  })
 
   const picked = payers.find((p) => p.payer_id === choice)
   const grouped = KIND_ORDER.map((k) => [k, payers.filter((p) => p.kind === k)]).filter(([, list]) => list.length)
@@ -458,7 +466,7 @@ function WhatIf({ learning, merchantId, demoDate, owner, pickRequest, wanted, pa
   }
 
   return (
-    <section className="panel lr-tool" ref={panelRef} aria-labelledby="lr-tool-h">
+    <section className="panel lr-tool" ref={panelRef} aria-labelledby="lr-tool-h" data-tour="preview">
       <h2 id="lr-tool-h">What would happen?</h2>
       <p className="lr-tool-lede">Pick a payer and an amount. Naanayam runs the same decision it uses for a real payment, and saves nothing.</p>
       {!learning.data && !learning.error && <LoadState state={learning} what="this merchant's payers" />}
@@ -835,7 +843,7 @@ export default function Learning({ params = {} }) {
       <div className="lr-top">
         <EvalHeadline evaluation={evaluation} />
         <WhatIf key={merchantId} learning={learning} merchantId={merchantId} demoDate={demoDate} owner={owner}
-          pickRequest={pickRequest} wanted={params.payer} panelRef={toolRef} />
+          pickRequest={pickRequest} wanted={params.payer} panelRef={toolRef} autoRun={params.run} />
       </div>
 
       <div className={`lr-row2 ${e?.headline ? '' : 'is-single'}`}>

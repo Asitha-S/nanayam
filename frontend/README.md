@@ -42,6 +42,12 @@ React (Vite) app for Naanayam: a landing page for judges and the app screens, al
 
 The merchant switch in the top bar changes between Murugan (M001, Tamil) and Venkatesh (M002, Telugu).
 
+**Judge tour:** the "Judge tour" button in the bottom-right corner of every screen walks through Murugan's day in the
+order of `docs/BUILD_PLAN.md` §7, one highlighted element at a time with Back / Next. Starting it **resets the demo
+day**; forward steps send the scripted payments through the Soundbox screen itself, and if nobody taps the question
+card, Next answers it the way the script does. Engine: `src/tour/Tour.jsx`; steps and captions: `src/tour/steps.jsx`;
+screens mark what can be highlighted with `data-tour="..."`.
+
 ## Where things live
 
 - `src/api.js`: every request; `useApi(path)` refetches after any write. `VITE_API_BASE=fixtures` mapping is here.

@@ -63,7 +63,7 @@ export default function Today() {
             </div>
             <Money amount={s.profit} sources={[...(src.business_sales || []), ...(src.expenses || [])]} className="today-big" />
             <p className="equation">
-              <span><small>Business sales</small><Money amount={s.business_sales} sources={src.business_sales} /></span>
+              <span data-tour="sales-figure"><small>Business sales</small><Money amount={s.business_sales} sources={src.business_sales} /></span>
               <i aria-hidden="true">−</i>
               <span><small>Expenses</small><Money amount={s.expenses} sources={src.expenses} /></span>
               <i aria-hidden="true">=</i>

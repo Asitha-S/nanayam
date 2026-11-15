@@ -57,7 +57,7 @@ function Verify({ merchantId }) {
   const v = useApi(`/merchants/${merchantId}/ledger/verify`)
   const ok = v.data?.status === 'VALID'
   return (
-    <section className={`panel verify-strip ${v.data ? (ok ? 'is-valid' : 'is-bad') : ''}`} aria-live="polite">
+    <section className={`panel verify-strip ${v.data ? (ok ? 'is-valid' : 'is-bad') : ''}`} aria-live="polite" data-tour="verify">
       {ok ? <ShieldCheck aria-hidden="true" /> : <ShieldAlert aria-hidden="true" />}
       <div>
         <span className="label">Hash-chain check</span>
@@ -177,7 +177,7 @@ export default function Ledger({ params }) {
       </div>
 
       <div className="split ledger-split">
-        <div className="dtable ledger-table" role="table" aria-label="Ledger entries">
+        <div className="dtable ledger-table" role="table" aria-label="Ledger entries" data-tour="ledger-table">
           <div className="tr th" role="row">
             <span>Seq</span><span>Time</span><span>Entry</span><span>Source</span><span>Kind</span><span className="num">Amount</span><span>Hash</span>
           </div>

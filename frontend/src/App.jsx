@@ -2,6 +2,7 @@
 import { useEffect } from 'react'
 import { MerchantProvider } from './app/merchant'
 import { useHashRoute } from './app/route'
+import { TourProvider } from './tour/Tour'
 import AppShell from './components/AppShell'
 import DemoPanel from './pages/DemoPanel'
 import Home from './pages/Home'
@@ -41,13 +42,16 @@ function NotFound({ route }) {
 export default function App() {
   const { route, params } = useHashRoute()
   useEffect(() => { window.scrollTo(0, 0) }, [route])
-  if (route === '/') return <Landing />
   const [active, Screen] = SCREENS[route] || [null, null]
   return (
     <MerchantProvider>
-      <AppShell active={active}>
-        {Screen ? <Screen params={params} /> : <NotFound route={route} />}
-      </AppShell>
+      <TourProvider>
+        {route === '/' ? <Landing /> : (
+          <AppShell active={active}>
+            {Screen ? <Screen params={params} /> : <NotFound route={route} />}
+          </AppShell>
+        )}
+      </TourProvider>
     </MerchantProvider>
   )
 }

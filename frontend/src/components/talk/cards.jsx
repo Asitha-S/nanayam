@@ -354,7 +354,7 @@ export function ProfitCard({ r, t }) {
     const s = r.fallback
     const src = s?.sources || {}
     return (
-      <div className="tcard profit">
+      <div className="tcard profit" data-tour="profit-answer">
         <Head tone="lime" label={label} />
         <ErrorLine error={e} hint={hint} />
         {s && (
@@ -383,7 +383,7 @@ export function ProfitCard({ r, t }) {
     : !a.audio_id ? 'No audio came back: the text is shown without speech.'
       : USING_FIXTURES ? 'Speech plays with the live backend (fixtures mode has no audio).' : null
   return (
-    <div className="tcard profit">
+    <div className="tcard profit" data-tour="profit-answer">
       <Head tone="lime" label={label}>
         <Badge kind="ledger" />
       </Head>

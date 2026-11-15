@@ -562,6 +562,14 @@ export default function Talk({ params }) {
     return () => clearInterval(timer)
   }, [listening])
 
+  // #/talk?ask=profit&n=<nonce> (judge tour) asks today's profit once per nonce, through the same tap path.
+  const askedFor = useRef(null)
+  useEffect(() => {
+    if (params?.ask !== 'profit' || !demoDate || askedFor.current === (params.n || 'once')) return
+    askedFor.current = params.n || 'once'
+    tapProfit()
+  })
+
   // #/talk?question=Q-... opens that question's card (by id, never by position).
   const linked = useRef(null)
   useEffect(() => {

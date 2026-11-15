@@ -155,7 +155,7 @@ function Reader({ merchantId, onRead }) {
   }
 
   return (
-    <section className="panel nt-reader" aria-labelledby="nt-reader-h">
+    <section className="panel nt-reader" aria-labelledby="nt-reader-h" data-tour="notice-read">
       <div className="panel-head">
         <span className="label" id="nt-reader-h">The notice</span>
         <span className="label">PNG, JPG or PDF</span>
@@ -348,7 +348,7 @@ function bucketSources(sources, key) {
 function Evidence({ evidence, ev, sources, who }) {
   if (!ev) {
     return (
-      <section className="panel nt-evidence" aria-labelledby="nt-ev-h">
+      <section className="panel nt-evidence" aria-labelledby="nt-ev-h" data-tour="notice-evidence">
         <span className="label" id="nt-ev-h">What your ledger shows</span>
         {evidence.error
           ? <ErrorBanner error={evidence.error} hint={evidenceHint(evidence.error, who)} />
@@ -361,7 +361,7 @@ function Evidence({ evidence, ev, sources, who }) {
   const diff = ev.difference_vs_notice
   const tampered = ev.ledger_verify_status && ev.ledger_verify_status !== 'VALID'
   return (
-    <section className="panel lime nt-evidence" aria-labelledby="nt-ev-h">
+    <section className="panel lime nt-evidence" aria-labelledby="nt-ev-h" data-tour="notice-evidence">
       <div className="panel-head">
         <span className="label" id="nt-ev-h">What your ledger shows · {periodText(ev.period)}</span>
         <Badge kind="ledger" />

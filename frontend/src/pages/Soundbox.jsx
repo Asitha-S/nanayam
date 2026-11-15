@@ -9,6 +9,7 @@ import { apiUrl, get, post, useApi } from '../api'
 import { useMerchant } from '../app/merchant'
 import { useStrings } from '../app/strings'
 import QuestionCard from '../components/QuestionCard'
+import { TOUR_EVENT } from '../tour/Tour'
 import { Badge, LoadState, Money, clockTime, confidenceText, count } from '../components/ui'
 
 const CLASS_WORDS = { SALE: 'Sale', FAMILY: 'Family', PENDING: 'Waiting' }
@@ -175,7 +176,7 @@ function sourceText(p) {
 function PaymentsPanel({ payments }) {
   const items = [...(payments.data?.items || [])].sort((a, b) => (a.timestamp < b.timestamp ? 1 : a.timestamp > b.timestamp ? -1 : 0))
   return (
-    <section className="panel sb-payments" aria-labelledby="sb-pay-h">
+    <section className="panel sb-payments" aria-labelledby="sb-pay-h" data-tour="soundbox-payments">
       <div className="panel-head">
         <h2 id="sb-pay-h" className="sb-h">Today's payments</h2>
         {payments.data && <span className="label">{count(payments.data.count)} · newest first</span>}
@@ -250,12 +251,32 @@ export default function Soundbox() {
       }
       const item = items.find((i) => i.transaction_id === res.transaction_id) || null
       setSent({ res, question, questionError, item, key: id, answer: null })
+      return res
     } catch (e) {
       if (id === reqId.current) setError(e)
+      return null
     } finally {
       if (id === reqId.current) setSending(false)
     }
   }
+
+  // Judge tour: "send N payments" presses this screen's own Send, so the device, the announcement and the
+  // question card behave exactly as they do for a presenter.
+  const sendRef = useRef(send)
+  sendRef.current = send
+  useEffect(() => {
+    const on = async (e) => {
+      if (e.detail?.action !== 'send') return
+      e.detail.ack?.()
+      for (let i = 0; i < (e.detail.count || 1); i += 1) {
+        const res = await sendRef.current()
+        if (!res) return e.detail.fail?.(new Error('A payment could not be sent (see the Soundbox screen)'))
+      }
+      return e.detail.done?.()
+    }
+    window.addEventListener(TOUR_EVENT, on)
+    return () => window.removeEventListener(TOUR_EVENT, on)
+  }, [])
 
   useEffect(() => {
     if (sent?.question && askRef.current) askRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
@@ -319,7 +340,7 @@ export default function Soundbox() {
 
       <div className="sb-layout">
         <div className="sb-main">
-          <section className="panel sb-stage" aria-label="Soundbox simulator">
+          <section className="panel sb-stage" aria-label="Soundbox simulator" data-tour="soundbox-stage">
             <div className="sb-device-col">
               <Device state={devState} speaking={voice === 'playing' || sending} amount={devAmount} sources={devSources} line={devLine} top={devTop} />
               {counts.length > 0 && (
@@ -397,7 +418,7 @@ export default function Soundbox() {
           </section>
 
           {res && isAsk && (
-            <section className="panel signal sb-ask" ref={askRef} aria-label="The question">
+            <section className="panel signal sb-ask" ref={askRef} aria-label="The question" data-tour="soundbox-question">
               <div className="sb-ask-copy">
                 <h2 className="sb-h">One question for {owner}.</h2>
                 <p>On {owner}'s phone and the Soundbox, in {t.languageName}. Two big answers; nothing is guessed.</p>
