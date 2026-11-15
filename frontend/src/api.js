@@ -2,12 +2,15 @@
 // VITE_API_BASE=fixtures serves contract/fixtures instead of the backend.
 import { useCallback, useEffect, useState } from 'react'
 
-// VITE_API_BASE: a full URL, "fixtures", or unset. Unset means "the API on this same host, port 8000": the laptop
-// reaches localhost, and a phone that opened http://<laptop-LAN-IP>:5173 reaches http://<laptop-LAN-IP>:8000.
+// VITE_API_BASE: a full URL, "fixtures", "same-origin", or unset. Unset means "the API on this same host, port 8000":
+// the laptop reaches localhost, and a phone that opened http://<laptop-LAN-IP>:5173 reaches http://<laptop-LAN-IP>:8000.
+// "same-origin": the page and the API share one host, the API under /api (the Vercel deployment, vercel.json).
 const RAW_BASE = import.meta.env.VITE_API_BASE
 const API_PORT = import.meta.env.VITE_API_PORT || '8000'
+export const SAME_ORIGIN = RAW_BASE === 'same-origin'
 function deriveBase() {
   if (RAW_BASE === 'fixtures') return 'fixtures'
+  if (SAME_ORIGIN) return `${window.location.origin}/api`
   if (RAW_BASE && /^https?:\/\//.test(RAW_BASE)) return RAW_BASE.replace(/\/$/, '')
   const host = window.location.hostname || 'localhost'
   const path = RAW_BASE && RAW_BASE.startsWith('/') ? RAW_BASE.replace(/\/$/, '') : '/api'

@@ -16,7 +16,7 @@ import qrcode from 'qrcode-generator'
 import { Check, CircleHelp, HandCoins, Laptop, Pause, Play, Send, Smartphone, TriangleAlert, Volume2, VolumeX, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { CHANGED, USING_FIXTURES, get, post, useApi } from '../api'
+import { CHANGED, SAME_ORIGIN, USING_FIXTURES, get, post, useApi } from '../api'
 import { useMerchant } from '../app/merchant'
 import { clearSpeech, setMuted, speak, unlockSound, useSpeech } from '../app/speech'
 import { stringsFor, useStrings } from '../app/strings'
@@ -337,9 +337,11 @@ function TabOffer({ item, onYes, onNo }) {
 }
 
 function PhonePanel({ merchantId, onPayHere, payOpen }) {
-  const net = useApi(USING_FIXTURES ? null : '/demo/network')
+  // Hosted (SAME_ORIGIN): this page's own public address works from any phone, so no LAN lookup.
+  const net = useApi(USING_FIXTURES || SAME_ORIGIN ? null : '/demo/network')
   const ip = net.data?.lan_ips?.[0]
-  const url = ip ? `http://${ip}:${window.location.port || 5173}/#/pay?m=${encodeURIComponent(merchantId)}` : null
+  const pay = `/#/pay?m=${encodeURIComponent(merchantId)}`
+  const url = SAME_ORIGIN ? `${window.location.origin}${pay}` : ip ? `http://${ip}:${window.location.port || 5173}${pay}` : null
   return (
     <section className="panel sb-phone" aria-labelledby="sb-phone-h">
       <div className="panel-head">
@@ -348,7 +350,9 @@ function PhonePanel({ merchantId, onPayHere, payOpen }) {
       </div>
       {url ? (
         <>
-          <p className="sb-phone-lede">Scan with any phone on the same Wi-Fi or hotspot as this laptop. The payment lands here and the Soundbox announces it.</p>
+          <p className="sb-phone-lede">{SAME_ORIGIN
+            ? 'Scan with any phone. The payment lands here and the Soundbox announces it.'
+            : 'Scan with any phone on the same Wi-Fi or hotspot as this laptop. The payment lands here and the Soundbox announces it.'}</p>
           <QrCode text={url} />
           <p className="sb-url"><span className="label">Or type</span><span className="mono">{url}</span></p>
         </>
