@@ -130,6 +130,7 @@ Request:
   "business_category": "VEGETABLES",
   "preferred_language": "ta",
   "family_payers": [ { "payer_id": "P90002", "payer_name": "Karthik", "relation_label": "Thambi (brother)" } ],
+  "customer_payers": [ { "payer_id": "P10411", "payer_name": "Senthil K" } ],
   "created_at": "2026-08-01T05:00:00+05:30"
 }
 ```
@@ -137,9 +138,9 @@ Request:
 ### PUT `/merchants/{merchant_id}`
 Partial update. Only these fields:
 ```json
-{ "preferred_language": "ta", "business_category": "VEGETABLES", "family_payer_ids": ["P90002", "P90001"] }
+{ "preferred_language": "ta", "business_category": "VEGETABLES", "family_payer_ids": ["P90002", "P90001"], "customer_payer_ids": ["P10411"] }
 ```
-`200`: full merchant object. Adding a payer to `family_payer_ids` affects **future** classifications only; it does not rewrite history. `422` for unknown payer IDs.
+`200`: full merchant object. Each list field, when present, **replaces** that configured list. Changes affect **future** classifications only; they never rewrite history. `422` for unknown payer IDs (`details.unknown`) and when the result would put a payer in both lists (`details.overlap`). Moving a payer between lists is done by removing them from one list in the same request, or by the confirm flow below.
 
 ---
 
@@ -275,7 +276,7 @@ Stores the merchant's answer or correction. Creates a `RECLASSIFICATION` ledger 
 { "merchant_id": "M001", "question_id": "Q-M001-000057", "confirmed_category": "FAMILY", "channel": "VOICE", "utterance_text": "veettu panam, eppavum", "remember_payer": true }
 ```
 - `question_id`: required when answering a question; `null` for a correction from the ledger screen. The backend checks the question exists, belongs to this `transaction_id` and `merchant_id`; otherwise `409 INVALID_STATE` with `details.reason = "QUESTION_MISMATCH"`. This stops a voice answer from landing on a different open question.
-- `remember_payer` (optional, default `false`): only allowed with `FAMILY` (`422` with `SALE`). Adds the payer to the merchant's family payers. Affects future payments only.
+- `remember_payer` (optional, default `false`). With `FAMILY` ("Always family"): adds the payer to the family payers. With `SALE` ("Remember as customer", offered by the UI after a SALE answer on a **P2P** payment): adds the payer to the customer payers; on a non-P2P payment → `422` (`details.field = "remember_payer"`). A payer is never in both lists: remembering in one removes them from the other in the same transaction, and `moved_from` says so. Affects future payments only.
 
 `201`
 ```json
@@ -287,7 +288,8 @@ Stores the merchant's answer or correction. Creates a `RECLASSIFICATION` ledger 
   "feedback_id": "FB-M001-000031",
   "question_id": "Q-M001-000057",
   "question_status": "ANSWERED",
-  "payer_memory": { "payer_id": "P90001", "confirmed_family": 1, "confirmed_sale": 0, "family_payer_configured": true },
+  "payer_memory": { "payer_id": "P90001", "confirmed_family": 1, "confirmed_sale": 0, "family_payer_configured": true, "customer_payer_configured": false },
+  "moved_from": null,
   "idempotent_replay": false
 }
 ```
@@ -301,6 +303,8 @@ Stores the merchant's answer or correction. Creates a `RECLASSIFICATION` ledger 
 | Same category as an AUTO decision (merchant "confirms" an auto one) | `201`, RECLASSIFICATION with source `MERCHANT_CONFIRMED`, feedback stored |
 | Answering a question that is already ANSWERED, with a different category | treated as a correction (row 3) |
 | Payment reversed | `409 INVALID_STATE` |
+| Remember with `SALE` on a P2P payment | `201`, payer added to customer payers (`customer_payer_configured: true`). If they were a family payer: removed from that list, `"moved_from": "FAMILY"` |
+| Remember with `FAMILY` for a configured customer | `201`, payer moved to family payers, `"moved_from": "CUSTOMER"` |
 | Correcting a payment from a configured family payer to SALE | `201`; the payer stays configured; response includes `"suggest_unconfigure": true` so the UI can ask "Stop treating {name} as always family?" |
 
 ### POST `/classify/preview`
@@ -313,6 +317,7 @@ Runs the full decision procedure for a hypothetical payment **without writing an
 { "suggested_classification": "FAMILY", "confidence": null, "confidence_kind": "NONE", "action": "AUTO_CLASSIFY", "classification_source": "MERCHANT_CONFIG", "reasons": ["Marked as family by merchant"], "written": false }
 ```
 UI text for this case: "Next time: family, because you told Naanayam to remember (you can change this)". Never a percentage.
+Configured customer: `SALE`, `AUTO_CLASSIFY`, `MERCHANT_CONFIG`, `confidence: null`, reason "Marked as customer by merchant" (fixture `classify_preview_customer.json`). Guardrails (DATA 5.6 rules 5d and 1b) return `ASK_MERCHANT`, source `RULE`, with the model's suggestion and confidence, first reason "Looks like a shop sale from a family payer" / "Looks like family money from a customer" (fixture `classify_preview_guardrail_ask.json`).
 
 ---
 
@@ -545,7 +550,7 @@ Directly edits one entry's amount in SQLite without updating hashes, so `/ledger
   "recent_feedback": [ { "feedback_id": "FB-M001-000031", "payer_name": "Lakshmi R", "confirmed_category": "FAMILY", "at": "2026-11-15T19:43:02+05:30" } ]
 }
 ```
-All counts from the database. `first_7_days` = first 7 days of the merchant's history. Also `payers`: the merchant's configured family payers and payers with answers, each `{ payer_id, payer_name, kind, relation_label, confirmed_family, confirmed_sale }` with `kind` = `INSTRUCTION` (configured: "always family, your instruction"), `MIXED` (rule 5a: always asked) or `MEMORY` (answers nudge the model). Shown as activity; the Learning headline is the evaluation's weekly questions (C vs E).
+All counts from the database. `first_7_days` = first 7 days of the merchant's history. Also `customer_payers_configured` and `payers`: both configured lists and the payers with answers, each `{ payer_id, payer_name, kind, source, relation_label, confirmed_family, confirmed_sale }` with `kind` = `FAMILY_INSTRUCTION` ("always family, your instruction"), `CUSTOMER_INSTRUCTION` ("always a customer, your instruction"), `MIXED` (rule 5a: always asked) or `MEMORY` (answers nudge the model), and `source` = `SETUP` / `CONFIRMATION` (how the instruction was given) or `ANSWERS`. Shown as activity; the Learning headline is the evaluation's weekly questions (C vs E).
 
 ### GET `/evaluation`
 Returns the latest evaluation run file (`data/eval/latest.json`), produced by `python -m ml.evaluate`. Never hand-edited.

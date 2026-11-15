@@ -63,6 +63,29 @@ def is_family_payer(conn: sqlite3.Connection, merchant_id: str, payer_id: str) -
     ).fetchone() is not None
 
 
+def is_customer_payer(conn: sqlite3.Connection, merchant_id: str, payer_id: str) -> bool:
+    return conn.execute(
+        "SELECT 1 FROM merchant_customer_payers WHERE merchant_id = ? AND payer_id = ?", (merchant_id, payer_id)
+    ).fetchone() is not None
+
+
+def add_customer_payer(conn: sqlite3.Connection, merchant_id: str, payer_id: str, added_at: str, added_via: str) -> None:
+    conn.execute(
+        "INSERT OR IGNORE INTO merchant_customer_payers (merchant_id, payer_id, added_at, added_via) VALUES (?, ?, ?, ?)",
+        (merchant_id, payer_id, added_at, added_via),
+    )
+
+
+def remove_family_payer(conn: sqlite3.Connection, merchant_id: str, payer_id: str) -> None:
+    """Configuration only: the ledger history is never touched."""
+    conn.execute("DELETE FROM merchant_family_payers WHERE merchant_id = ? AND payer_id = ?", (merchant_id, payer_id))
+
+
+def remove_customer_payer(conn: sqlite3.Connection, merchant_id: str, payer_id: str) -> None:
+    """Configuration only: the ledger history is never touched."""
+    conn.execute("DELETE FROM merchant_customer_payers WHERE merchant_id = ? AND payer_id = ?", (merchant_id, payer_id))
+
+
 def insert_merchant(conn: sqlite3.Connection, m: dict) -> None:
     conn.execute(
         "INSERT INTO merchants (merchant_id, display_name, owner_name, city, business_category, preferred_language, created_at)"

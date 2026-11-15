@@ -10,7 +10,7 @@ from datetime import date as Date, datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 Language = Literal["ta", "te", "en"]
 VoiceLanguage = Literal["ta", "te"]
@@ -68,6 +68,7 @@ class MerchantUpdateIn(Strict):
     preferred_language: Language | None = None
     business_category: BusinessCategory | None = None
     family_payer_ids: list[NonEmpty] | None = None
+    customer_payer_ids: list[NonEmpty] | None = None
 
 
 # --- payments ---------------------------------------------------------------
@@ -101,13 +102,9 @@ class ConfirmIn(Strict):
     confirmed_category: ConfirmableCategory
     channel: ConfirmationChannel
     utterance_text: str | None = None
+    # FAMILY: "Always family". SALE: "Remember as customer", offered only after a SALE answer on a P2P payment
+    # (the backend checks the payment is P2P).
     remember_payer: bool = False
-
-    @model_validator(mode="after")
-    def _remember_only_family(self):
-        if self.remember_payer and self.confirmed_category != "FAMILY":
-            raise ValueError("remember_payer is only allowed with confirmed_category FAMILY")
-        return self
 
 
 class PreviewIn(Strict):

@@ -102,7 +102,8 @@ def test_demo_day_flow(seeded):
     body = c.json()
     assert body["previous_classification"] == "PENDING" and body["question_status"] == "ANSWERED"
     assert body["payer_memory"] == {"payer_id": "P90001", "confirmed_family": 1, "confirmed_sale": 0,
-                                    "family_payer_configured": True}
+                                    "family_payer_configured": True, "customer_payer_configured": False}
+    assert body["moved_from"] is None
     after = summary(seeded)
     assert amounts(after) == {"total_collections": 682000, "business_sales": 482000, "family_transfers": 200000,
                               "pending": 0, "expenses": 310000, "profit": 172000, "pending_count": 0}
@@ -471,3 +472,95 @@ def test_preview_writes_nothing(seeded):
     assert stranger["action"] == "ASK_MERCHANT" and stranger["written"] is False
     assert len(ledger_rows()) == before
     assert seeded.post("/api/classify/preview", json=body | {"merchant_id": "M999"}).status_code == 422
+
+
+# --- customer memory, list moves, guardrails (DATA 5.6 rules 1, 1b, 5d) -------------------------
+def _pay(c, n, payer="P90002", name="Karthik", amount=150000, ptype="P2P", ts="2026-11-15T20:00:00+05:30"):
+    r = c.post("/api/payments", json={
+        "transaction_id": f"TXN-M001-20261115-{n:03d}", "merchant_id": "M001", "payer_id": payer, "payer_name": name,
+        "payer_vpa_kind": "PERSONAL", "amount_paise": amount, "payment_type": ptype, "timestamp": ts, "description": None})
+    assert r.status_code == 201, r.text
+    return r.json()
+
+
+def _lists(c):
+    m = c.get("/api/merchants/M001").json()
+    return [p["payer_id"] for p in m["family_payers"]], [p["payer_id"] for p in m["customer_payers"]]
+
+
+def test_remember_as_customer_needs_a_p2p_payment(seeded):
+    (p,) = inject(seeded, 1)  # P2M sale
+    r = confirm(seeded, txn=p["transaction_id"], confirmed_category="SALE", remember_payer=True)
+    assert r.status_code == 422 and r.json()["error"]["details"]["field"] == "remember_payer"
+
+
+def test_remember_as_customer_then_auto_sale(seeded):
+    p = _pay(seeded, 200, payer="P50001", name="Ganesh", amount=200000)  # P2P round -> ASK (stand-in q 0.6)
+    assert p["action"] == "ASK_MERCHANT"
+    r = confirm(seeded, txn=p["transaction_id"], question_id=p["question_id"], confirmed_category="SALE", remember_payer=True)
+    assert r.status_code == 201
+    body = r.json()
+    assert body["moved_from"] is None and body["payer_memory"]["customer_payer_configured"] is True
+    assert _lists(seeded) == (["P90002"], ["P50001"])
+    nxt = _pay(seeded, 201, payer="P50001", name="Ganesh", amount=200000, ts="2026-11-15T20:10:00+05:30")
+    assert (nxt["classification"], nxt["action"], nxt["classification_source"], nxt["confidence"]) == (
+        "SALE", "AUTO_CLASSIFY", "MERCHANT_CONFIG", None)
+    assert nxt["reasons"] == ["Marked as customer by merchant"]
+
+
+def test_moving_between_lists_and_history_unchanged(seeded):
+    before = {r["ledger_entry_id"]: (r["classification"], r["classification_source"], r["hash"]) for r in ledger_rows()}
+    k1 = _pay(seeded, 210)  # Karthik, configured family -> AUTO FAMILY
+    assert k1["classification_source"] == "MERCHANT_CONFIG"
+    to_customer = confirm(seeded, txn=k1["transaction_id"], confirmed_category="SALE", remember_payer=True).json()
+    assert to_customer["moved_from"] == "FAMILY"
+    assert to_customer["payer_memory"]["family_payer_configured"] is False
+    assert to_customer["payer_memory"]["customer_payer_configured"] is True
+    assert "suggest_unconfigure" not in to_customer  # already moved out of the family list
+    assert _lists(seeded) == ([], ["P90002"])
+    k2 = _pay(seeded, 211, ts="2026-11-15T20:20:00+05:30")
+    assert (k2["classification"], k2["classification_source"]) == ("SALE", "MERCHANT_CONFIG")
+    back = confirm(seeded, txn=k2["transaction_id"], confirmed_category="FAMILY", remember_payer=True).json()
+    assert back["moved_from"] == "CUSTOMER" and _lists(seeded) == (["P90002"], [])
+    # earlier entries (seed history) are exactly as they were: configuration never rewrites the ledger
+    after = {r["ledger_entry_id"]: (r["classification"], r["classification_source"], r["hash"]) for r in ledger_rows()}
+    assert all(after[k] == v for k, v in before.items())
+    assert seeded.get("/api/merchants/M001/ledger/verify").json()["status"] == "VALID"
+
+
+def test_family_guardrail_5d_via_api(seeded):
+    sale_like = _pay(seeded, 220, amount=125050, ptype="P2M")  # configured family, P2M, Rs 1,250.50, stand-in q 0.0001
+    assert (sale_like["action"], sale_like["classification"], sale_like["classification_source"]) == (
+        "ASK_MERCHANT", "PENDING", "RULE")
+    assert sale_like["suggested_classification"] == "SALE" and sale_like["confidence_kind"] == "MODEL"
+    assert sale_like["reasons"][0] == "Looks like a shop sale from a family payer" and sale_like["question_id"]
+    round_p2m = _pay(seeded, 221, amount=120000, ptype="P2M", ts="2026-11-15T20:05:00+05:30")
+    assert round_p2m["classification_source"] == "MERCHANT_CONFIG"
+
+
+def test_customer_guardrail_via_api(seeded, monkeypatch):
+    seeded.put("/api/merchants/M001", json={"customer_payer_ids": ["P90004"]})  # Mani as a customer
+    from app.classifier import model
+
+    monkeypatch.setattr(model, "q_model", lambda vec: 0.99)
+    p = _pay(seeded, 230, payer="P90004", name="Mani", amount=200000)
+    assert (p["action"], p["classification_source"], p["suggested_classification"]) == ("ASK_MERCHANT", "RULE", "FAMILY")
+    assert p["reasons"][0] == "Looks like family money from a customer"
+    monkeypatch.setattr(model, "q_model", lambda vec: 0.9799)
+    q = _pay(seeded, 231, payer="P90004", name="Mani", amount=200000, ts="2026-11-15T20:05:00+05:30")
+    assert (q["action"], q["classification_source"]) == ("AUTO_CLASSIFY", "MERCHANT_CONFIG")
+
+
+def test_put_lists_conflicts_and_removal(seeded):
+    both = seeded.put("/api/merchants/M001", json={"family_payer_ids": ["P90002"], "customer_payer_ids": ["P90002"]})
+    assert both.status_code == 422 and both.json()["error"]["details"]["overlap"] == ["P90002"]
+    karthik_as_customer = seeded.put("/api/merchants/M001", json={"customer_payer_ids": ["P90002"]})  # still family
+    assert karthik_as_customer.status_code == 422
+    ok = seeded.put("/api/merchants/M001", json={"family_payer_ids": [], "customer_payer_ids": ["P90002"]})
+    assert ok.status_code == 200 and _lists(seeded) == ([], ["P90002"])
+    removed = seeded.put("/api/merchants/M001", json={"customer_payer_ids": []})
+    assert removed.status_code == 200 and _lists(seeded) == ([], [])
+    k = _pay(seeded, 240)
+    assert k["classification_source"] != "MERCHANT_CONFIG"  # no longer configured
+    hist = seeded.get("/api/merchants/M001/payments", params={"start_date": "2026-10-20", "end_date": "2026-10-20"}).json()
+    assert hist["items"][0]["classification_source"] == "MERCHANT_CONFIG"  # past decision kept

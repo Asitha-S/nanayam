@@ -25,42 +25,89 @@ IST = clock.IST
     (0.60, 2, 2, 0.533, "ASK_MERCHANT"),     # mixed payer rule (spec table said 0.55: arithmetic slip)
 ])
 def test_feedback_examples(q, nf, ns, p, action):
-    o = procedure.run(q=q, n_family=nf, n_sale=ns, configured=False, is_new_payer=False, amount_paise=200000, tau=0.90)
+    o = procedure.run(q=q, n_family=nf, n_sale=ns, is_new_payer=False, amount_paise=200000, payment_type="P2P", tau=0.90)
     assert round(o.p_final, 3) == p and o.action == action
     assert o.source == ("RULE" if o.rules else "PAYER_MEMORY" if nf + ns else "MODEL")
 
 
 def test_auto_sale_example_confidence():
-    o = procedure.run(q=0.10, n_family=0, n_sale=3, configured=False, is_new_payer=False, amount_paise=4000, tau=0.9)
+    o = procedure.run(q=0.10, n_family=0, n_sale=3, is_new_payer=False, amount_paise=4000, payment_type="P2M", tau=0.9)
     assert (o.suggested, round(o.confidence, 2), o.classification) == ("SALE", 0.96, "SALE")
 
 
 @pytest.mark.parametrize("q", [0.5, 0.71, 0.95, 0.999, 1.0])
 def test_rule_5c_family_suggestion_without_confirmation_always_asks(q):
-    o = procedure.run(q=q, n_family=0, n_sale=0, configured=False, is_new_payer=False, amount_paise=200000, tau=0.5)
+    o = procedure.run(q=q, n_family=0, n_sale=0, is_new_payer=False, amount_paise=200000, payment_type="P2P", tau=0.5)
     assert o.suggested == "FAMILY" and o.action == "ASK_MERCHANT" and "FAMILY_NEEDS_CONFIRMATION" in o.rules
     assert o.classification == "PENDING" and o.source == "RULE"
 
 
 def test_rule_5b_first_time_large():
-    o = procedure.run(q=0.0, n_family=0, n_sale=0, configured=False, is_new_payer=True, amount_paise=500000, tau=0.9)
+    o = procedure.run(q=0.0, n_family=0, n_sale=0, is_new_payer=True, amount_paise=500000, payment_type="P2M", tau=0.9)
     assert o.suggested == "SALE" and o.action == "ASK_MERCHANT" and o.rules == ("FIRST_TIME_LARGE",)
-    small = procedure.run(q=0.0, n_family=0, n_sale=0, configured=False, is_new_payer=True, amount_paise=499900, tau=0.9)
+    small = procedure.run(q=0.0, n_family=0, n_sale=0, is_new_payer=True, amount_paise=499900, payment_type="P2M", tau=0.9)
     assert small.action == "AUTO_CLASSIFY"
 
 
 def test_rule_5a_mixed_payer():
-    o = procedure.run(q=0.0, n_family=1, n_sale=3, configured=False, is_new_payer=False, amount_paise=30000, tau=0.5)
+    o = procedure.run(q=0.0, n_family=1, n_sale=3, is_new_payer=False, amount_paise=30000, payment_type="P2M", tau=0.5)
     assert "MIXED_PAYER" in o.rules and o.action == "ASK_MERCHANT"
-    two = procedure.run(q=0.0, n_family=1, n_sale=1, configured=False, is_new_payer=False, amount_paise=30000, tau=0.5)
+    two = procedure.run(q=0.0, n_family=1, n_sale=1, is_new_payer=False, amount_paise=30000, payment_type="P2M", tau=0.5)
     assert "MIXED_PAYER" not in two.rules  # needs at least 3 answers
 
 
-def test_merchant_config_has_no_confidence():
-    o = procedure.run(q=None, n_family=0, n_sale=0, configured=True, is_new_payer=False, amount_paise=1, tau=0.99)
-    assert (o.suggested, o.action, o.source, o.confidence, o.confidence_kind) == (
-        "FAMILY", "AUTO_CLASSIFY", "MERCHANT_CONFIG", None, "NONE")
+def test_merchant_config_has_no_confidence_but_q_is_computed():
+    o = procedure.run(q=0.3, n_family=0, n_sale=0, configured_family=True, is_new_payer=False, amount_paise=200000,
+                      payment_type="P2P", tau=0.99)
+    assert (o.suggested, o.action, o.source, o.confidence, o.confidence_kind, o.q_model) == (
+        "FAMILY", "AUTO_CLASSIFY", "MERCHANT_CONFIG", None, "NONE", 0.3)
     assert procedure.reasons(o, None, 0, 0) == ["Marked as family by merchant"]
+    c = procedure.run(q=0.3, n_family=0, n_sale=0, configured_customer=True, is_new_payer=False, amount_paise=200000,
+                      payment_type="P2P", tau=0.99)
+    assert (c.suggested, c.action, c.source, c.confidence) == ("SALE", "AUTO_CLASSIFY", "MERCHANT_CONFIG", None)
+    assert procedure.reasons(c, None, 0, 0) == ["Marked as customer by merchant"]
+
+
+def _cfg(*, family=False, customer=False, q, ptype, amount):
+    return procedure.run(q=q, n_family=0, n_sale=0, is_new_payer=False, amount_paise=amount, payment_type=ptype,
+                         tau=0.99, configured_family=family, configured_customer=customer)
+
+
+@pytest.mark.parametrize("q, ptype, amount, asks", [
+    (0.02, "P2M", 125_000, True),      # boundary: q <= 0.02 fires
+    (0.0201, "P2M", 125_000, False),
+    (0.0, "P2M", 120_000, False),      # round to Rs 100 -> no guardrail
+    (0.0, "P2M", 120_050, True),       # Rs 1,200.50 is not round to Rs 100
+    (0.0, "P2P", 125_000, False),      # P2P -> no guardrail
+])
+def test_family_guardrail_5d_boundaries(q, ptype, amount, asks):
+    o = _cfg(family=True, q=q, ptype=ptype, amount=amount)
+    if asks:
+        assert (o.action, o.source, o.suggested, o.rules) == ("ASK_MERCHANT", "RULE", "SALE", ("FAMILY_GUARDRAIL",))
+        assert o.confidence == max(q, 1 - q) and o.confidence_kind == "MODEL"
+        assert procedure.reasons(o, None, 0, 0)[0] == "Looks like a shop sale from a family payer"
+    else:
+        assert (o.action, o.source, o.suggested) == ("AUTO_CLASSIFY", "MERCHANT_CONFIG", "FAMILY")
+
+
+@pytest.mark.parametrize("q, ptype, amount, asks", [
+    (0.98, "P2P", 200_000, True),      # boundary: q >= 0.98 fires
+    (0.9799, "P2P", 200_000, False),
+    (1.0, "P2P", 210_000, False),      # round to Rs 100 but not Rs 500 -> no guardrail
+    (1.0, "P2P", 250_000, True),       # Rs 2,500 is round to Rs 500
+    (1.0, "P2M", 200_000, False),      # P2M -> no guardrail
+])
+def test_customer_guardrail_1b_boundaries(q, ptype, amount, asks):
+    o = _cfg(customer=True, q=q, ptype=ptype, amount=amount)
+    if asks:
+        assert (o.action, o.source, o.suggested, o.rules) == ("ASK_MERCHANT", "RULE", "FAMILY", ("CUSTOMER_GUARDRAIL",))
+        assert procedure.reasons(o, None, 0, 0)[0] == "Looks like family money from a customer"
+    else:
+        assert (o.action, o.source, o.suggested) == ("AUTO_CLASSIFY", "MERCHANT_CONFIG", "SALE")
+
+
+def test_memory_k_is_a_parameter():
+    assert round(procedure.memory_p(0.71, 1, 0, k=1), 3) == 0.855 and round(procedure.memory_p(0.71, 1, 0, k=4), 3) == 0.768
 
 
 def _pay(amount=200000, ptype="P2P", kind="PERSONAL", ts="2026-11-15T19:42:10+05:30", payer="P1", txn="T1"):
@@ -69,12 +116,12 @@ def _pay(amount=200000, ptype="P2P", kind="PERSONAL", ts="2026-11-15T19:42:10+05
 
 def test_reasons_priority_and_limit():
     f = build(_pay(), "VEGETABLES", [], PayerStats())
-    o = procedure.run(q=0.9, n_family=0, n_sale=0, configured=False, is_new_payer=True, amount_paise=200000, tau=0.9)
+    o = procedure.run(q=0.9, n_family=0, n_sale=0, is_new_payer=True, amount_paise=200000, payment_type="P2P", tau=0.9)
     assert procedure.reasons(o, f, 0, 0) == [
         "Family money is only excluded after the merchant confirms", "New payer", "P2P transfer", "Round amount"]
     regular = build(_pay(amount=12000, ptype="P2M"), "VEGETABLES", [],
                     PayerStats(count=8, p2p=1, amount_sum=96000, round100=2, last_ts=clock.parse("2026-11-14T08:00:00+05:30")))
-    o2 = procedure.run(q=0.01, n_family=0, n_sale=0, configured=False, is_new_payer=False, amount_paise=12000, tau=0.9)
+    o2 = procedure.run(q=0.01, n_family=0, n_sale=0, is_new_payer=False, amount_paise=12000, payment_type="P2M", tau=0.9)
     assert procedure.reasons(o2, regular, 0, 0) == ["Regular customer", "Typical sale amount"]
 
 

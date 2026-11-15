@@ -31,6 +31,10 @@ All money columns are `INTEGER` paise. All timestamps are `TEXT` ISO 8601 with `
 
 Payers are global (one person can pay several merchants), but all memory is per merchant.
 
+**merchant_customer_payers** (merchant configuration, "Remember as customer")
+| merchant_id | payer_id | added_at | added_via (`SETUP`/`CONFIRMATION`) |
+PK (merchant_id, payer_id). A payer is never in both this table and merchant_family_payers.
+
 **merchant_family_payers** (merchant configuration)
 | merchant_id | payer_id | relation_label | added_at | added_via (`SETUP`/`CONFIRMATION`) |
 PK (merchant_id, payer_id).
@@ -49,7 +53,7 @@ PK (merchant_id, payer_id).
 | received_at | TEXT | backend time |
 
 **predictions** (one row per payment, written once)
-| transaction_id PK FK | model_version | threshold REAL | q_model REAL NULL (calibrated p(FAMILY); null for MERCHANT_CONFIG) | p_final REAL NULL | confidence REAL NULL | confidence_kind (`MODEL`/`NONE`) | suggested_classification | action | classification_source | reasons_json | created_at |
+| transaction_id PK FK | model_version | threshold REAL | q_model REAL (calibrated p(FAMILY); computed for every payment, including MERCHANT_CONFIG decisions) | p_final REAL NULL | confidence REAL NULL | confidence_kind (`MODEL`/`NONE`) | suggested_classification | action | classification_source | reasons_json | created_at |
 
 **questions**
 | question_id PK | merchant_id | transaction_id UNIQUE | status (`OPEN`/`ANSWERED`) | created_at | answered_at NULL |
@@ -345,6 +349,9 @@ One function `features.build(payment, history_df)` is used in training, evaluati
 | code (internal) | English text |
 |---|---|
 | CONFIGURED_FAMILY | "Marked as family by merchant" |
+| CONFIGURED_CUSTOMER | "Marked as customer by merchant" |
+| FAMILY_GUARDRAIL | "Looks like a shop sale from a family payer" (rule 5d) |
+| CUSTOMER_GUARDRAIL | "Looks like family money from a customer" (rule 1b guardrail) |
 | MIXED_PAYER | "This person has paid for both shop and family before" |
 | FIRST_TIME_LARGE | "First payment from this person, and large" |
 | FAMILY_NEEDS_CONFIRMATION | "Family money is only excluded after the merchant confirms" |
@@ -363,14 +370,23 @@ Reasons are rule-derived from feature values, not from SHAP. They describe the i
 ### 5.6 Decision procedure (exact order)
 
 ```
+0. q = q_model(features)        # calibrated p(FAMILY), computed for EVERY payment, before any configuration
 1. If payer in merchant_family_payers:
-       FAMILY, AUTO_CLASSIFY, source=MERCHANT_CONFIG,
-       q_model/p_final/confidence = null, confidence_kind = NONE.  STOP.
+       guardrail 5d: payment_type == P2M AND amount not round to ₹100 AND q <= 0.02
+           -> ASK_MERCHANT, source=RULE, suggested = model's (SALE), confidence = max(q, 1-q), kind MODEL,
+              reason "Looks like a shop sale from a family payer".  STOP.
+       otherwise FAMILY, AUTO_CLASSIFY, source=MERCHANT_CONFIG, confidence = null, confidence_kind = NONE.  STOP.
    (A configured rule, not a probability. The merchant can correct any such payment to SALE;
     the API then offers to remove the payer from the family list.)
-2. q = q_model(features)                                  # calibrated p(FAMILY)
+1b. If payer in merchant_customer_payers:
+       guardrail: payment_type == P2P AND amount round to ₹500 AND q >= 0.98
+           -> ASK_MERCHANT, source=RULE, suggested = model's (FAMILY), confidence = max(q, 1-q), kind MODEL,
+              reason "Looks like family money from a customer".  STOP.
+       otherwise SALE, AUTO_CLASSIFY, source=MERCHANT_CONFIG, confidence = null, confidence_kind = NONE.  STOP.
+   (A payer is never in both lists; see section 6.)
+2. q as computed in step 0
 3. Payer memory (section 6): n_family, n_sale from merchant-confirmed feedback for this payer at this merchant.
-   p = (k*q + n_family) / (k + n_family + n_sale), k = 2      # if n_family + n_sale == 0 then p = q
+   p = (k*q + n_family) / (k + n_family + n_sale)   # k from the model artifact (5.7); if n_family + n_sale == 0 then p = q
    source = PAYER_MEMORY if n_family + n_sale > 0 else MODEL
 4. suggested = FAMILY if p >= 0.5 else SALE
    confidence = max(p, 1 - p)
@@ -408,6 +424,10 @@ Rule 5c is why Lakshmi's first ₹2,000 is always asked, regardless of the exact
 | 0.60 | 2 | 2 | 0.533 | 0.533 | ASK (mixed payer rule) |
 
 **Explicit memory:** when the merchant confirms FAMILY with `remember_payer: true` (voice: "aamaa, eppavum veettu panam dhaan" / tap "Always family"), the payer is added to `merchant_family_payers` with `added_via=CONFIRMATION`. From then on rule 1 applies. Removing a payer from family is done via `PUT /merchants/{id}`. Neither rewrites past ledger entries.
+
+**Customer memory:** after a SALE answer on a **P2P** payment the UI offers "Remember as customer"; confirming SALE with `remember_payer: true` adds the payer to `merchant_customer_payers` (`added_via=CONFIRMATION`). From then on rule 1b applies. The backend rejects SALE + remember on a non-P2P payment (422).
+
+**One list only:** remembering a payer in one list removes them from the other in the same transaction (the confirm response says `"moved_from": "FAMILY"` or `"CUSTOMER"`). `PUT /merchants/{id}` that would leave a payer in both lists → 422. Configuration changes never rewrite ledger history.
 
 **Not feedback:** no retraining per answer. Retraining the global model is an offline step (`python -m ml.train`) and is out of scope for the demo.
 

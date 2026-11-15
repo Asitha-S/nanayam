@@ -1,0 +1,11 @@
+{
+  "suggested_classification": "SALE",
+  "confidence": null,
+  "confidence_kind": "NONE",
+  "action": "AUTO_CLASSIFY",
+  "classification_source": "MERCHANT_CONFIG",
+  "reasons": [
+    "Marked as customer by merchant"
+  ],
+  "written": false
+}

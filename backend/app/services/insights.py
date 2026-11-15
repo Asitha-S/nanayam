@@ -24,12 +24,24 @@ def merchant_detail(conn: sqlite3.Connection, merchant_id: str) -> dict:
     family = conn.execute(
         "SELECT f.payer_id, p.payer_name, f.relation_label FROM merchant_family_payers f"
         " JOIN payers p USING (payer_id) WHERE f.merchant_id = ? ORDER BY f.added_at, f.payer_id", (merchant_id,))
+    customers = conn.execute(
+        "SELECT c.payer_id, p.payer_name FROM merchant_customer_payers c"
+        " JOIN payers p USING (payer_id) WHERE c.merchant_id = ? ORDER BY c.added_at, c.payer_id", (merchant_id,))
     return {**merchant_summary(m), "city": m["city"], "created_at": m["created_at"],
-            "family_payers": [dict(r) for r in family]}
+            "family_payers": [dict(r) for r in family], "customer_payers": [dict(r) for r in customers]}
+
+
+LISTS = {  # request field -> (table, add function)
+    "family_payer_ids": ("merchant_family_payers",
+                         lambda conn, m, p, now: repo.add_family_payer(conn, m, p, None, now, "SETUP")),
+    "customer_payer_ids": ("merchant_customer_payers",
+                           lambda conn, m, p, now: repo.add_customer_payer(conn, m, p, now, "SETUP")),
+}
 
 
 def update_merchant(conn: sqlite3.Connection, merchant_id: str, req) -> dict:
-    """Partial update. family_payer_ids replaces the configured list; affects future payments only."""
+    """Partial update. family_payer_ids / customer_payer_ids each replace that configured list. A payer can't be
+    in both lists (422). Affects future payments only; the ledger history is never rewritten."""
     with db.write_tx(conn):
         repo.require_merchant(conn, merchant_id)
         if req.preferred_language is not None:
@@ -38,20 +50,31 @@ def update_merchant(conn: sqlite3.Connection, merchant_id: str, req) -> dict:
         if req.business_category is not None:
             conn.execute("UPDATE merchants SET business_category = ? WHERE merchant_id = ?",
                          (req.business_category, merchant_id))
-        if req.family_payer_ids is not None:
-            wanted = list(dict.fromkeys(req.family_payer_ids))
+        current = {field: {r[0] for r in conn.execute(f"SELECT payer_id FROM {table} WHERE merchant_id = ?",
+                                                      (merchant_id,))}
+                   for field, (table, _) in LISTS.items()}
+        final = dict(current)
+        for field in LISTS:
+            wanted = getattr(req, field)
+            if wanted is None:
+                continue
+            wanted = list(dict.fromkeys(wanted))
             unknown = [p for p in wanted if not conn.execute("SELECT 1 FROM payers WHERE payer_id = ?", (p,)).fetchone()]
             if unknown:
-                raise errors.validation_error(f"Unknown payer IDs: {', '.join(unknown)}", field="family_payer_ids",
-                                              unknown=unknown)
-            current = {r[0] for r in conn.execute("SELECT payer_id FROM merchant_family_payers WHERE merchant_id = ?",
-                                                  (merchant_id,))}
-            for pid in current - set(wanted):
-                conn.execute("DELETE FROM merchant_family_payers WHERE merchant_id = ? AND payer_id = ?", (merchant_id, pid))
-            now = clock.iso(clock.now())
-            for pid in wanted:
-                if pid not in current:
-                    repo.add_family_payer(conn, merchant_id, pid, None, now, "SETUP")
+                raise errors.validation_error(f"Unknown payer IDs: {', '.join(unknown)}", field=field, unknown=unknown)
+            final[field] = set(wanted)
+        overlap = sorted(final["family_payer_ids"] & final["customer_payer_ids"])
+        if overlap:
+            raise errors.validation_error(f"A payer can't be both family and customer: {', '.join(overlap)}",
+                                          field="customer_payer_ids", overlap=overlap)
+        now = clock.iso(clock.now())
+        for field, (table, add) in LISTS.items():
+            if getattr(req, field) is None:
+                continue
+            for pid in current[field] - final[field]:
+                conn.execute(f"DELETE FROM {table} WHERE merchant_id = ? AND payer_id = ?", (merchant_id, pid))
+            for pid in sorted(final[field] - current[field]):
+                add(conn, merchant_id, pid, now)
     return merchant_detail(conn, merchant_id)
 
 
@@ -68,25 +91,34 @@ def learning(conn: sqlite3.Connection, merchant_id: str) -> dict:
     today = clock.today()
     first_day = clock.parse(m["created_at"]).date()
     one = lambda sql, *args: conn.execute(sql, (merchant_id, *args)).fetchone()[0]  # noqa: E731
-    configured = {r["payer_id"]: r for r in conn.execute(
+    family = {r["payer_id"]: r for r in conn.execute(
         "SELECT f.payer_id, p.payer_name, f.relation_label, f.added_via FROM merchant_family_payers f"
         " JOIN payers p USING (payer_id) WHERE f.merchant_id = ?", (merchant_id,))}
+    customers = {r["payer_id"]: r for r in conn.execute(
+        "SELECT c.payer_id, p.payer_name, NULL AS relation_label, c.added_via FROM merchant_customer_payers c"
+        " JOIN payers p USING (payer_id) WHERE c.merchant_id = ?", (merchant_id,))}
     with_feedback = {r[0]: r[1] for r in conn.execute(
         "SELECT DISTINCT f.payer_id, p.payer_name FROM feedback f JOIN payers p USING (payer_id) WHERE f.merchant_id = ?",
         (merchant_id,))}
     payers = []
-    for pid in sorted(set(configured) | set(with_feedback)):
+    for pid in sorted(set(family) | set(customers) | set(with_feedback)):
         n_family, n_sale = payer_counts(conn, merchant_id, pid)
         n = n_family + n_sale
-        if pid in configured:
-            kind = "INSTRUCTION"  # "always family (your instruction)"
+        cfg = family.get(pid) or customers.get(pid)
+        if pid in family:
+            kind = "FAMILY_INSTRUCTION"  # "always family (your instruction)"
+        elif pid in customers:
+            kind = "CUSTOMER_INSTRUCTION"  # "always a customer (your instruction)"
         elif n >= 3 and min(n_family, n_sale) / n >= 0.25:
             kind = "MIXED"  # "mixed payer, always asked" (rule 5a)
         else:
             kind = "MEMORY"  # answers nudge the model
-        payers.append({"payer_id": pid, "payer_name": configured[pid]["payer_name"] if pid in configured else with_feedback[pid],
-                       "kind": kind, "relation_label": configured[pid]["relation_label"] if pid in configured else None,
-                       "confirmed_family": n_family, "confirmed_sale": n_sale})
+        payers.append({
+            "payer_id": pid, "payer_name": cfg["payer_name"] if cfg else with_feedback[pid], "kind": kind,
+            "source": cfg["added_via"] if cfg else "ANSWERS",  # SETUP | CONFIRMATION | ANSWERS
+            "relation_label": cfg["relation_label"] if cfg else None,
+            "confirmed_family": n_family, "confirmed_sale": n_sale,
+        })
     recent = conn.execute(
         "SELECT f.feedback_id, p.payer_name, f.confirmed_category, f.created_at FROM feedback f"
         " JOIN payers p USING (payer_id) WHERE f.merchant_id = ? ORDER BY f.feedback_id DESC LIMIT 5", (merchant_id,))
@@ -95,7 +127,8 @@ def learning(conn: sqlite3.Connection, merchant_id: str) -> dict:
         "corrections_total": one("SELECT COUNT(*) FROM feedback WHERE merchant_id = ?"),
         "known_payers": one("SELECT COUNT(DISTINCT payer_id) FROM payments WHERE merchant_id = ?"),
         "payers_with_memory": len(with_feedback),
-        "family_payers_configured": len(configured),
+        "family_payers_configured": len(family),
+        "customer_payers_configured": len(customers),
         "questions_asked": {
             "today": _questions_between(conn, merchant_id, today, today),
             "last_7_days": _questions_between(conn, merchant_id, today - timedelta(days=6), today),

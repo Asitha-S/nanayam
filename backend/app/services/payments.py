@@ -209,16 +209,19 @@ def confirm(conn: sqlite3.Connection, transaction_id: str, req: ConfirmIn) -> tu
             raise errors.invalid_state("Payment was reversed and cannot be confirmed", reason="REVERSED",
                                        transaction_id=transaction_id)
 
+        if req.remember_payer and req.confirmed_category == "SALE" and pay["payment_type"] != "P2P":
+            raise errors.validation_error("'Remember as customer' is only offered after a SALE answer on a P2P payment",
+                                          field="remember_payer")
+
         current = ledger.current_classification_entry(conn, transaction_id)
         payer_id = pay["payer_id"]
-        configured = repo.is_family_payer(conn, req.merchant_id, payer_id)
 
         if current["classification"] == req.confirmed_category and current["classification_source"] == "MERCHANT_CONFIRMED":
             fb = conn.execute("SELECT feedback_id FROM feedback WHERE transaction_id = ? ORDER BY feedback_id DESC"
                               " LIMIT 1", (transaction_id,)).fetchone()
             return 200, _confirm_response(conn, pay, req, previous=current["classification"],
                                           ledger_entry_id=current["ledger_entry_id"],
-                                          feedback_id=fb["feedback_id"] if fb else None, replay=True)
+                                          feedback_id=fb["feedback_id"] if fb else None, replay=True, moved_from=None)
 
         entry = ledger.append(
             conn, merchant_id=req.merchant_id, entry_type="RECLASSIFICATION", source_type="PAYMENT",
@@ -241,18 +244,32 @@ def confirm(conn: sqlite3.Connection, transaction_id: str, req: ConfirmIn) -> tu
             "UPDATE questions SET status = 'ANSWERED', answered_at = ? WHERE transaction_id = ? AND status = 'OPEN'",
             (entry["created_at"], transaction_id),
         )
-        if req.remember_payer and not configured:
-            repo.add_family_payer(conn, req.merchant_id, payer_id, None, entry["created_at"], "CONFIRMATION")
+        moved_from = _remember(conn, req, payer_id, entry["created_at"]) if req.remember_payer else None
         return 201, _confirm_response(conn, pay, req, previous=current["classification"],
                                       ledger_entry_id=entry["ledger_entry_id"], feedback_id=feedback_id,
-                                      replay=False)
+                                      replay=False, moved_from=moved_from)
 
 
-def _confirm_response(conn, pay, req: ConfirmIn, *, previous, ledger_entry_id, feedback_id, replay) -> dict:
+def _remember(conn: sqlite3.Connection, req: ConfirmIn, payer_id: str, at: str) -> str | None:
+    """Add the payer to the family or customer list. A payer is never in both: remembering in one list removes
+    them from the other in the same transaction. Returns the list they were moved from. History is untouched."""
+    if req.confirmed_category == "FAMILY":
+        moved = "CUSTOMER" if repo.is_customer_payer(conn, req.merchant_id, payer_id) else None
+        repo.remove_customer_payer(conn, req.merchant_id, payer_id)
+        repo.add_family_payer(conn, req.merchant_id, payer_id, None, at, "CONFIRMATION")
+    else:
+        moved = "FAMILY" if repo.is_family_payer(conn, req.merchant_id, payer_id) else None
+        repo.remove_family_payer(conn, req.merchant_id, payer_id)
+        repo.add_customer_payer(conn, req.merchant_id, payer_id, at, "CONFIRMATION")
+    return moved
+
+
+def _confirm_response(conn, pay, req: ConfirmIn, *, previous, ledger_entry_id, feedback_id, replay, moved_from) -> dict:
     q = conn.execute("SELECT question_id, status FROM questions WHERE transaction_id = ?",
                      (pay["transaction_id"],)).fetchone()
     n_family, n_sale = payer_counts(conn, req.merchant_id, pay["payer_id"])
     configured = repo.is_family_payer(conn, req.merchant_id, pay["payer_id"])
+    customer = repo.is_customer_payer(conn, req.merchant_id, pay["payer_id"])
     out = {
         "transaction_id": pay["transaction_id"],
         "previous_classification": previous,
@@ -266,7 +283,9 @@ def _confirm_response(conn, pay, req: ConfirmIn, *, previous, ledger_entry_id, f
             "confirmed_family": n_family,
             "confirmed_sale": n_sale,
             "family_payer_configured": configured,
+            "customer_payer_configured": customer,
         },
+        "moved_from": moved_from,
         "idempotent_replay": replay,
     }
     if configured and req.confirmed_category == "SALE":

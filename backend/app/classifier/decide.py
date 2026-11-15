@@ -1,5 +1,5 @@
-"""Live decision for one payment (DATA_AND_LOGIC 5.6): merchant config, features from strictly earlier
-payments, calibrated model, payer memory, override rules 5a-5c, reasons.
+"""Live decision for one payment (DATA_AND_LOGIC 5.6): q_model from strictly earlier payments for EVERY
+payment first, then merchant configuration (family / customer) with guardrails, payer memory, rules 5a-5c.
 """
 from __future__ import annotations
 
@@ -41,6 +41,11 @@ def threshold() -> float:
     return effective_threshold(info.threshold if info else None, get_settings().conf_threshold)
 
 
+def memory_k() -> float:
+    info = current_model()
+    return info.k if info else procedure.K
+
+
 def _round(x: float | None) -> float | None:
     return None if x is None else round(x, 4)
 
@@ -58,22 +63,20 @@ def decide(
 ) -> Decision:
     """transaction_id None = hypothetical payment (preview): history is every payment before timestamp."""
     tau = threshold()
-    version = active_model_version()
-    if repo.is_family_payer(conn, merchant_id, payer_id):
-        out = procedure.run(q=None, n_family=0, n_sale=0, configured=True, is_new_payer=False,
-                            amount_paise=amount_paise, tau=tau)
-        return Decision(out.suggested, None, "NONE", out.action, out.source,
-                        procedure.reasons(out, None, 0, 0), None, None, version, tau)
-
     category = repo.merchant(conn, merchant_id)["business_category"]
     pay = features.Pay(transaction_id or "", payer_id, amount_paise, payment_type, payer_vpa_kind,
                        clock.parse(timestamp))
     window, stats = features.history_from_db(conn, merchant_id, pay, hypothetical=transaction_id is None)
     named = features.build(pay, category, window, stats)
-    q = model.q_model(features.vector(named))
+    q = model.q_model(features.vector(named))  # always, before any configuration override
     n_family, n_sale = payer_counts(conn, merchant_id, payer_id)
-    out = procedure.run(q=q, n_family=n_family, n_sale=n_sale, configured=False,
-                        is_new_payer=bool(named["is_new_payer"]), amount_paise=amount_paise, tau=tau)
+    out = procedure.run(
+        q=q, n_family=n_family, n_sale=n_sale, is_new_payer=bool(named["is_new_payer"]), amount_paise=amount_paise,
+        payment_type=payment_type, tau=tau, k=memory_k(),
+        configured_family=repo.is_family_payer(conn, merchant_id, payer_id),
+        configured_customer=repo.is_customer_payer(conn, merchant_id, payer_id),
+    )
+    configured = out.source == "MERCHANT_CONFIG"
     return Decision(out.suggested, _round(out.confidence), out.confidence_kind, out.action, out.source,
-                    procedure.reasons(out, named, n_family, n_sale), _round(out.q_model), _round(out.p_final),
-                    version, tau)
+                    procedure.reasons(out, None if configured else named, n_family, n_sale), _round(out.q_model),
+                    _round(out.p_final), active_model_version(), tau)

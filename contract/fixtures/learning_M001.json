@@ -17,5 +17,44 @@
       "confirmed_category": "FAMILY",
       "at": "2026-11-15T19:43:02+05:30"
     }
+  ],
+  "customer_payers_configured": 1,
+  "payers": [
+    {
+      "payer_id": "P90001",
+      "payer_name": "Lakshmi R",
+      "kind": "FAMILY_INSTRUCTION",
+      "source": "CONFIRMATION",
+      "relation_label": null,
+      "confirmed_family": 1,
+      "confirmed_sale": 0
+    },
+    {
+      "payer_id": "P90002",
+      "payer_name": "Karthik",
+      "kind": "FAMILY_INSTRUCTION",
+      "source": "SETUP",
+      "relation_label": "Thambi (brother)",
+      "confirmed_family": 0,
+      "confirmed_sale": 0
+    },
+    {
+      "payer_id": "P90003",
+      "payer_name": "Selvi",
+      "kind": "MIXED",
+      "source": "ANSWERS",
+      "relation_label": null,
+      "confirmed_family": 3,
+      "confirmed_sale": 2
+    },
+    {
+      "payer_id": "P10502",
+      "payer_name": "Ganesh",
+      "kind": "CUSTOMER_INSTRUCTION",
+      "source": "CONFIRMATION",
+      "relation_label": null,
+      "confirmed_family": 0,
+      "confirmed_sale": 1
+    }
   ]
 }

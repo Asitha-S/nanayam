@@ -15,11 +15,15 @@ from ..config import REPO_ROOT
 CURRENT_MODEL_FILE = REPO_ROOT / "ml" / "artifacts" / "current.json"
 
 
+DEFAULT_K = 2.0  # payer-memory prior weight for artifacts saved before k selection (model-freeze-1)
+
+
 @dataclass(frozen=True)
 class ModelInfo:
     model_version: str
     threshold: float
     artifact: Path
+    k: float = DEFAULT_K
 
 
 def current_model() -> ModelInfo | None:
@@ -27,7 +31,7 @@ def current_model() -> ModelInfo | None:
         return None
     data = json.loads(CURRENT_MODEL_FILE.read_text(encoding="utf-8"))
     return ModelInfo(model_version=data["model_version"], threshold=float(data["threshold"]),
-                     artifact=REPO_ROOT / data["artifact"])
+                     artifact=REPO_ROOT / data["artifact"], k=float(data.get("k", DEFAULT_K)))
 
 
 def effective_threshold(model_threshold: float | None, conf_threshold: float) -> float:

@@ -117,11 +117,6 @@ def test_malformed_json_is_400(client):
     assert r.status_code == 400 and r.json()["error"]["code"] == "BAD_REQUEST"
 
 
-def test_remember_payer_with_sale_is_422(client):
-    body = fx("confirm_request_015") | {"confirmed_category": "SALE", "remember_payer": True}
-    assert client.post("/api/payments/TXN-M001-20261115-015/confirm", json=body).status_code == 422
-
-
 @pytest.mark.parametrize("amount", [0, 99, 50_000_001])
 def test_expense_amount_range(client, amount):
     body = fx("expenses_post_request") | {"amount_paise": amount}

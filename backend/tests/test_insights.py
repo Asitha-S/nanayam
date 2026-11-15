@@ -51,7 +51,7 @@ def test_learning_activity_and_payers(demo):
     assert r["corrections_total"] >= r["payers_with_memory"] > 0
     assert set(r["questions_asked"]) == {"today", "last_7_days", "first_7_days"} and r["questions_asked"]["today"] == 0
     payers = {p["payer_name"]: p for p in r["payers"]}
-    assert payers["Karthik"]["kind"] == "INSTRUCTION"
+    assert (payers["Karthik"]["kind"], payers["Karthik"]["source"]) == ("FAMILY_INSTRUCTION", "SETUP")
     assert payers["Selvi"]["kind"] == "MIXED" and (payers["Selvi"]["confirmed_family"], payers["Selvi"]["confirmed_sale"]) == (3, 2)
     assert len(r["recent_feedback"]) == 5 and "precision" not in str(r)  # /learning never returns precision
 
@@ -66,7 +66,8 @@ def test_learning_today_after_demo(demo):
     assert r["questions_asked"]["today"] == 1 and r["auto_classified_today"] == 14
     assert r["family_payers_configured"] == 2
     assert r["recent_feedback"][0]["payer_name"] == "Lakshmi R" and r["recent_feedback"][0]["confirmed_category"] == "FAMILY"
-    assert {p["payer_name"]: p["kind"] for p in r["payers"]}["Lakshmi R"] == "INSTRUCTION"
+    lakshmi = {p["payer_name"]: p for p in r["payers"]}["Lakshmi R"]
+    assert (lakshmi["kind"], lakshmi["source"]) == ("FAMILY_INSTRUCTION", "CONFIRMATION")
 
 
 # --- tax summary (DATA 8) ----------------------------------------------------------------------

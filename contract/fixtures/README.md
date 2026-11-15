@@ -13,6 +13,14 @@ Example responses for every endpoint, used by:
 **Placeholder (depend on generated history or the evaluation run).** Right shape, invented numbers. **Never show these numbers in the pitch or a screenshot.** They are replaced by real API output after Saturday's seeding and evaluation.
 `evaluation` (labelled "PLACEHOLDER NUMBERS" in `data_label`; its `split` and `label_mix` already use the generator's 70 train+calibration / 110 test merchants, M101–M280, and the seed-42 label mix, but every metric is still a placeholder), `learning_M001`, `tax_summary_*`, `notice_analyse`, `notice_evidence`, `passport_M001`, `questions_M001_open_all` (the 3 older open questions), `refund`, `reversal`.
 
+## Customer memory and guardrails (2026-11-14, see CHANGES.md)
+- `confirm_015.json` now has `"moved_from"` (`null` | `"FAMILY"` | `"CUSTOMER"`) and `payer_memory.customer_payer_configured`.
+- `confirm_sale_remember_customer.json`: SALE answer on a P2P payment with `remember_payer: true` ("Remember as customer"). Offer that button only after a SALE answer on a P2P payment.
+- `classify_preview_customer.json`: a remembered customer, shown as "Your instruction" (confidence null).
+- `classify_preview_guardrail_ask.json`: a configured payer whose payment looks like the other kind; the payment is asked (source RULE) with the guardrail reason first.
+- `learning_M001.json`: `payers` lists both instruction lists (`FAMILY_INSTRUCTION`, `CUSTOMER_INSTRUCTION`) with `source` (`SETUP` / `CONFIRMATION` / `ANSWERS`), plus `MIXED` and `MEMORY`; new `customer_payers_configured`. Numbers are placeholders.
+- `merchant_M001.json` has `customer_payers`.
+
 ## Confidence display (Nagasai Sree)
 The API sends the real number (`0.9971`). Show a confidence ≥ 0.995 as **">99%"**, never "100%". `null` (`confidence_kind: NONE`) shows **"Your instruction"**, never a percentage.
 

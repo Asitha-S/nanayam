@@ -10,7 +10,9 @@
     "payer_id": "P90001",
     "confirmed_family": 1,
     "confirmed_sale": 0,
-    "family_payer_configured": true
+    "family_payer_configured": true,
+    "customer_payer_configured": false
   },
+  "moved_from": null,
   "idempotent_replay": false
 }

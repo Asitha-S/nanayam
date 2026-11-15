@@ -45,6 +45,7 @@ def reset(db_path: Path) -> dict:
     dst = db.connect(db_path)
     try:
         src.backup(dst)
+        dst.executescript(db.SCHEMA)  # CREATE ... IF NOT EXISTS: an older seed gets any newer tables, data untouched
         merchants = repo.merchant_ids(dst)
         pending = {}
         for mid in SCRIPT_MERCHANTS:

@@ -1,0 +1,12 @@
+{
+  "suggested_classification": "SALE",
+  "confidence": 0.9991,
+  "confidence_kind": "MODEL",
+  "action": "ASK_MERCHANT",
+  "classification_source": "RULE",
+  "reasons": [
+    "Looks like a shop sale from a family payer",
+    "Regular customer"
+  ],
+  "written": false
+}

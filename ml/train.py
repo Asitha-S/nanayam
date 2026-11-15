@@ -86,14 +86,15 @@ def selection_table(calib: pd.DataFrame, q: np.ndarray, taus: list[float]) -> li
     """Condition C on the calibration set, merchant answers taken as correct (used only to choose tau)."""
     truth = calib.true_label.to_numpy()
     new, amounts = calib.is_new_payer.to_numpy() > 0, calib.amount_paise.to_numpy()
+    ptype = calib.is_p2p.map(lambda x: "P2P" if x else "P2M").to_numpy()
     merchant_days = calib.merchant_id.nunique() * calib.date.nunique()
     n_family = int((truth == "FAMILY").sum())
     rows = []
     for tau in taus:
         auto = correct = family_as_sale = sale_as_family = family_found = 0
         for i in range(len(calib)):
-            o = procedure.run(q=float(q[i]), n_family=0, n_sale=0, configured=False, is_new_payer=bool(new[i]),
-                              amount_paise=int(amounts[i]), tau=tau)
+            o = procedure.run(q=float(q[i]), n_family=0, n_sale=0, is_new_payer=bool(new[i]),
+                              amount_paise=int(amounts[i]), payment_type=ptype[i], tau=tau)
             if o.action == "AUTO_CLASSIFY":
                 auto += 1
                 correct += o.suggested == truth[i]

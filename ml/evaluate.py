@@ -63,8 +63,9 @@ def replay(cond: str, t: pd.DataFrame, q: np.ndarray, tau: float, answers: np.nd
         else:
             key = (merchant[i], payer[i])
             nf, ns = memory[key] if cond in ("D", "E") else (0, 0)
-            o = procedure.run(q=float(q[i]), n_family=nf, n_sale=ns, configured=cond == "E" and key in configured,
-                              is_new_payer=bool(new[i]), amount_paise=int(amount[i]), tau=tau)
+            o = procedure.run(q=float(q[i]), n_family=nf, n_sale=ns, configured_family=cond == "E" and key in configured,
+                              is_new_payer=bool(new[i]), amount_paise=int(amount[i]),
+                              payment_type="P2P" if p2p[i] else "P2M", tau=tau)
             a, s, src = o.action, o.suggested, o.source
         action[i], suggested[i], source[i] = a, s, src
         if a == "AUTO_CLASSIFY":

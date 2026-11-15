@@ -47,6 +47,14 @@ CREATE TABLE IF NOT EXISTS merchant_family_payers (
     PRIMARY KEY (merchant_id, payer_id)
 );
 
+CREATE TABLE IF NOT EXISTS merchant_customer_payers (
+    merchant_id TEXT NOT NULL REFERENCES merchants(merchant_id),
+    payer_id    TEXT NOT NULL REFERENCES payers(payer_id),
+    added_at    TEXT NOT NULL,
+    added_via   TEXT NOT NULL CHECK (added_via IN ('SETUP','CONFIRMATION')),
+    PRIMARY KEY (merchant_id, payer_id)
+);
+
 CREATE TABLE IF NOT EXISTS payments (
     transaction_id TEXT PRIMARY KEY,
     merchant_id    TEXT NOT NULL REFERENCES merchants(merchant_id),
