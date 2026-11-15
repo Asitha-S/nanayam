@@ -1,0 +1,1 @@
+{"created_at":"2026-11-15T11:28:08+05:30","input_sha256":"fec79c5f1fc70ef3b667608941dc05ecbe3e359a3973f6ce5fef90afc3ffca0d","model_id":"bulbul:v3","params":{"model":"bulbul:v3","speaker":"shubh","target_language_code":"te-IN"},"response":{"request_id":"20261115_07bc97c1-7a0e-47f9-b24f-89234eaa8a1d"},"service":"tts"}
