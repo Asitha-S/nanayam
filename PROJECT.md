@@ -44,10 +44,10 @@ Naanayam turns a small merchant's incoming UPI payments and voice-logged expense
 |---|---|---|
 | **P1 must work** | Synthetic payments and demo stream | Asitha |
 | P1 | Classification with confidence, AUTO vs ASK | Asitha |
-| P1 | Merchant confirmation (tap and voice) | Asitha (API), Nagasai Sree (UI), Charulatha (Tamil voice) |
+| P1 | Merchant confirmation (tap and voice) | Asitha (API; UI since 2026-11-14), Charulatha (Tamil voice) |
 | P1 | Voice expense logging in Tamil | Charulatha |
 | P1 | Daily profit calculated by backend, answered in Tamil | Asitha (numbers; answer composer + slot check + TTS call since 2026-11-14), Charulatha (Tamil templates, voice) |
-| P1 | Ledger view where every number links to its source entries | Asitha (API), Nagasai Sree (UI) |
+| P1 | Ledger view where every number links to its source entries | Asitha (API; UI since 2026-11-14) |
 | **P2 must demonstrate** | Feedback layer + held-out evaluation (precision AND coverage, before vs after) | Asitha |
 | P2 | Evaluation / learning screen for judges | Nagasai Sree |
 | **P3 strong additions** | Hash-chained audit trail + verify | Asitha |
@@ -109,7 +109,8 @@ naanayam/
 │   ├── demo/                   (committed: demo-day fixtures, sample notice)
 │   └── voice_tests/ta.jsonl, te.jsonl   (Charulatha, Nagasai Sree)
 ├── ml/                         (Asitha: train, calibrate, evaluate)
-├── frontend/                   (Nagasai Sree)
+├── frontend/                   (Asitha since 2026-11-14: landing page, P1 screens (Soundbox simulator, question card,
+│                               Talk, Today, Ledger), DESIGN.md; Nagasai Sree: every other screen, on those components)
 ├── assets/
 │   ├── demo_audio/ta/, te/     (Charulatha, Nagasai Sree)
 │   └── notice/sample_notice.png (Charulatha)
