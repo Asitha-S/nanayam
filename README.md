@@ -70,6 +70,16 @@ The frontend can work without the backend: set `VITE_API_BASE=fixtures` in `fron
 
 Using Sarvam: always go through `backend/app/sarvam/client.py` (`stt`, `chat`, `tts`, `vision`). Develop with `DEMO_MODE=cache_first` so repeated runs cost no credits. Model IDs live only in `backend/app/sarvam/models.py`. After recording demo clips into `assets/demo_audio/{ta,te}/`, run `python -m backend.app.sarvam.register_demo_clips` from the repo root.
 
+## Deploy (Vercel)
+
+Live: https://naanayam.vercel.app (Vercel project `naanayam`). Deploy from the repository root with `vercel deploy --prod`.
+
+- `vercel.json` builds the frontend with `VITE_API_BASE=same-origin` (the page calls `/api` on its own host) and sends every `/api/*` request to `api/index.py`, which serves `backend/app` as one Python function.
+- The function's file system is read-only except `/tmp`, so the database, the Sarvam dev cache and the logs live in `/tmp/naanayam`. Each new instance starts from `data/demo/seed.db` (like `/demo/reset`) and keeps its state only while it lives; two instances don't share state.
+- `SARVAM_API_KEY` goes in the Vercel project (Settings, Environment Variables). Without it only the committed demo cache answers speech requests.
+- LightGBM needs `libgomp.so.1`, which the runtime lacks: `api/_native/` carries it (source and checksum in its README).
+- `.vercelignore` is an allowlist, so `.env` is never uploaded.
+
 ## Contributing
 
 - Branches: `asitha/*`, `charu/*`, `naga/*`. Small PRs into `main`; Asitha merges. `main` must always run.

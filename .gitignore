@@ -42,3 +42,7 @@ frontend/shots-before/
 Thumbs.db
 .idea/
 .vscode/
+
+# Vercel CLI: project link and pulled env files (VERCEL_OIDC_TOKEN)
+.vercel
+.env*.local
