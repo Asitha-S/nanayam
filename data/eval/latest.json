@@ -1,9 +1,11 @@
 {
-  "run_id": "eval-2026-11-14-013918",
-  "created_at": "2026-11-14T01:39:18+05:30",
+  "run_id": "holdout-20261114-154347-2e5850",
+  "created_at": "2026-11-14T15:43:51+05:30",
   "data_label": "Synthetic data (generator seed 42)",
-  "model_version": "clf-20261114-e37803",
+  "model_version": "clf-20261114-e8dfc2",
   "threshold": 0.99,
+  "k": 0.5,
+  "n_test_evaluations": 4,
   "split": {
     "train_merchants": 70,
     "test_merchants": 110,
@@ -44,18 +46,72 @@
     },
     "with_feedback": {
       "family_money_found": {
-        "count": 648,
+        "count": 645,
         "of": 667,
-        "rate": 0.9715
+        "rate": 0.967
       },
       "income_wrongly_removed": {
-        "count": 34,
+        "count": 26,
         "of": 152525,
         "rate": 0.0002,
-        "silent": 11,
+        "silent": 3,
         "merchant_answer_errors": 23
       },
       "questions_per_merchant_per_day": 0.44
+    }
+  },
+  "previous_baseline": {
+    "tag": "model-freeze-1",
+    "run_id": "eval-2026-11-14-013918",
+    "model_version": "clf-20261114-e37803",
+    "threshold": 0.99,
+    "headline": {
+      "note": "Show these first. precision_auto and precision by source are secondary and always shown next to the always-SALE baseline (condition A).",
+      "always_sale": {
+        "family_money_found": {
+          "count": 0,
+          "of": 667,
+          "rate": 0.0
+        },
+        "income_wrongly_removed": {
+          "count": 0,
+          "of": 152525,
+          "rate": 0.0,
+          "silent": 0,
+          "merchant_answer_errors": 0
+        },
+        "questions_per_merchant_per_day": 0.0
+      },
+      "baseline": {
+        "family_money_found": {
+          "count": 630,
+          "of": 667,
+          "rate": 0.9445
+        },
+        "income_wrongly_removed": {
+          "count": 24,
+          "of": 152525,
+          "rate": 0.0002,
+          "silent": 0,
+          "merchant_answer_errors": 24
+        },
+        "questions_per_merchant_per_day": 0.48
+      },
+      "with_feedback": {
+        "family_money_found": {
+          "count": 648,
+          "of": 667,
+          "rate": 0.9715
+        },
+        "income_wrongly_removed": {
+          "count": 34,
+          "of": 152525,
+          "rate": 0.0002,
+          "silent": 11,
+          "merchant_answer_errors": 23
+        },
+        "questions_per_merchant_per_day": 0.44
+      }
     }
   },
   "threshold_selection": {
@@ -687,6 +743,63 @@
       "silent_errors": 0
     }
   ],
+  "k_selection": {
+    "set": "M101-M170, 2026-10-02..2026-10-15, condition D, simulated answers (2% error), memory empty at the start, tau 0.99",
+    "objective": "lexicographic: fewest silent errors, then fewest questions per merchant per day, then smaller k",
+    "candidates": [
+      0.5,
+      1.0,
+      2.0,
+      4.0
+    ],
+    "chosen": 0.5,
+    "table": [
+      {
+        "k": 0.5,
+        "silent_errors": {
+          "family_counted_as_sale": 0,
+          "sale_removed_as_family": 0,
+          "total": 0
+        },
+        "questions": 493,
+        "questions_per_merchant_per_day": 0.5031,
+        "coverage": 0.9887
+      },
+      {
+        "k": 1.0,
+        "silent_errors": {
+          "family_counted_as_sale": 0,
+          "sale_removed_as_family": 0,
+          "total": 0
+        },
+        "questions": 493,
+        "questions_per_merchant_per_day": 0.5031,
+        "coverage": 0.9887
+      },
+      {
+        "k": 2.0,
+        "silent_errors": {
+          "family_counted_as_sale": 0,
+          "sale_removed_as_family": 0,
+          "total": 0
+        },
+        "questions": 493,
+        "questions_per_merchant_per_day": 0.5031,
+        "coverage": 0.9887
+      },
+      {
+        "k": 4.0,
+        "silent_errors": {
+          "family_counted_as_sale": 0,
+          "sale_removed_as_family": 0,
+          "total": 0
+        },
+        "questions": 493,
+        "questions_per_merchant_per_day": 0.5031,
+        "coverage": 0.9887
+      }
+    ]
+  },
   "baseline": {
     "precision_auto": 0.9999,
     "coverage": 0.9896,
@@ -715,7 +828,7 @@
     "with_feedback": [
       0.47,
       0.46,
-      0.46,
+      0.47,
       0.38
     ]
   },
@@ -981,11 +1094,11 @@
     "matrix": [
       [
         151565,
-        11
+        3
       ],
       [
-        6,
-        162
+        9,
+        160
       ]
     ]
   },
@@ -1098,6 +1211,22 @@
         "of": 0,
         "rate": null
       },
+      "config_errors_by_list": {
+        "FAMILY": {
+          "count": 0,
+          "of": 0,
+          "rate": null
+        },
+        "CUSTOMER": {
+          "count": 0,
+          "of": 0,
+          "rate": null
+        }
+      },
+      "guardrail_questions": {
+        "FAMILY_GUARDRAIL": 0,
+        "CUSTOMER_GUARDRAIL": 0
+      },
       "questions_per_day_by_week": [
         0.0,
         0.0,
@@ -1158,6 +1287,22 @@
         "count": 0,
         "of": 0,
         "rate": null
+      },
+      "config_errors_by_list": {
+        "FAMILY": {
+          "count": 0,
+          "of": 0,
+          "rate": null
+        },
+        "CUSTOMER": {
+          "count": 0,
+          "of": 0,
+          "rate": null
+        }
+      },
+      "guardrail_questions": {
+        "FAMILY_GUARDRAIL": 0,
+        "CUSTOMER_GUARDRAIL": 0
       },
       "questions_per_day_by_week": [
         0.0,
@@ -1236,6 +1381,22 @@
         "of": 0,
         "rate": null
       },
+      "config_errors_by_list": {
+        "FAMILY": {
+          "count": 0,
+          "of": 0,
+          "rate": null
+        },
+        "CUSTOMER": {
+          "count": 0,
+          "of": 0,
+          "rate": null
+        }
+      },
+      "guardrail_questions": {
+        "FAMILY_GUARDRAIL": 0,
+        "CUSTOMER_GUARDRAIL": 0
+      },
       "questions_per_day_by_week": [
         0.47,
         0.48,
@@ -1313,6 +1474,22 @@
         "of": 0,
         "rate": null
       },
+      "config_errors_by_list": {
+        "FAMILY": {
+          "count": 0,
+          "of": 0,
+          "rate": null
+        },
+        "CUSTOMER": {
+          "count": 0,
+          "of": 0,
+          "rate": null
+        }
+      },
+      "guardrail_questions": {
+        "FAMILY_GUARDRAIL": 0,
+        "CUSTOMER_GUARDRAIL": 0
+      },
       "questions_per_day_by_week": [
         0.47,
         0.48,
@@ -1339,7 +1516,7 @@
       }
     },
     "E": {
-      "name": "Full system (payer memory + remember)",
+      "name": "Full system (payer memory + remember, guardrails)",
       "precision_auto": 0.9999,
       "precision_auto_by_source": {
         "MODEL": {
@@ -1348,52 +1525,68 @@
           "precision": 1.0
         },
         "PAYER_MEMORY": {
-          "correct": 114,
-          "of": 115,
-          "precision": 0.9913
+          "correct": 82,
+          "of": 83,
+          "precision": 0.988
         },
         "MERCHANT_CONFIG": {
-          "correct": 143,
-          "of": 154,
-          "precision": 0.9286
+          "correct": 173,
+          "of": 179,
+          "precision": 0.9665
         }
       },
       "coverage": 0.9905,
-      "auto_decisions": 151744,
-      "questions": 1448,
+      "auto_decisions": 151737,
+      "questions": 1455,
       "questions_per_merchant_per_day": 0.44,
       "overall_accuracy": 0.9997,
       "family_recall_final": {
-        "count": 648,
+        "count": 645,
         "of": 667,
-        "rate": 0.9715
+        "rate": 0.967
       },
       "income_wrongly_removed": {
-        "count": 34,
+        "count": 26,
         "of": 152525,
         "rate": 0.0002,
-        "silent": 11,
+        "silent": 3,
         "merchant_answer_errors": 23
       },
       "silent_family_errors": {
-        "count": 11,
+        "count": 3,
         "of": 152525,
-        "rate": 0.0001
+        "rate": 0.0
       },
       "silent_sale_errors": {
-        "count": 6,
+        "count": 9,
         "of": 667,
-        "rate": 0.009
+        "rate": 0.0135
       },
       "config_errors": {
-        "count": 11,
-        "of": 154,
-        "rate": 0.0714
+        "count": 6,
+        "of": 179,
+        "rate": 0.0335
+      },
+      "config_errors_by_list": {
+        "FAMILY": {
+          "count": 3,
+          "of": 144,
+          "rate": 0.0208
+        },
+        "CUSTOMER": {
+          "count": 3,
+          "of": 35,
+          "rate": 0.0857
+        }
+      },
+      "guardrail_questions": {
+        "FAMILY_GUARDRAIL": 9,
+        "CUSTOMER_GUARDRAIL": 2
       },
       "questions_per_day_by_week": [
         0.47,
         0.46,
-        0.46,
+        0.47,
         0.38
       ],
       "confusion_matrix_auto": {
@@ -1406,11 +1599,11 @@
         "matrix": [
           [
             151565,
-            11
+            3
           ],
           [
-            6,
-            162
+            9,
+            160
           ]
         ]
       }
@@ -1419,8 +1612,10 @@
   "notes": {
     "family_metric_denominators": "family_recall_final: of all true FAMILY payments; silent_family_errors: of all true SALE payments; silent_sale_errors: of all true FAMILY payments; config_errors: of all MERCHANT_CONFIG decisions; income_wrongly_removed: true SALE payments whose final label is FAMILY (silent + merchant answer errors), of all true SALE payments.",
     "confusion_matrix_auto": "Top-level matrix is condition E (the full system); each condition has its own.",
-    "reversals": "Ignored in the evaluation replay (0.1% of payments)."
+    "reversals": "Ignored in the evaluation replay (0.1% of payments).",
+    "remember": "Condition E: after a FAMILY answer, or a SALE answer on a P2P payment, the simulated merchant chooses remember with probability 0.5. Guardrails apply.",
+    "n_test_evaluations": "Corrected from data/eval/experiment_log.jsonl after the run: the run had counted 3 because its own log line is written at the end. Nothing else changed."
   },
   "seed": 42,
-  "git_commit": "006b75292109a6b6ebeda043ca6f48ae3e695776"
+  "git_commit": "b2f819f358dccc5888dfb46a78bef10e405a696a"
 }

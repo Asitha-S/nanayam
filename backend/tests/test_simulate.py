@@ -67,3 +67,10 @@ def test_holdout_needs_explicit_flag(monkeypatch):
     with pytest.raises(SystemExit):
         evaluate.main()
     assert experiment_log.n_test_evaluations() == before and len(experiment_log.read()) == lines
+
+
+def test_holdout_count_includes_a_run_in_progress(monkeypatch, tmp_path):
+    monkeypatch.setattr(experiment_log, "LOG", tmp_path / "log.jsonl")
+    with experiment_log.logged_run(kind="holdout", dataset="x", model_version=None, k=None, threshold=None):
+        inside = experiment_log.n_test_evaluations() + 1  # what ml.evaluate.holdout records
+    assert inside == experiment_log.n_test_evaluations() == 1

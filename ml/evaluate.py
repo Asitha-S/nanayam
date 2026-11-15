@@ -171,7 +171,8 @@ def holdout() -> dict:
             "model_version": info["model_version"],
             "threshold": tau,
             "k": k,
-            "n_test_evaluations": experiment_log.n_test_evaluations(),  # includes this run
+            # this run's own log line is written when the run ends, so add it here
+            "n_test_evaluations": experiment_log.n_test_evaluations() + 1,
             "split": {"train_merchants": 70, "test_merchants": len(TEST_MERCHANTS),
                       "test_period": f"{TEST_PERIOD[0]} to {TEST_PERIOD[1]}", "test_transactions": len(t)},
             "headline": {
