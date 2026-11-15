@@ -67,6 +67,31 @@
 .dp-verify.is-bad .label { color: rgba(255, 255, 255, 0.85); }
 .dp-verify.is-bad .btn { background: transparent; color: #fff; border-color: rgba(255, 255, 255, 0.7); }
 
+/* ---------- live note ---------- */
+.dp-live { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border: 1.5px solid var(--ink); border-radius: var(--r-md); background: var(--sky); font-size: 16.5px; }
+.dp-live > svg { flex: none; width: 22px; height: 22px; }
+.dp-live a { font-weight: 700; text-underline-offset: 3px; }
+
+/* ---------- device voices ---------- */
+.dp-left .dp-health { position: static; }
+.dp-voices { display: grid; gap: 14px; align-content: start; }
+.dp-verdict { display: grid; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.dp-verdict li { display: flex; align-items: start; gap: 10px; padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: var(--r-md); font-size: 16px; overflow-wrap: anywhere; }
+.dp-verdict li > svg { flex: none; width: 20px; height: 20px; margin-top: 2px; }
+.dp-verdict li.is-yes { background: color-mix(in srgb, var(--lime) 50%, var(--card)); border-color: var(--ink); }
+.dp-verdict li.is-yes > svg { color: var(--valid); }
+.dp-verdict li.is-no { background: color-mix(in srgb, var(--signal) 12%, var(--card)); border-color: var(--signal-deep); }
+.dp-verdict li.is-no > svg { color: var(--signal-deep); }
+.dp-verdict li.is-wait { background: var(--paper-2); color: var(--ink-soft); }
+.dp-vtable { max-height: 460px; overflow-y: auto; }
+.dp-vtable .tr { grid-template-columns: minmax(0, 1.6fr) minmax(110px, 0.8fr) 118px 78px; gap: 12px; padding: 9px 16px; font-size: 14.5px; }
+.dp-vtable .th { position: sticky; top: 0; z-index: 1; }
+.dp-vtable .tr.is-mark { background: color-mix(in srgb, var(--lime) 55%, var(--card)); box-shadow: inset 4px 0 0 var(--ink); font-weight: 700; }
+.dp-vname { min-width: 0; overflow-wrap: anywhere; }
+.dp-vlang { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.dp-vlang .mono { font-size: 13px; }
+.chip.dp-vchip { background: var(--ink); color: var(--lime); border-color: var(--ink); }
+
 /* ---------- script ---------- */
 .dp-script { display: grid; gap: 14px; align-content: start; }
 .dp-script .panel-head { align-items: end; }

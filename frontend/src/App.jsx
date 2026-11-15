@@ -1,6 +1,5 @@
 // Routes. "#/" is the standalone landing page; "#/home" and every other route is an app screen inside AppShell.
-import { useEffect } from 'react'
-import { MerchantProvider } from './app/merchant'
+import { MerchantProvider, useMerchant } from './app/merchant'
 import { useHashRoute } from './app/route'
 import { TourProvider } from './tour/Tour'
 import AppShell from './components/AppShell'
@@ -11,10 +10,12 @@ import Learning from './pages/Learning'
 import Ledger from './pages/Ledger'
 import Notice from './pages/Notice'
 import Passport from './pages/Passport'
+import Pay from './pages/Pay'
 import Questions from './pages/Questions'
 import Soundbox from './pages/Soundbox'
 import Talk from './pages/Talk'
 import Today from './pages/Today'
+import Udhari from './pages/Udhari'
 
 const SCREENS = {
   '/home': ['home', Home],
@@ -28,6 +29,10 @@ const SCREENS = {
   '/passport': ['passport', Passport],
   '/demo': ['demo', DemoPanel], // hidden demo control panel, not in the rail
 }
+// Screens behind a backend feature flag: with the flag off (or unknown) the route does not exist.
+const FLAGGED = {
+  '/udhari': ['udhari', Udhari, 'udhari'],
+}
 
 function NotFound({ route }) {
   return (
@@ -39,18 +44,34 @@ function NotFound({ route }) {
   )
 }
 
+/** The app screen for a route, inside the chrome. A flagged route waits for /health before saying "no screen". */
+function Screen({ route, params }) {
+  const merchant = useMerchant()
+  const flagged = FLAGGED[route]
+  const [active, Page] = SCREENS[route] || (flagged && merchant[flagged[2]] ? flagged : [null, null])
+  return (
+    <AppShell active={active}>
+      {Page ? <Page params={params} />
+        : flagged && !merchant.health ? <p className="load-state">Loading…</p>
+          : <NotFound route={route} />}
+    </AppShell>
+  )
+}
+
 export default function App() {
   const { route, params } = useHashRoute()
-  useEffect(() => { window.scrollTo(0, 0) }, [route])
-  const [active, Screen] = SCREENS[route] || [null, null]
+  // the customer's phone page: standalone, no app chrome, no judge tour
+  if (route === '/pay') {
+    return (
+      <MerchantProvider>
+        <Pay params={params} />
+      </MerchantProvider>
+    )
+  }
   return (
     <MerchantProvider>
       <TourProvider>
-        {route === '/' ? <Landing /> : (
-          <AppShell active={active}>
-            {Screen ? <Screen params={params} /> : <NotFound route={route} />}
-          </AppShell>
-        )}
+        {route === '/' ? <Landing /> : <Screen route={route} params={params} />}
       </TourProvider>
     </MerchantProvider>
   )

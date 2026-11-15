@@ -9,12 +9,22 @@
 }
 .tour-start:hover { transform: translateY(-2px); box-shadow: 0 18px 30px -16px rgba(16, 35, 41, 0.75); }
 .tour-start svg { width: 22px; height: 22px; fill: currentColor; }
+/* app screens: sit in the empty foot of the left rail, never over content; the landing page keeps the corner */
+body:has(.rail) .tour-start { left: 12px; right: auto; bottom: 18px; width: calc(var(--rail-w) - 24px); min-width: 0; padding: 14px 6px 12px; }
 
+/* catches clicks outside the highlight (clipped open over the highlighted part) */
+.tour-shield { position: fixed; inset: 0; z-index: 90; background: transparent; }
 .tour-dim { position: fixed; inset: 0; z-index: 90; background: color-mix(in srgb, var(--ink) 45%, transparent); pointer-events: none; }
 .tour-hole {
   position: fixed; z-index: 90; border-radius: 18px; pointer-events: none;
   box-shadow: 0 0 0 3px var(--paper), 0 0 0 7px var(--ink), 0 0 0 200vmax color-mix(in srgb, var(--ink) 50%, transparent);
-  transition: top 0.35s var(--ease), left 0.35s var(--ease), width 0.35s var(--ease), height 0.35s var(--ease);
+  /* one spotlight that glides from target to target */
+  transition: top 0.45s var(--ease), left 0.45s var(--ease), width 0.45s var(--ease), height 0.45s var(--ease),
+    box-shadow 0.25s var(--ease);
+}
+/* between targets (a step working, the next screen loading): the ring fades, the dim stays */
+.tour-hole.is-waiting {
+  box-shadow: 0 0 0 3px transparent, 0 0 0 7px transparent, 0 0 0 200vmax color-mix(in srgb, var(--ink) 50%, transparent);
 }
 
 .tour-card {
@@ -22,7 +32,7 @@
   display: grid; gap: 10px; padding: 18px 20px 18px;
   background: var(--card); border: 1.5px solid var(--ink); border-radius: 20px;
   box-shadow: 0 30px 60px -30px rgba(16, 35, 41, 0.8);
-  transition: top 0.3s var(--ease), left 0.3s var(--ease);
+  animation: tour-in 0.22s var(--ease) both; /* fades in where it lands; never slides across the screen */
 }
 .tour-card.is-centered { top: 50%; left: 50%; translate: -50% -50%; }
 .tour-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -40,6 +50,7 @@
 .tour-actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 4px; }
 .tour-actions .btn { min-height: 44px; font-size: 13px; }
 @keyframes tour-dot { 50% { transform: translateY(-4px); opacity: 0.4; } }
+@keyframes tour-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 @media (max-width: 760px) {
   .tour-start { right: 12px; bottom: 12px; min-width: 0; padding: 10px 12px; }

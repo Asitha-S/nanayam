@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { ArrowUpRight, CircleHelp, Download, Link2, RotateCcw } from 'lucide-react'
 import { apiUrl, useApi } from '../api'
 import { useMerchant } from '../app/merchant'
+import QuestionCard from '../components/QuestionCard'
 import { useStrings } from '../app/strings'
 import { Badge, LoadState, Money, clockTime, confidenceText, count, longDate, monthLabel } from '../components/ui'
 
@@ -13,47 +14,56 @@ const DEMO_HREF = '#/soundbox'
 const DAY_START = 6 * 60
 const DAY_END = 20 * 60
 
-function minutes(hhmm) {
-  const [h, m] = hhmm.split(':').map(Number)
+function minutes(iso) {
+  const [h, m] = clockTime(iso).split(':').map(Number)
   return h * 60 + m
 }
 
+const KIND = { SALE: 'sale', FAMILY: 'family', PENDING: 'ask' }
+
+/** The day's real payments on a 06:00-20:00 line, coloured by their current classification. */
 function DayStrip({ items }) {
   const t = useStrings()
-  if (!items?.length) return null
+  if (!items) return null
+  if (!items.length) {
+    return <p className="daystrip-empty note">No payments yet today. They appear here as they arrive on the Soundbox.</p>
+  }
   const hours = [6, 8, 10, 12, 14, 16, 18, 20]
+  const sorted = [...items].sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1))
+  const labelled = sorted.length <= 18 // amounts only when they fit
+  const lastAsk = [...sorted].reverse().find((p) => p.current_classification === 'PENDING')
+  const pos = (p) => Math.min(100, Math.max(0, ((minutes(p.timestamp) - DAY_START) / (DAY_END - DAY_START)) * 100))
+  const words = { sale: 'sorted as a sale', family: 'family money, kept out of sales', ask: `waiting for an answer in ${t.languageName}` }
   return (
     <figure className="daystrip">
-      <figcaption className="visually-hidden">The demo day: {items.length} UPI payments between {items[0].time} and {items[items.length - 1].time}.</figcaption>
+      <figcaption className="visually-hidden">{sorted.length} UPI payments between {clockTime(sorted[0].timestamp)} and {clockTime(sorted[sorted.length - 1].timestamp)}.</figcaption>
       <div className="daystrip-track">
         {hours.map((h) => (
           <span key={h} className="daystrip-hour" style={{ left: `${((h * 60 - DAY_START) / (DAY_END - DAY_START)) * 100}%` }}>
             {String(h).padStart(2, '0')}:00
           </span>
         ))}
-        {items.map((it, i) => {
-          const ask = it.expected_action === 'ASK_MERCHANT'
-          const left = ((minutes(it.time) - DAY_START) / (DAY_END - DAY_START)) * 100
-          const what = ask ? `asked in ${t.languageName}` : `sorted as ${it.expected_classification.toLowerCase()}`
+        {sorted.map((p, i) => {
+          const kind = KIND[p.current_classification] || 'sale'
           return (
-            <span key={it.transaction_id} className={`dot ${ask ? 'is-ask' : 'is-sale'} ${i % 2 ? 'below' : 'above'}`}
-              style={{ left: `${left}%` }} tabIndex={0} aria-label={`${it.time} ${it.payer_name} ${it.amount_display}, ${what}`}>
-              {ask ? (
+            <span key={p.transaction_id} className={`dot is-${kind} ${i % 2 ? 'below' : 'above'}`}
+              style={{ left: `${pos(p)}%` }} tabIndex={0}
+              aria-label={`${clockTime(p.timestamp)} ${p.payer_name} ${p.amount_display}, ${words[kind]}`}>
+              {p === lastAsk ? (
                 <span className="dot-card">
-                  <b>{it.time} · {it.payer_name}</b>
-                  <span className="figure">{it.amount_display}</span>
+                  <b>{clockTime(p.timestamp)} · {p.payer_name}</b>
+                  <span className="figure">{p.amount_display}</span>
                   <em>asked in {t.languageName}</em>
                 </span>
-              ) : (
-                <span className="dot-amt">{it.amount_display}</span>
-              )}
+              ) : labelled && <span className="dot-amt">{p.amount_display}</span>}
             </span>
           )
         })}
       </div>
       <div className="daystrip-legend">
         <span><i className="sw sale" /> Sorted as a sale, silently</span>
-        <span><i className="sw ask" /> Not sure, so asked in {t.languageName}</span>
+        <span><i className="sw family" /> Family money</span>
+        <span><i className="sw ask" /> Waiting for an answer in {t.languageName}</span>
       </div>
     </figure>
   )
@@ -91,7 +101,7 @@ function TodayList({ summary }) {
   )
 }
 
-function Overview({ script, summary, dayWord, shownDate, merchantName }) {
+function Overview({ payments, summary, dayWord, shownDate, merchantName }) {
   const t = useStrings()
   const s = summary.data
   return (
@@ -99,14 +109,14 @@ function Overview({ script, summary, dayWord, shownDate, merchantName }) {
       <div className="panel hero-panel">
         <div className="panel-head">
           <span className="label">{merchantName}</span>
-          <Badge kind="synthetic">Synthetic demo day</Badge>
+          <Badge kind="synthetic">Synthetic data</Badge>
         </div>
         <h1 id="overview-h">The day,<br />payment by payment.</h1>
         <p className="lede">
           Every UPI payment is sorted as it arrives. Sure calls stay silent; the one Naanayam isn't sure about becomes
           a question in {t.languageName}. Every amount opens the ledger entries behind it.
         </p>
-        {script.data ? <DayStrip items={script.data.items} /> : <LoadState state={script} what="the demo day" />}
+        {payments.data ? <DayStrip items={payments.data.items} /> : <LoadState state={payments} what="the day's payments" />}
       </div>
 
       <div className="panel today-panel">
@@ -164,75 +174,33 @@ function How() {
 
 // ---------- 03 The question ----------
 
-function QuestionCard({ question, askItem }) {
+function Question({ questions, evaluation }) {
   const t = useStrings()
-  const [answer, setAnswer] = useState(null)
-  const payer = question?.payer_name || askItem?.payer_name
-  const amount = question?.amount_display || askItem?.amount_display
-  return (
-    <div className={`qcard ${answer ? 'is-answered' : ''}`}>
-      <div className="qcard-head">
-        <span className="qcard-avatar" aria-hidden="true">{payer?.[0]}</span>
-        <span>
-          <b>{payer}</b>
-          <small className="figure">{amount}{question && ` · ${clockTime(question.timestamp)}`}</small>
-        </span>
-        {question && (
-          <span className="qcard-conf label">
-            {confidenceText(question.confidence)} sure it's {question.suggested_classification === 'FAMILY' ? 'family' : 'a sale'}
-          </span>
-        )}
-      </div>
-      {question ? (
-        <>
-          <p className="qcard-ta" lang="ta">{question.question_text}</p>
-          <p className="qcard-en">{question.question_text_en}</p>
-        </>
-      ) : (
-        <p className="qcard-en">This question appears in the live demo when {payer}'s payment arrives.</p>
-      )}
-      <div className="qcard-answers">
-        <button type="button" onClick={() => setAnswer('SALE')} disabled={Boolean(answer)}>
-          <span lang={t.lang}>{t.sale}</span><small>Shop sale</small>
-        </button>
-        <button type="button" onClick={() => setAnswer('FAMILY')} disabled={Boolean(answer)}>
-          <span lang={t.lang}>{t.family}</span><small>Family money</small>
-        </button>
-      </div>
-      {answer && (
-        <div className="qcard-stamp" role="status">
-          <span className="stamp" lang={t.lang}>{answer === 'FAMILY' ? t.family : t.sale}</span>
-          <p>
-            Preview only: nothing was saved. In the live demo this answer goes to the ledger
-            {answer === 'FAMILY' ? ', stays out of sales,' : ''} and Naanayam asks whether to remember {payer}.
-          </p>
-          <button type="button" className="btn" onClick={() => setAnswer(null)}><RotateCcw aria-hidden="true" /> Try again</button>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function Question({ script, questions, evaluation }) {
-  const t = useStrings()
-  const owner = useMerchant().merchant?.owner_name || 'the merchant'
-  const askItem = script.data?.items.find((it) => it.expected_action === 'ASK_MERCHANT')
-  // open by transaction, never by list position (the seed keeps older open questions)
-  const question = askItem && questions.data?.items.find((q) => q.transaction_id === askItem.transaction_id)
+  const { merchantId, merchant, language, demoDate } = useMerchant()
+  const owner = merchant?.owner_name || 'the merchant'
+  const open = questions.data?.items || []
+  const q = open[0] || null // newest first (contract); opened by its own question_id
   const tau = evaluation.data?.threshold
   return (
     <section id="question" className="panel question" aria-labelledby="question-h">
       <div className="question-copy">
-        <span className="label">The one question of the day</span>
-        <h2 id="question-h">When it isn't sure, it asks.</h2>
+        <span className="label">{q ? 'Waiting for an answer' : 'Questions'}</span>
+        <h2 id="question-h">When it isn&apos;t sure, it asks.</h2>
         <p>
-          {askItem ? `${askItem.payer_name}'s ${askItem.amount_display} could be a sale or family money. ` : ''}
           Below the confidence threshold{typeof tau === 'number' ? ` (${tau})` : ''}, a payment waits as pending
           until {owner} answers. Two big buttons, in {t.languageName}, on the Soundbox and the phone.
         </p>
-        <p className="question-note">Try it here. This card is a preview; the live demo saves the answer.</p>
+        {open.length > 1 && <p className="question-note"><a href="#/questions">{open.length - 1} more waiting today</a></p>}
       </div>
-      {askItem ? <QuestionCard question={question} askItem={askItem} /> : <LoadState state={script} what="the question" />}
+      {q ? (
+        <QuestionCard key={q.question_id} question={q} merchantId={merchantId} language={language} demoDate={demoDate} />
+      ) : (
+        <div className="qcard question-none">
+          <p className="qcard-en">No question right now. Naanayam has been sure about every payment so far today; when it isn&apos;t,
+            the question appears here, on the Soundbox and on the Questions screen.</p>
+          <a className="btn" href="#/soundbox">Open the Soundbox</a>
+        </div>
+      )}
     </section>
   )
 }
@@ -406,7 +374,6 @@ export default function Home() {
   const { merchantId: MERCHANT, merchant } = useMerchant()
   const health = useApi('/health')
   const verify = useApi(`/merchants/${MERCHANT}/ledger/verify`)
-  const script = useApi(`/demo/script?merchant_id=${MERCHANT}`)
   const today = useApi(`/merchants/${MERCHANT}/summary?include_sources=true`)
   const evaluation = useApi('/evaluation')
   const passport = useApi(`/merchants/${MERCHANT}/passport`)
@@ -418,15 +385,17 @@ export default function Home() {
     ? `/merchants/${MERCHANT}/summary?start_date=${prev}&end_date=${prev}&include_sources=true` : null)
   const summary = todayEmpty ? yesterday : today
   const dayWord = todayEmpty ? 'Yesterday' : 'Today'
+  const shown = todayEmpty ? prev : day
+  const payments = useApi(shown ? `/merchants/${MERCHANT}/payments?start_date=${shown}&end_date=${shown}&limit=500` : null, { pollMs: 5000 })
   const questions = useApi(day ? `/merchants/${MERCHANT}/questions?status=OPEN&date=${day}` : null)
   const owner = merchant?.owner_name || 'The merchant'
 
   return (
     <div className="home">
-        <Overview script={script} summary={summary} dayWord={dayWord} shownDate={todayEmpty ? prev : day}
+        <Overview payments={payments} summary={summary} dayWord={dayWord} shownDate={todayEmpty ? prev : day}
           merchantName={merchant?.display_name || MERCHANT} />
         <How />
-        <Question script={script} questions={questions} evaluation={evaluation} />
+        <Question questions={questions} evaluation={evaluation} />
         <Proofs summary={summary} passport={passport} health={health} dayWord={dayWord} merchantId={MERCHANT} />
         <Evaluation evaluation={evaluation} />
         <Ledger verify={verify} />

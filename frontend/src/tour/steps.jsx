@@ -109,7 +109,7 @@ export const STEPS = [
     id: 'notice',
     target: ['notice-evidence', 'notice-read'],
     title: 'Proof for the taxman',
-    text: <>One sample GST notice, read and set beside the ledger for the same period, for a CA to check. Naanayam explains and organises; it never files or replies. If no notice has been read yet, pick the sample here.</>,
+    text: <>One sample GST notice, read and set beside the ledger for the same period, for a CA to check. Naanayam explains and organises; it never files or replies. If no notice has been read yet, tap Use the sample notice, then Read the notice.</>,
     enter: (h) => h.go(h.lastNotice() ? `/notice?id=${encodeURIComponent(h.lastNotice())}` : '/notice'),
   },
   {

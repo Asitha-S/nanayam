@@ -1,0 +1,139 @@
+/* Udhari (#/udhari, flag UDHARI): the credit book beside the ledger. Colours keep their meaning: sky = neutral book,
+   signal = waiting for the merchant (a payment that could come off a tab), lime = done / proof. */
+
+.ud-split { grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr); }
+.ud-side { display: grid; gap: 16px; align-content: start; position: sticky; top: calc(var(--ticker-h) + var(--top-h) + 20px); }
+.ud-side .panel { display: grid; gap: 12px; padding: 22px 26px; border-radius: var(--r-lg); }
+
+/* the total */
+.ud-total-fig { font-size: clamp(56px, 5vw, 84px); line-height: 0.95; letter-spacing: -0.05em; }
+.ud-total small { font-size: 15px; color: var(--ink-2); }
+.ud-total .note { color: var(--ink-2); }
+
+/* the book: one row per payer, expandable to its entries */
+.ud-book { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; border-radius: var(--r-lg); padding: 24px 26px 18px; min-width: 0; }
+.ud-book .panel-head { margin-bottom: 4px; }
+.ud-book h2 { font: 400 28px/1 var(--font-display); letter-spacing: -0.035em; }
+.ud-group { margin-top: 14px; padding: 0 2px; }
+.ud-tabs { list-style: none; margin: 0; padding: 0; }
+.ud-tab { border-bottom: 1.5px solid var(--line); }
+.ud-tab:last-child { border-bottom: 0; }
+.ud-tab-row {
+  display: grid; grid-template-columns: 44px minmax(0, 1fr) auto 28px; align-items: center; gap: 12px; width: 100%;
+  padding: 16px 6px; border: 0; background: none; text-align: left; border-radius: var(--r-sm);
+  transition: background 0.15s var(--ease);
+}
+.ud-tab-row:hover { background: color-mix(in srgb, var(--sky) 55%, var(--card)); }
+.ud-tab.is-open > .ud-tab-row { background: var(--sky); }
+.ud-tab-row .n { font: 800 18px/1 var(--font-mono); }
+.ud-who { display: grid; gap: 2px; min-width: 0; }
+.ud-who b { font-size: 19px; font-weight: 700; }
+.ud-who small { font-size: 14px; color: var(--ink-soft); }
+.ud-due { font-size: 30px; letter-spacing: -0.03em; white-space: nowrap; }
+.ud-chev { width: 22px; height: 22px; transition: rotate 0.2s var(--ease); }
+.ud-tab.is-open .ud-chev { rotate: 180deg; }
+.ud-tab.is-settled .ud-due { color: var(--ink-soft); font-size: 22px; }
+.ud-tab.is-settled .ud-who b { color: var(--ink-2); }
+
+/* entries of one tab */
+.ud-entries { margin: 4px 0 18px; }
+.ud-entries .tr { grid-template-columns: 96px minmax(0, 1fr) 82px 88px minmax(0, 1.15fr); gap: 12px; align-items: start; }
+.ud-entries .tr:not(.th) { padding-top: 14px; padding-bottom: 14px; }
+.ud-when { display: grid; gap: 1px; }
+.ud-when b { font: 800 13.5px/1.3 var(--font-mono); }
+.ud-when small { font: 700 12.5px/1.2 var(--font-mono); color: var(--ink-soft); }
+.ud-what { display: grid; gap: 6px; justify-items: start; }
+.ud-what small { font-size: 14px; color: var(--ink-2); }
+.chip.ud-add { background: var(--sky-2); }
+.chip.ud-settle { background: var(--lime); }
+.ud-src { display: grid; gap: 4px; justify-items: start; min-width: 0; }
+.ud-src-k { display: inline-flex; align-items: center; gap: 6px; font: 800 11.5px/1.2 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.ud-src-k svg { width: 15px; height: 15px; }
+.ud-src q { quotes: '“' '”'; font-weight: 600; overflow-wrap: anywhere; }
+.ud-src q[lang] { font-size: 22px; line-height: 1.35; }
+.ud-src small, .ud-src a { font-size: 12.5px; overflow-wrap: anywhere; }
+.ud-src .badge { background: var(--paper-2); color: var(--ink-soft); }
+
+/* payments that could come off a tab */
+.ud-offers ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.ud-offer {
+  display: grid; gap: 10px; padding: 14px 16px; border: 1.5px solid var(--ink); border-radius: var(--r-md); background: var(--card);
+}
+.ud-offer-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; }
+.ud-offer-top b { font-size: 18px; }
+.ud-offer-top small { font-size: 13.5px; color: var(--ink-soft); }
+.ud-offer-top .figure { font-size: 26px; letter-spacing: -0.03em; }
+.ud-offer .kv { gap: 6px 14px; }
+.ud-offer .kv dd { font-size: 15px; }
+.ud-offer .btn { justify-content: center; min-height: 48px; }
+.ud-offer .error-banner { font-size: 14.5px; }
+.ud-done {
+  display: grid; gap: 6px; padding: 14px 16px; border: 1.5px solid var(--ink); border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--lime) 45%, var(--card)); animation: settle 0.35s var(--ease) both;
+}
+.ud-done p { display: flex; align-items: start; gap: 10px; font-size: 15.5px; }
+.ud-done p > svg { flex: none; width: 20px; height: 20px; margin-top: 2px; color: var(--valid); }
+.ud-done small { font-size: 13.5px; color: var(--ink-2); }
+.ud-done .figure { font-size: inherit; }
+
+.ud-side .ud-scope { display: flex; gap: 12px; align-items: start; }
+.ud-scope svg { flex: none; width: 22px; height: 22px; margin-top: 2px; }
+.ud-scope p { font-size: 15.5px; color: var(--ink-2); }
+
+@media (max-width: 1360px) {
+  .ud-entries .tr { grid-template-columns: 96px minmax(0, 1fr) 82px 88px; }
+  .ud-entries .tr > :nth-child(5) { grid-column: 1 / -1; }
+  .ud-entries .tr.th > :nth-child(5) { display: none; }
+}
+@media (max-width: 1180px) { .ud-split { grid-template-columns: minmax(0, 1fr); } .ud-side { position: static; } }
+@media (max-width: 760px) {
+  .ud-book { padding: 18px 14px 12px; }
+  .ud-tab-row { grid-template-columns: 34px minmax(0, 1fr) auto; }
+  .ud-chev { display: none; }
+  .ud-due { font-size: 24px; }
+  .ud-entries .tr { grid-template-columns: 1fr 1fr; }
+  .ud-entries .tr.th { display: none; }
+}
+
+/* ---------- Talk: the udhari cards (credit to write on a tab, who owes what) ---------- */
+.talk .credit-who { display: grid; gap: 3px; }
+.talk .credit-who b { font-size: 28px; font-weight: 800; line-height: 1.1; }
+.talk .credit-who b.is-missing { color: var(--signal-deep); }
+.talk .credit-who small { font: 800 11.5px/1.2 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+.talk .credit-heard { font-size: 15px; color: var(--ink-2); }
+.talk .credit-heard [lang] { font-weight: 600; }
+.talk .credit-say {
+  display: grid; gap: 10px; justify-items: start; padding: 14px 18px; border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--sky) 70%, var(--card));
+}
+.talk .credit-pick { display: grid; gap: 10px; }
+.talk .credit .catchip span { font-size: 18px; font-weight: 700; line-height: 1.2; }
+.talk .credit .catchip[aria-checked='true'] { background: var(--sky-2); }
+.talk .credit .facts dd .figure, .talk .dues .facts dd .figure { font-size: 30px; letter-spacing: -0.03em; }
+.talk .dues-rows li { padding: 12px 0; }
+.talk .dues-rows .name b { font-size: 18px; }
+.talk .dues-rows .dues-amt { font-size: 26px; letter-spacing: -0.03em; }
+
+/* ---------- Soundbox: a payment that could come off a tab ---------- */
+.sb-tab { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 32px; align-items: start; padding: 32px; border-radius: var(--r-xl); animation: sb-in 0.45s var(--ease) both; }
+.sb-tab-copy { display: grid; gap: 12px; padding-top: 6px; }
+.sb-tab-copy h2.sb-h { font-size: 34px; line-height: 0.98; }
+.sb-tab-copy p { font-size: 16.5px; }
+.sb-tab-copy a { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-weight: 700; }
+.sb-tab-card { display: grid; gap: 16px; }
+.sb-tab-card .qc-head .figure { font-size: 36px; line-height: 1; letter-spacing: -0.04em; }
+.sb-tab-en { font-size: 19px; font-weight: 600; line-height: 1.4; }
+.sb-tab-en .figure { font-size: inherit; }
+.sb-tab-card .kv dd { font-size: 15.5px; }
+.sb-tab-answers button:first-child { background: var(--lime); }
+.sb-tab-answers button:last-child { background: var(--paper-2); }
+.sb-tab-done { display: grid; gap: 8px; padding: 16px 18px; border: 1.5px solid var(--ink); border-radius: var(--r-md); background: color-mix(in srgb, var(--lime) 45%, var(--card)); animation: settle 0.35s var(--ease) both; }
+.sb-tab-done p { display: flex; align-items: start; gap: 10px; font-size: 17px; }
+.sb-tab-done p > svg { flex: none; width: 22px; height: 22px; margin-top: 2px; color: var(--valid); }
+.sb-tab-done .figure { font-size: inherit; }
+.sb-tab-done small { font-size: 14px; color: var(--ink-2); }
+.sb-tab-done .btn, .sb-tab-card .qc-row .btn { min-height: 42px; font-size: 13px; justify-self: start; }
+@media (max-width: 1320px) { .sb-tab { order: 2; grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .sb-tab { padding: 22px 16px; } }
+/* money owed is not a sale: the key figure on the udhari cards is sky, not lime */
+.talk .credit .facts > div.is-key, .talk .dues .facts > div.is-key { background: var(--sky-2); }

@@ -40,7 +40,7 @@ export default function Composer({
         </button>
       </div>
       <div className="talk-tries">
-        <span className="label">{listening ? `Listening, up to ${MAX_SECONDS} s. It stops when you pause.` : 'Try'}</span>
+        <span className="label">{listening ? `Listening. Tap Stop when you’re done (it also stops after a long pause, or at ${MAX_SECONDS} s).` : 'Try'}</span>
         {!listening && examples.map((ex) => (
           <button key={ex} type="button" className="try" onClick={() => onExample(ex)} disabled={busy}>
             <span lang={t.lang}>{ex}</span>

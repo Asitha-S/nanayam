@@ -9,8 +9,11 @@ import { RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError, USING_FIXTURES, apiUrl, get, post, useApi } from '../api'
 import { useMerchant } from '../app/merchant'
+import { isMuted } from '../app/speech'
 import { useStrings } from '../app/strings'
-import { ExpenseCard, PendingCard, ProfitCard, QuestionCard, Said, SayCard, StartCard } from '../components/talk/cards'
+import {
+  CreditCard, DuesCard, ExpenseCard, PendingCard, ProfitCard, QuestionCard, Said, SayCard, StartCard,
+} from '../components/talk/cards'
 import { demoClips } from '../components/talk/clips'
 import Composer from '../components/talk/Composer'
 import { fileNameFor, micSupported, startRecording } from '../components/talk/mic'
@@ -47,7 +50,7 @@ const SPEECH_FAILURES = ['CACHE_MISS', 'SARVAM_UNAVAILABLE', 'TIMEOUT', 'UNREACH
 const LIVE = ['open', 'edit', 'failed']
 
 export default function Talk({ params }) {
-  const { merchantId, merchant, language, demoDate, health } = useMerchant()
+  const { merchantId, merchant, language, demoDate, health, udhari } = useMerchant()
   const t = useStrings()
   const W = talkWords(t.lang)
 
@@ -269,15 +272,22 @@ export default function Talk({ params }) {
   }
 
   /** Read a backend sentence aloud (POST /voice/speak). Only backend text is ever spoken. */
-  const speak = async (id, sentence) => {
+  const speak = async (id, sentence, lang = language) => {
     patchReply(id, { speech: { state: 'loading' } })
     try {
-      const r = await call((signal) => post('/voice/speak', { merchant_id: merchantId, language, text: sentence }, { signal }), 20000)
+      const r = await call((signal) => post('/voice/speak', { merchant_id: merchantId, language: lang, text: sentence }, { signal }), 20000)
       const url = apiUrl(`/audio/${encodeURIComponent(r.audio_id)}`)
       patchReply(id, { speech: url ? { state: 'ready', url } : { state: 'error', message: 'Audio plays only with the live backend.' } })
     } catch (e) {
       if (e instanceof StaleError) return
-      patchReply(id, { speech: { state: 'error', message: `No speech (${e.message}). The text above is what it says.` } })
+      // plain words, not the backend's message: why there is no voice, and that the text is the answer
+      const why = {
+        CACHE_MISS: 'No voice for this sentence: Sarvam isn’t connected, and this exact sentence wasn’t saved before.',
+        SARVAM_UNAVAILABLE: 'No voice: Sarvam can’t be reached right now.',
+        TIMEOUT: 'No voice: Sarvam didn’t answer in time.',
+        UNREACHABLE: 'No voice: Naanayam’s backend isn’t reachable.',
+      }[e.code] || 'No voice this time.'
+      patchReply(id, { speech: { state: 'error', message: `${why} The text above is exactly what it would say.` } })
     }
   }
 
@@ -298,6 +308,137 @@ export default function Talk({ params }) {
     if (action === 'void') return patchReply(id, { voidState: 'ask' })
     if (action === 'void-keep') return patchReply(id, { voidState: null })
     if (action === 'void-confirm') return voidExpense(id, r.result)
+    return undefined
+  }
+
+  // ---- udhari (contract section 13, flag UDHARI): write on a customer's tab; who owes what ------------------------
+  // Same rules as the expense card: nothing is written before Yes, the card's draft id is the client_request_id, and a
+  // change (another customer, a typed amount) makes a new draft with a new id.
+
+  /** Customers to pick from when the backend offered none: the merchant's tab payers (GET /merchants/{id}/tabs). */
+  const loadPayers = async (id) => {
+    const put = (patch) => patchReply(id, (x) => (x?.kind === 'credit' ? { ...x, draft: { ...x.draft, ...patch } } : x))
+    try {
+      const d = await call((signal) => get(`/merchants/${merchantId}/tabs`, { signal }), 15000)
+      put({ candidates: (d.items || []).map((x) => ({ payer_id: x.payer_id, payer_name: x.payer_name })), candidatesLoading: false })
+    } catch (e) {
+      if (e instanceof StaleError) return
+      put({ candidates: [], candidatesLoading: false, candidatesError: e.message })
+    }
+  }
+
+  const openCredit = (id, { res, utt, manual = false, note = null, hint = {} }) => {
+    const ent = res?.entities || hint
+    const candidates = (ent.payer_candidates || []).filter((p) => p?.payer_id)
+    const payerId = ent.payer_id || null
+    const payerName = payerId ? ent.payer_name || candidates.find((p) => p.payer_id === payerId)?.payer_name || payerId : null
+    const draft = {
+      draft_id: uuid(),
+      amount_paise: manual ? null : ent.amount_paise,
+      amount_display: manual ? null : ent.amount_display,
+      typed: null,
+      payer_id: payerId,
+      payer_name: payerName,
+      payer_heard: ent.payer_heard || null,
+      candidates: payerId && !candidates.some((p) => p.payer_id === payerId)
+        ? [{ payer_id: payerId, payer_name: payerName }, ...candidates] : candidates,
+      candidatesLoading: false,
+      candidatesError: null,
+      picked: false,
+      input_source: !manual && (utt?.source === 'mic' || utt?.source === 'clip') ? 'VOICE' : 'MANUAL',
+      utterance_text: utt?.text || null,
+      voice_log_id: utt?.voice_log_id || null,
+    }
+    if (!draft.candidates.length) draft.candidatesLoading = true
+    setReply(id, {
+      kind: 'credit',
+      status: manual ? 'edit' : 'open',
+      draft,
+      confirmationText: manual ? null : res?.confirmation_text || null,
+      note,
+      form: { rupees: '', error: null },
+    })
+    activate({ turnId: id, cardKey: draft.draft_id, kind: 'credit' })
+    if (draft.candidatesLoading) loadPayers(id)
+  }
+
+  const saveCredit = async (id, d) => {
+    if (!d.payer_id) return
+    patchReply(id, { status: 'saving', error: null, draft: d })
+    try {
+      const res = await call((signal) => post(`/tabs/${encodeURIComponent(d.payer_id)}/add`, {
+        client_request_id: d.draft_id,
+        merchant_id: merchantId,
+        amount_paise: d.amount_paise,
+        note: null,
+        input_source: d.input_source,
+        language,
+        utterance_text: d.utterance_text,
+        voice_log_id: d.voice_log_id,
+      }, { signal }), 20000)
+      patchReply(id, { status: 'saved', result: res })
+      release(id)
+    } catch (e) {
+      if (e instanceof StaleError) return
+      patchReply(id, { status: 'failed', error: e })
+    }
+  }
+
+  const redraftCredit = (id, d, changes) => {
+    const next = { ...d, ...changes, draft_id: uuid() }
+    if (activeRef.current?.turnId === id) activeRef.current = { ...activeRef.current, cardKey: next.draft_id }
+    return next
+  }
+
+  const submitCredit = (id, r) => {
+    const typed = r.form.rupees.trim()
+    const d = r.draft
+    if (!/^\d+$/.test(typed) || Number(typed) < 1 || Number(typed) > 500000) {
+      return patchReply(id, { form: { ...r.form, error: typed ? 'Type a whole number of rupees, from 1 to 5,00,000.' : 'Type the amount in rupees.' } })
+    }
+    if (!d.payer_id) return patchReply(id, { form: { ...r.form, error: 'Pick whose tab it goes on.' } })
+    // The merchant's own typed rupees in the contract's unit (paise), as on the expense card; the backend revalidates
+    // and formats it. The same amount again re-sends the same draft (a retry can't write twice).
+    const next = d.typed === typed && d.amount_paise != null ? d
+      : redraftCredit(id, d, { amount_paise: Number(typed) * 100, amount_display: null, typed, input_source: 'MANUAL' })
+    return saveCredit(id, next)
+  }
+
+  const onCredit = (id, r, action, value) => {
+    const d = r.draft
+    if (action === 'save' || action === 'retry') return saveCredit(id, d)
+    if (action === 'payer') {
+      if (!value?.payer_id || value.payer_id === d.payer_id) return undefined
+      return patchReply(id, {
+        draft: redraftCredit(id, d, { payer_id: value.payer_id, payer_name: value.payer_name, picked: true }),
+        status: r.status === 'failed' ? 'open' : r.status,
+        error: null,
+      })
+    }
+    if (action === 'form') return patchReply(id, (x) => ({ ...x, form: { ...x.form, ...value, error: null } }))
+    if (action === 'submit') return submitCredit(id, r)
+    if (action === 'cancel') {
+      patchReply(id, { status: 'cancelled' })
+      return release(id)
+    }
+    if (action === 'speak') return speak(id, r.confirmationText)
+    return undefined
+  }
+
+  const runDues = async (id) => {
+    setReply(id, { kind: 'dues', status: 'loading' })
+    try {
+      const data = await call((signal) => get(`/merchants/${merchantId}/tabs?language=${language}`, { signal }), 15000)
+      patchReply(id, { status: 'done', data })
+    } catch (e) {
+      if (e instanceof StaleError) return
+      patchReply(id, { status: 'error', error: e })
+    }
+  }
+
+  const onDues = (id, r, action) => {
+    const spoken = r.data?.spoken
+    if (action === 'speak' && spoken?.text) return speak(id, spoken.text, spoken.language || language)
     return undefined
   }
 
@@ -428,6 +569,24 @@ export default function Talk({ params }) {
       clarifyTries.current = 0
       return openExpense(id, { res, utt })
     }
+    if (res.intent === 'ADD_CREDIT') {
+      if (ent.amount_paise == null) {
+        clarifyTries.current += 1
+        const ask = res.clarification_text || W.clarify_credit
+        if (clarifyTries.current >= 2) {
+          clarifyTries.current = 0
+          return openCredit(id, { utt, manual: true, note: ask, hint: ent })
+        }
+        return setReply(id, {
+          kind: 'say', tone: 'clarify', text: ask,
+          detail: "The amount couldn't be checked against what was said, so there is nothing to write on the tab yet. Say the name and the amount again.",
+        })
+      }
+      clarifyTries.current = 0
+      const unsure = res.needs_clarification || !ent.payer_id
+      return openCredit(id, { res, utt, note: unsure ? res.clarification_text || W.credit_pick : null })
+    }
+    if (res.intent === 'ASK_DUES') return runDues(id)
     if (res.intent === 'ASK_DAILY_PROFIT') return runProfit(id, ent.date)
     // UNKNOWN, or CONFIRM_TRANSACTION with no question card on screen (the backend treats that as UNKNOWN too).
     return setReply(id, { kind: 'say', tone: 'not_understood', text: res.clarification_text || W.not_understood, taps: true })
@@ -538,7 +697,7 @@ export default function Talk({ params }) {
     const card = boundCard()
     const id = addTurn({ utterance: { source: 'clip', text: null, status: 'transcribing', clipText: clip.text }, reply: { kind: 'pending', stage: 'understanding' } })
     try {
-      new Audio(clip.url).play().catch(() => {})
+      if (!isMuted()) new Audio(clip.url).play().catch(() => {})
       const blob = await (await fetch(clip.url)).blob()
       await transcribe(id, blob, clip, card)
     } catch (e) {
@@ -612,12 +771,19 @@ export default function Talk({ params }) {
   // Keep the newest turn in view, just above the text box.
   const last = turns[turns.length - 1]
   const tail = last ? `${turns.length}:${last.reply?.kind}:${last.reply?.status}:${last.reply?.stage}:${last.utterance?.text}` : ''
+  // The card keeps growing for a moment after it appears (Tamil font, buttons, speech), so pin again once it has settled;
+  // otherwise its buttons end up behind the text box.
   useEffect(() => {
-    if (tail) endRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
+    if (!tail) return undefined
+    const pin = (behavior) => endRef.current?.scrollIntoView({ block: 'end', behavior })
+    pin('smooth')
+    const timers = [setTimeout(() => pin('smooth'), 450), setTimeout(() => pin('smooth'), 1300)]
+    return () => timers.forEach(clearTimeout)
   }, [tail])
 
   const bound = active?.kind === 'question' ? active : null
-  const examples = bound ? (bound.stage === 'remember' ? W.rememberExamples : W.answerExamples) : W.examples
+  const examples = bound ? (bound.stage === 'remember' ? W.rememberExamples : W.answerExamples)
+    : udhari ? [...W.examples, ...W.udhariExamples] : W.examples
   const shownClips = clips.filter((c) => (bound ? c.answers : !c.answers))
 
   return (
@@ -653,7 +819,8 @@ export default function Talk({ params }) {
                   <div className="reply">
                     <span className="visually-hidden">Naanayam:</span>
                     <Reply turn={turn} W={W} t={t} demoDate={demoDate}
-                      onExpense={onExpense} onQuestion={onQuestion} onExpenseTap={tapExpense} onProfitTap={tapProfit} />
+                      onExpense={onExpense} onQuestion={onQuestion} onExpenseTap={tapExpense} onProfitTap={tapProfit}
+                      onCredit={onCredit} onDues={onDues} />
                   </div>
                 )}
               </li>
@@ -677,12 +844,14 @@ export default function Talk({ params }) {
   )
 }
 
-function Reply({ turn, W, t, demoDate, onExpense, onQuestion, onExpenseTap, onProfitTap }) {
+function Reply({ turn, W, t, demoDate, onExpense, onQuestion, onExpenseTap, onProfitTap, onCredit, onDues }) {
   const r = turn.reply
   const id = turn.id
   if (!r) return null
   if (r.kind === 'pending') return <PendingCard stage={r.stage} />
   if (r.kind === 'expense') return <ExpenseCard r={r} W={W} t={t} demoDate={demoDate} act={(a, v) => onExpense(id, r, a, v)} />
+  if (r.kind === 'credit') return <CreditCard r={r} W={W} t={t} act={(a, v) => onCredit(id, r, a, v)} />
+  if (r.kind === 'dues') return <DuesCard r={r} act={(a) => onDues(id, r, a)} />
   if (r.kind === 'profit') return <ProfitCard r={r} t={t} />
   if (r.kind === 'question') return <QuestionCard r={r} W={W} t={t} act={(a) => onQuestion(id, r, a)} />
   if (r.kind === 'discarded') {

@@ -127,3 +127,12 @@ html { scrollbar-color: var(--ink-soft) var(--paper-2); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
 }
+
+/* Screen-to-screen cross-fade (route.js). The page chrome and the tour overlay keep their own names so they stay put
+   while only the screen's content fades. */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.24s; animation-timing-function: cubic-bezier(0.2, 0.85, 0.25, 1); }
+.ticker { view-transition-name: nn-ticker; }
+.topbar { view-transition-name: nn-topbar; }
+.rail { view-transition-name: nn-rail; }
+.tour-card { view-transition-name: nn-tour-card; }
+.tour-hole { view-transition-name: nn-tour-hole; }

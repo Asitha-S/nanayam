@@ -1,10 +1,12 @@
 // Talk screen turns: what the merchant said, and Naanayam's card in reply. Every amount is the backend's display
 // string through <Money>; the merchant's own words are shown with lang set.
+import '../../styles/udhari.css'
 import {
   CircleHelp, Loader2, Pause, ShieldCheck, TriangleAlert, Volume2,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { USING_FIXTURES, apiUrl } from '../../api'
+import { isMuted } from '../../app/speech'
 import { Badge, Money, clockTime, confidenceText, count, ledgerHref, longDate } from '../ui'
 import { EXPENSE_CATEGORIES, words } from './strings'
 
@@ -82,7 +84,8 @@ export function SpokenAudio({ url, auto = false, label, unavailable }) {
   const ref = useRef(null)
   const [state, setState] = useState('idle')
   useEffect(() => {
-    if (auto && url && ref.current) ref.current.play().catch(() => setState('blocked'))
+    // Muted on the Soundbox means nothing plays by itself anywhere; the play button still works
+    if (auto && url && ref.current && !isMuted()) ref.current.play().catch(() => setState('blocked'))
   }, [auto, url])
   if (!url) return unavailable ? <p className="note spoken-none">{unavailable}</p> : null
   const toggle = () => {
@@ -509,6 +512,221 @@ function AnsweredQuestion({ r, W, t }) {
         {s.moved_from && (<><dt>Moved</dt><dd>{q.payer_name} was remembered as {words(s.moved_from)} before.</dd></>)}
       </dl>
       <div className="tcard-actions"><a className="btn" href="#/today">Open Today</a></div>
+    </div>
+  )
+}
+
+// ---- Udhari (flag UDHARI, contract section 13) -------------------------------------------------------------------
+
+const CREDIT_ERRORS = {
+  DUPLICATE_CONFLICT: 'This card was already sent with different details. Cancel it and say it again.',
+  NOT_FOUND: 'This customer or shop is not known to the credit book.',
+  VALIDATION_ERROR: 'The backend did not accept the amount (₹1 to ₹5,00,000).',
+}
+
+/** Whose tab: the backend's candidates, best first; the backend's match is preselected. */
+function PayerPicker({ d, act, disabled }) {
+  const list = d.candidates || []
+  return (
+    <div className="credit-pick">
+      <span className="label">Whose tab?</span>
+      {d.candidatesLoading && <p className="tcard-en">Finding customers…</p>}
+      {!d.candidatesLoading && !list.length && (
+        <p className="tcard-en">No customer to pick from{d.candidatesError ? ` (${d.candidatesError})` : ''}. Say the name again, or open Udhari.</p>
+      )}
+      {list.length > 0 && (
+        <div className="catchips" role="radiogroup" aria-label="Whose tab">
+          {list.map((p) => (
+            <button key={p.payer_id} type="button" role="radio" aria-checked={d.payer_id === p.payer_id} disabled={disabled}
+              className="catchip" onClick={() => act('payer', p)}>
+              <span>{p.payer_name}</span>
+              <small>{p.payer_id}</small>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function CreditForm({ r, W, t, act }) {
+  const d = r.draft
+  const f = r.form
+  const busy = r.status === 'saving'
+  return (
+    <form className="exp-form" onSubmit={(e) => { e.preventDefault(); act('submit') }}>
+      <label className="field">
+        <span>Amount in rupees</span>
+        <input inputMode="numeric" autoComplete="off" value={f.rupees} disabled={busy} placeholder="For example 300"
+          onChange={(e) => act('form', { rupees: e.target.value })} aria-describedby="credit-amount-hint" />
+        <small id="credit-amount-hint" className="note">From 1 to 5,00,000. The backend checks it again.</small>
+      </label>
+      <PayerPicker d={d} act={act} disabled={busy} />
+      {f.error && <p className="error-banner" role="alert"><TriangleAlert aria-hidden="true" /> {f.error}</p>}
+      <div className="bigtaps n2">
+        <button type="submit" className="bigtap ink" disabled={busy || !d.payer_id}>
+          <span lang={t.lang}>{W.yes}</span><small>{busy ? 'Saving…' : d.payer_id ? 'Write it on the tab' : 'Pick who first'}</small>
+        </button>
+        <button type="button" className="bigtap muted" onClick={() => act('cancel')} disabled={busy}>
+          <span lang={t.lang}>{W.cancel}</span><small>Cancel</small>
+        </button>
+      </div>
+    </form>
+  )
+}
+
+/** "Ramesh 300 on credit": confirm before anything is written on the tab. Yes needs a customer picked. */
+export function CreditCard({ r, W, t, act }) {
+  const d = r.draft
+  const busy = r.status === 'saving'
+  if (r.status === 'saved') return <SavedCredit r={r} W={W} t={t} />
+  const statusText = {
+    open: 'Check, then tap to save', edit: 'Type the amount', saving: 'Saving…', failed: 'Not saved yet',
+    cancelled: 'Cancelled', closed: 'Closed',
+  }[r.status]
+  const live = ['open', 'failed', 'saving'].includes(r.status)
+  return (
+    <div className={`tcard credit ${r.status === 'closed' || r.status === 'cancelled' ? 'is-done' : ''}`} data-status={r.status}>
+      <Head tone="sky" label={`Udhari · ${statusText}`} />
+
+      {r.note && <p className="tcard-say" lang={t.lang}>{r.note}</p>}
+
+      {r.status !== 'edit' && (
+        <>
+          <div className="exp-main">
+            {d.amount_display
+              ? <span className="tcard-amount figure">{d.amount_display}</span>
+              : <span className="tcard-amount typed">{d.typed} <small>rupees, as typed</small></span>}
+            <div className="exp-what credit-who">
+              {d.payer_name ? <b>{d.payer_name}</b> : <b className="is-missing">Who?</b>}
+              <small>On credit · goes on the tab</small>
+              {d.payer_heard && <span className="credit-heard">Heard <span lang={t.lang}>{d.payer_heard}</span></span>}
+            </div>
+          </div>
+          {r.confirmationText && !d.picked && (
+            <div className="credit-say">
+              <p className="tcard-say" lang={t.lang}>{r.confirmationText}</p>
+              {r.status === 'open' && (
+                r.speech?.url
+                  ? <SpokenAudio url={r.speech.url} auto label="Hear it again" />
+                  : (
+                    <button type="button" className="btn small-btn" onClick={() => act('speak')} disabled={r.speech?.state === 'loading'}>
+                      <Volume2 aria-hidden="true" /> {r.speech?.state === 'loading' ? 'Getting speech…' : 'Hear it'}
+                    </button>
+                  )
+              )}
+              {r.speech?.state === 'error' && <p className="note">{r.speech.message}</p>}
+            </div>
+          )}
+          {live && <PayerPicker d={d} act={act} disabled={busy} />}
+        </>
+      )}
+
+      {r.status === 'edit' && <CreditForm r={r} W={W} t={t} act={act} />}
+
+      {r.status === 'failed' && (
+        <ErrorLine error={r.error} hint={CREDIT_ERRORS[r.error?.code] || "Retry sends the same card again, so it can't be written twice."} />
+      )}
+
+      {(r.status === 'open' || r.status === 'saving') && (
+        <BigTaps label="Write this on the tab?" items={[
+          { key: 'yes', text: W.yes, lang: t.lang, en: busy ? 'Saving…' : d.payer_id ? 'Write it on the tab' : 'Pick who first', tone: 'ink', onClick: () => act('save'), disabled: busy || !d.payer_id },
+          { key: 'cancel', text: W.cancel, lang: t.lang, en: 'Cancel', tone: 'muted', onClick: () => act('cancel'), disabled: busy },
+        ]} />
+      )}
+      {r.status === 'failed' && (
+        <div className="tcard-actions">
+          <button type="button" className="btn ink" onClick={() => act('retry')} disabled={!d.payer_id}>Retry</button>
+          <button type="button" className="btn" onClick={() => act('cancel')}>Cancel</button>
+        </div>
+      )}
+      {r.status === 'cancelled' && <p className="tcard-en">Cancelled. Nothing was written on the tab.</p>}
+      {r.status === 'closed' && (
+        <p className="tcard-en">
+          {r.error
+            ? "Closed when another card opened. The last save didn't confirm, so check Udhari before adding it again."
+            : 'Closed when another card opened. Nothing was written from this card.'}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function SavedCredit({ r, W, t }) {
+  const s = r.result
+  return (
+    <div className="tcard credit is-saved" data-status="saved">
+      <Head tone="sky" label="Udhari · Written on the tab" />
+      <p className="tcard-say" lang={t.lang}><span className="figure">{s.amount_display}</span> {W.credit_saved}</p>
+      {s.idempotent_replay && <p className="tcard-en">This card was already saved, so nothing new was written.</p>}
+      <dl className="facts">
+        <div><dt>Written now</dt><dd><span className="figure">{s.amount_display}</span></dd></div>
+        <div className="is-key"><dt>{s.payer_name} owes now</dt><dd><span className="figure">{s.due_display}</span></dd></div>
+      </dl>
+      <dl className="kv">
+        <dt>Customer</dt><dd>{s.payer_name} <span className="mono">{s.payer_id}</span></dd>
+        <dt>Tab entry</dt><dd className="mono">{s.tab_entry_id}</dd>
+        {r.draft?.utterance_text && (<><dt>Said</dt><dd><span lang={t.lang}>{r.draft.utterance_text}</span></dd></>)}
+      </dl>
+      <p className="tcard-en">The credit book sits beside the ledger: sales and profit don&apos;t change.</p>
+      <div className="tcard-actions"><a className="btn ink" href="#/udhari">Open Udhari</a></div>
+    </div>
+  )
+}
+
+/** "Who owes me?": GET /merchants/{id}/tabs, its fixed-template spoken summary, and the list. */
+export function DuesCard({ r, act }) {
+  if (r.status === 'loading') return <PendingCard stage="understanding" />
+  if (r.status === 'error') {
+    return (
+      <div className="tcard dues">
+        <Head tone="sky" label="Who owes you" />
+        <ErrorLine error={r.error} hint={r.error?.code === 'NOT_FOUND' ? 'Udhari is off on this backend.' : 'Try again, or open Udhari.'} />
+      </div>
+    )
+  }
+  const d = r.data
+  const owing = (d.items || []).filter((x) => x.due_paise > 0)
+  const offers = d.offers?.length || 0
+  return (
+    <div className="tcard dues" data-status="done">
+      <Head tone="sky" label="Who owes you">
+        <span className="tcard-date">as of {clockTime(d.as_of)} IST</span>
+      </Head>
+      {d.spoken?.text && (
+        <div className="credit-say">
+          <p className="tcard-say" lang={d.spoken.language}>{d.spoken.text}</p>
+          {r.speech?.url
+            ? <SpokenAudio url={r.speech.url} auto label="Hear it again" />
+            : (
+              <button type="button" className="btn small-btn" onClick={() => act('speak')} disabled={r.speech?.state === 'loading'}>
+                <Volume2 aria-hidden="true" /> {r.speech?.state === 'loading' ? 'Getting speech…' : 'Hear it'}
+              </button>
+            )}
+          {r.speech?.state === 'error' && <p className="note">{r.speech.message}</p>}
+        </div>
+      )}
+      <dl className="facts">
+        <div className="is-key"><dt>Owed to the shop</dt><dd><span className="figure">{d.total_due_display}</span></dd></div>
+        <div><dt>Customers owing</dt><dd><span className="figure">{count(d.open_count)}</span></dd></div>
+      </dl>
+      {owing.length > 0 ? (
+        <ol className="rows dues-rows" aria-label="Who owes what, oldest first">
+          {owing.map((x, i) => (
+            <li key={x.payer_id}>
+              <span className="n">{String(i + 1).padStart(2, '0')}</span>
+              <span className="name"><b>{x.payer_name}</b>{x.opened_at && <small>Owing since {longDate(x.opened_at)}</small>}</span>
+              <span className="figure dues-amt">{x.due_display}</span>
+            </li>
+          ))}
+        </ol>
+      ) : <p className="tcard-en">Nobody owes the shop anything right now.</p>}
+      {offers > 0 && (
+        <p className="tcard-en">
+          {count(offers)} {offers === 1 ? 'payment' : 'payments'} today could come off a tab. Take {offers === 1 ? 'it' : 'them'} off on the Udhari screen.
+        </p>
+      )}
+      <div className="tcard-actions"><a className="btn ink" href="#/udhari">Open Udhari</a></div>
     </div>
   )
 }

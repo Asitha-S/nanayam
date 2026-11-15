@@ -126,6 +126,7 @@
   font: 800 12.5px/1 var(--font-mono); color: var(--ink-2);
 }
 .dot.below .dot-amt { bottom: auto; top: 24px; }
+.dot.is-family { background: var(--violet); }
 .dot.is-ask { width: 26px; height: 26px; background: var(--signal); z-index: 2; }
 .dot.is-ask::before, .dot.is-ask::after {
   content: ''; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid var(--signal);
@@ -147,6 +148,9 @@
 .sw { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--ink); }
 .sw.sale { background: var(--lime); }
 .sw.ask { background: var(--signal); }
+.sw.family { background: var(--violet); }
+.daystrip-empty { margin-top: auto; padding: 28px 4px 4px; font-size: 16px; }
+.question-none { display: grid; gap: 16px; justify-items: start; }
 
 .today-panel { background: var(--lime); display: flex; flex-direction: column; }
 .today-panel h2 { font-size: clamp(36px, 3.2vw, 52px); }

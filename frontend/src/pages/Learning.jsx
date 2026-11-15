@@ -2,10 +2,11 @@
 //   GET /merchants/{id}/learning  this merchant's questions, answers and payer memory (counts only, no precision)
 //   GET /evaluation               the held-out run file. Every metric on screen comes from it, next to its data_label.
 // POST /classify/preview runs the full decision for a payment that hasn't happened. It writes nothing.
+// Remember / forget a payer: GET /merchants/{id} (the configured lists), PUT /merchants/{id} with the replaced list(s).
 import '../styles/learning.css'
-import { ArrowRight, Info, Play, RefreshCw, TriangleAlert } from 'lucide-react'
+import { ArrowRight, Check, Info, Play, RefreshCw, TriangleAlert } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { post, useApi } from '../api'
+import { get, post, put, useApi } from '../api'
 import { useMerchant } from '../app/merchant'
 import { Badge, LoadState, clockTime, confidenceText, count, longDate } from '../components/ui'
 
@@ -306,7 +307,7 @@ const KIND = {
 }
 const KIND_ORDER = ['FAMILY_INSTRUCTION', 'MIXED', 'CUSTOMER_INSTRUCTION', 'MEMORY']
 const SOURCE = {
-  SETUP: 'Told when the shop was set up',
+  SETUP: 'Set by the merchant directly',
   CONFIRMATION: 'Said “remember” while answering',
   ANSWERS: 'Learned from answers',
 }
@@ -400,7 +401,7 @@ function PreviewResult({ result, payers, owner }) {
   )
 }
 
-function WhatIf({ learning, merchantId, demoDate, owner, pickRequest, wanted, panelRef, autoRun }) {
+function WhatIf({ learning, merchantId, demoDate, owner, pickRequest, wanted, panelRef, autoRun, memoryChange }) {
   const payers = useMemo(() => learning.data?.payers || [], [learning.data])
   const [choice, setChoice] = useState(null)
   const [typed, setTyped] = useState('')
@@ -425,6 +426,20 @@ function WhatIf({ learning, merchantId, demoDate, owner, pickRequest, wanted, pa
     setError(null)
     runRef.current?.focus({ preventScroll: true })
   }, [pickRequest])
+
+  // a payer's instruction changed below: a preview shown for them is out of date
+  useEffect(() => {
+    if (memoryChange) setResult((r) => (r && r.payerId === memoryChange.id ? null : r))
+  }, [memoryChange])
+
+  // the picked payer left the list (forgotten, no answers): keep them as a typed id rather than a wrong name
+  useEffect(() => {
+    if (!learning.data || choice === null || choice === OTHER) return
+    if (!payers.some((p) => p.payer_id === choice)) {
+      setTyped(choice)
+      setChoice(OTHER)
+    }
+  }, [learning.data, payers, choice])
 
   // ?run=<nonce> (judge tour): run the preview once, as if "See what happens" was pressed
   const ranFor = useRef(null)
@@ -534,7 +549,60 @@ function WhatIf({ learning, merchantId, demoDate, owner, pickRequest, wanted, pa
 
 const PAGE = 10
 
-function Payers({ payers, onTry, owner }) {
+/** The merchant's configured lists from GET /merchants/{id}, as id sets. */
+function listsOf(m) {
+  return {
+    family: (m?.family_payers || []).map((p) => p.payer_id),
+    customer: (m?.customer_payers || []).map((p) => p.payer_id),
+  }
+}
+
+/**
+ * PUT body that gives `id` the instruction `to` (FAMILY | CUSTOMER | null = forget). Each list sent replaces that
+ * list; a payer is never in both, so a move edits both lists in the same request.
+ */
+function instructionBody(lists, id, to) {
+  const without = (list) => list.filter((x) => x !== id)
+  const body = {}
+  if (to === 'FAMILY' || lists.family.includes(id)) body.family_payer_ids = to === 'FAMILY' ? [...without(lists.family), id] : without(lists.family)
+  if (to === 'CUSTOMER' || lists.customer.includes(id)) body.customer_payer_ids = to === 'CUSTOMER' ? [...without(lists.customer), id] : without(lists.customer)
+  return body
+}
+
+function instructionError(e) {
+  const d = e?.details || {}
+  if (e?.code === 'VALIDATION_ERROR' && Array.isArray(d.unknown) && d.unknown.length) {
+    return { error: e, hint: `Naanayam has no payer ${d.unknown.join(', ')}. Reload the page; the list may be out of date.` }
+  }
+  if (e?.code === 'VALIDATION_ERROR' && Array.isArray(d.overlap) && d.overlap.length) {
+    return { error: e, hint: `${d.overlap.join(', ')} would be on both lists. Reload the page and try again.` }
+  }
+  return { error: e, hint: hintFor(e) }
+}
+
+const TO_WORDS = { FAMILY: 'Always family', CUSTOMER: 'Always a customer' }
+
+function InstructionDone({ done, onTry }) {
+  const p = done.now
+  return (
+    <div className="lr-changed" role="status">
+      <Check aria-hidden="true" />
+      <p>
+        <b>{done.name}</b>{' '}
+        {done.to ? `is now on the ${done.to === 'FAMILY' ? 'family' : 'customer'} list.` : 'has no instruction now.'}
+        {done.moved && ` Moved off the ${done.moved === 'FAMILY' ? 'family' : 'customer'} list.`}{' '}
+        {p ? <>Naanayam now: <KindChip kind={p.kind} /> {SOURCE[p.source] || words(p.source)}.</>
+          : 'No answers either, so the model decides alone and the payer leaves this list.'}
+        {' '}Future payments only; the ledger keeps its history.
+      </p>
+      <button type="button" className="btn lr-try" onClick={() => onTry(done.id)} aria-label={`What if ${done.name} pays next?`}>
+        Next time <ArrowRight aria-hidden="true" />
+      </button>
+    </div>
+  )
+}
+
+function Payers({ payers, onTry, owner, lists, busy, onInstruct }) {
   const [filter, setFilter] = useState('all')
   const [all, setAll] = useState(false)
   const sorted = useMemo(
@@ -574,24 +642,51 @@ function Payers({ payers, onTry, owner }) {
         <div className="dtable lr-ptable" role="table" aria-label="Payers Naanayam remembers">
           <div className="tr th" role="row">
             <span role="columnheader">Payer</span><span role="columnheader">What Naanayam does</span>
-            <span role="columnheader">How it knows</span><span role="columnheader">Answers</span><span role="columnheader"><span className="visually-hidden">Try</span></span>
+            <span role="columnheader">How it knows</span><span role="columnheader">Answers</span>
+            <span role="columnheader">Instruction</span><span role="columnheader"><span className="visually-hidden">Try</span></span>
           </div>
-          {visible.map((p) => (
-            <div className="tr" role="row" key={p.payer_id}>
-              <span role="cell" className="lr-payer">
-                <b>{p.payer_name}</b>
-                <small><span className="mono">{p.payer_id}</span>{p.relation_label ? ` · ${p.relation_label}` : ''}</small>
-              </span>
-              <span role="cell"><KindChip kind={p.kind} /></span>
-              <span role="cell" className="lr-how">{SOURCE[p.source] || words(p.source)}</span>
-              <span role="cell" className="mono">{answers(p)}</span>
-              <span role="cell">
-                <button type="button" className="btn lr-try" onClick={() => onTry(p.payer_id)} aria-label={`What if ${p.payer_name} pays next?`}>
-                  Try <ArrowRight aria-hidden="true" />
-                </button>
-              </span>
-            </div>
-          ))}
+          {visible.map((p) => {
+            // the configured lists decide; the learning kind is the fallback until they load
+            const instructed = lists
+              ? lists.family.includes(p.payer_id) || lists.customer.includes(p.payer_id)
+              : p.kind === 'FAMILY_INSTRUCTION' || p.kind === 'CUSTOMER_INSTRUCTION'
+            const working = busy === p.payer_id
+            return (
+              <div className="tr" role="row" key={p.payer_id}>
+                <span role="cell" className="lr-payer">
+                  <b>{p.payer_name}</b>
+                  <small><span className="mono">{p.payer_id}</span>{p.relation_label ? ` · ${p.relation_label}` : ''}</small>
+                </span>
+                <span role="cell"><KindChip kind={p.kind} /></span>
+                <span role="cell" className="lr-how">{SOURCE[p.source] || words(p.source)}</span>
+                <span role="cell" className="mono">{answers(p)}</span>
+                <span role="cell" className="lr-instr" aria-busy={working}>
+                  {instructed ? (
+                    <button type="button" className="btn lr-mini" disabled={Boolean(busy)} onClick={() => onInstruct(p, null)}
+                      aria-label={`Forget the instruction for ${p.payer_name}`}>
+                      {working ? 'Saving…' : 'Forget'}
+                    </button>
+                  ) : (
+                    <>
+                      <button type="button" className="btn lr-mini is-family" disabled={Boolean(busy)} onClick={() => onInstruct(p, 'FAMILY')}
+                        aria-label={`Always family: ${p.payer_name}`}>
+                        {working ? 'Saving…' : TO_WORDS.FAMILY}
+                      </button>
+                      <button type="button" className="btn lr-mini is-sale" disabled={Boolean(busy)} onClick={() => onInstruct(p, 'CUSTOMER')}
+                        aria-label={`Always a customer: ${p.payer_name}`}>
+                        {TO_WORDS.CUSTOMER}
+                      </button>
+                    </>
+                  )}
+                </span>
+                <span role="cell">
+                  <button type="button" className="btn lr-try" onClick={() => onTry(p.payer_id)} aria-label={`What if ${p.payer_name} pays next?`}>
+                    Try <ArrowRight aria-hidden="true" />
+                  </button>
+                </span>
+              </div>
+            )
+          })}
         </div>
       )}
       {shown.length > PAGE && (
@@ -645,16 +740,52 @@ function MerchantActivity({ learning, owner }) {
   )
 }
 
-function PayerMemory({ learning, owner, onTry }) {
+function PayerMemory({ learning, owner, onTry, merchantId, onMemoryChanged }) {
   const l = learning.data
+  const detail = useApi(`/merchants/${merchantId}`)
+  const lists = detail.data?.merchant_id === merchantId ? listsOf(detail.data) : null
+  const [busy, setBusy] = useState(null)
+  const [done, setDone] = useState(null)
+  const [failed, setFailed] = useState(null)
+
+  async function instruct(p, to) {
+    setBusy(p.payer_id)
+    setDone(null)
+    setFailed(null)
+    try {
+      // read the lists fresh, so a change made elsewhere since this page loaded is not undone
+      const current = listsOf(await get(`/merchants/${merchantId}`))
+      const body = instructionBody(current, p.payer_id, to)
+      const moved = to === 'FAMILY' && current.customer.includes(p.payer_id) ? 'CUSTOMER'
+        : to === 'CUSTOMER' && current.family.includes(p.payer_id) ? 'FAMILY' : null
+      if (Object.keys(body).length) await put(`/merchants/${merchantId}`, body)
+      // refetch and show what Naanayam now does for this payer
+      const after = await get(`/merchants/${merchantId}/learning`)
+      setDone({ id: p.payer_id, name: p.payer_name, to, moved, now: (after.payers || []).find((x) => x.payer_id === p.payer_id) || null })
+      onMemoryChanged?.({ id: p.payer_id, at: Date.now() })
+    } catch (e) {
+      setFailed({ ...instructionError(e), name: p.payer_name })
+    } finally {
+      setBusy(null)
+    }
+  }
+
   return (
     <section className="panel lr-memory" aria-labelledby="lr-memory-h">
       <h2 id="lr-memory-h">Who Naanayam remembers</h2>
-      <p className="lr-sub-lede">Each payer with an instruction or an answer, what Naanayam does when they pay, and how it knows. Try one to see the next decision.</p>
+      <p className="lr-sub-lede">
+        Each payer with an instruction or an answer, what Naanayam does when they pay, and how it knows. Give a standing
+        instruction or forget one; it changes future payments only. Try one to see the next decision.
+      </p>
       <Status state={learning} what="this merchant's payers" />
+      <div aria-live="polite">
+        {done && <InstructionDone done={done} onTry={onTry} />}
+        {failed && <ErrorBanner error={{ message: `Couldn't change ${failed.name}: ${failed.error.message}` }} hint={failed.hint} />}
+      </div>
+      {detail.error && !detail.data && <p className="note">The merchant's lists didn't load ({detail.error.message}); the buttons follow the payer kinds below.</p>}
       {l && (
         <div className="lr-merchant-split">
-          <Payers payers={l.payers || []} onTry={onTry} owner={owner} />
+          <Payers payers={l.payers || []} onTry={onTry} owner={owner} lists={lists} busy={busy} onInstruct={instruct} />
           <div className="lr-recent">
             <h3>Latest answers</h3>
             {(l.recent_feedback || []).length ? (
@@ -814,6 +945,7 @@ export default function Learning({ params = {} }) {
   const learning = useApi(`/merchants/${merchantId}/learning`)
   const evaluation = useApi('/evaluation')
   const [pickRequest, setPickRequest] = useState(null)
+  const [memoryChange, setMemoryChange] = useState(null)
   const toolRef = useRef(null)
   const owner = merchant?.owner_name || ''
   const e = evaluation.data
@@ -843,7 +975,7 @@ export default function Learning({ params = {} }) {
       <div className="lr-top">
         <EvalHeadline evaluation={evaluation} />
         <WhatIf key={merchantId} learning={learning} merchantId={merchantId} demoDate={demoDate} owner={owner}
-          pickRequest={pickRequest} wanted={params.payer} panelRef={toolRef} autoRun={params.run} />
+          pickRequest={pickRequest} wanted={params.payer} panelRef={toolRef} autoRun={params.run} memoryChange={memoryChange} />
       </div>
 
       <div className={`lr-row2 ${e?.headline ? '' : 'is-single'}`}>
@@ -851,7 +983,7 @@ export default function Learning({ params = {} }) {
         <MerchantActivity learning={learning} owner={owner} />
       </div>
 
-      <PayerMemory learning={learning} owner={owner} onTry={onTry} />
+      <PayerMemory key={merchantId} learning={learning} owner={owner} onTry={onTry} merchantId={merchantId} onMemoryChanged={setMemoryChange} />
 
       {e?.headline && (
         <>

@@ -7,6 +7,7 @@ import { createContext, useCallback, useContext, useEffect, useLayoutEffect, use
 import demoDay from '../../../data/demo/M001_demo_day.json'
 import { get, post } from '../api'
 import { useMerchant } from '../app/merchant'
+import { unlockSound } from '../app/speech'
 import { go as goTo } from '../app/route'
 import { talkWords } from '../components/talk/strings'
 import '../styles/tour.css'
@@ -60,67 +61,104 @@ function lastNoticeId() {
   }
 }
 
-/** Highlight box + caption card. */
+/** Highlight box + caption card. The card never jumps to the centre between steps: it stays where it was while a step
+ * works and the page scrolls, then appears next to the new target once the scroll has stopped (a short fade, no slide).
+ * Only the intro and closing cards, which have no target, sit in the centre. */
 function Overlay({ step, index, total, busy, error, onNext, onBack, onExit, onRetry }) {
-  const [rect, setRect] = useState(null)
+  const [rect, setRect] = useState(null) // the last settled target (kept while the next one is found, so it can glide)
+  const [settledFor, setSettledFor] = useState(null) // the step whose target `rect` is
   const [missing, setMissing] = useState(false)
-  const [cardPos, setCardPos] = useState(null)
+  const [cardPos, setCardPos] = useState(null) // where the card is; kept across steps until the next target is known
+  const [landed, setLanded] = useState(0) // bumps when the card lands next to a new step's target (fade in)
+  const placedFor = useRef(null)
   const cardRef = useRef(null)
   const nextRef = useRef(null)
 
-  // find the target (it may appear only after data loads), bring it into view, then follow it as the page moves
+  // find the target (it may appear only after data loads), scroll it into view, wait for the scroll to stop,
+  // then follow small layout shifts
   useEffect(() => {
-    setRect(null)
     setMissing(false)
     if (!step.target || busy) return undefined
     let alive = true
-    let el = null
     let timer = null
     ;(async () => {
-      el = await waitFor(() => findTarget(step.target), 15000)
+      const el = await waitFor(() => findTarget(step.target), 15000)
       if (!alive) return
       if (!el) { setMissing(true); return }
-      const top = el.getBoundingClientRect().top + window.scrollY - 150
+      // below the sticky top bar, never under it
+      const bar = document.querySelector('.topbar')
+      const clear = (bar ? Math.max(0, bar.getBoundingClientRect().bottom) : 0) + 24
+      const top = el.getBoundingClientRect().top + window.scrollY - clear
       window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+      let prev = null
+      for (let i = 0; i < 40 && alive; i += 1) { // until the same position twice in a row
+        await sleep(80)
+        const r = el.getBoundingClientRect()
+        if (prev && Math.abs(prev.top - r.top) < 0.5 && Math.abs(prev.left - r.left) < 0.5) break
+        prev = r
+      }
+      if (!alive) return
       const measure = () => {
         const cur = findTarget(step.target) || el
+        if (!cur.isConnected) return
         const r = cur.getBoundingClientRect()
         setRect((p) => (p && p.top === r.top && p.left === r.left && p.width === r.width && p.height === r.height ? p
           : { top: r.top, left: r.left, width: r.width, height: r.height }))
       }
       measure()
-      timer = setInterval(measure, 100)
+      setSettledFor(step.id)
+      timer = setInterval(measure, 150)
     })()
     return () => { alive = false; if (timer) clearInterval(timer) }
   }, [step, busy])
 
-  // place the card next to the highlight: below, else above, else in the corner
+  // place the card next to the highlight (below, else above, else bottom-right); without a target only the intro and
+  // closing cards are centred; every other step keeps the card where it was until its target has settled
   useLayoutEffect(() => {
     const card = cardRef.current
     if (!card) return
+    if (!step.target) {
+      setCardPos(null)
+      placedFor.current = step.id
+      return
+    }
+    if (!rect || settledFor !== step.id) return // keep the card where it is until this step's target has settled
     const vw = window.innerWidth
     const vh = window.innerHeight
     const w = card.offsetWidth
     const h = card.offsetHeight
-    if (!rect) { setCardPos(null); return }
     const pad = 14
     const left = Math.min(Math.max(16, rect.left), vw - w - 16)
-    if (rect.top + rect.height + pad + h < vh - 16) setCardPos({ top: rect.top + rect.height + pad, left })
-    else if (rect.top - pad - h > 16) setCardPos({ top: rect.top - pad - h, left })
-    else setCardPos({ top: vh - h - 20, left: vw - w - 20 })
-  }, [rect, step, busy, error])
+    let pos
+    if (rect.top + rect.height + pad + h < vh - 16) pos = { top: rect.top + rect.height + pad, left }
+    else if (rect.top - pad - h > 16) pos = { top: rect.top - pad - h, left }
+    else pos = { top: vh - h - 20, left: vw - w - 20 }
+    // once the card has landed for this step it ignores small layout shifts (data loading): no jitter
+    const tolerance = placedFor.current === step.id ? 28 : 1
+    setCardPos((p) => (p && Math.abs(p.top - pos.top) < tolerance && Math.abs(p.left - pos.left) < tolerance ? p : pos))
+    if (placedFor.current !== step.id) {
+      placedFor.current = step.id
+      setLanded((n) => n + 1)
+    }
+  }, [rect, settledFor, step, error])
 
-  useEffect(() => { if (!busy) nextRef.current?.focus({ preventScroll: true }) }, [index, busy])
+  useEffect(() => { if (!busy) nextRef.current?.focus({ preventScroll: true }) }, [index, busy, landed])
 
   const pad = 8
   const last = index === total - 1
+  const settled = Boolean(step.target) && settledFor === step.id && !busy && Boolean(rect)
+  // no target (intro, closing): a point in the middle, so the first highlight opens out from the centre
+  const holeStyle = step.target && rect
+    ? { top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 }
+    : { top: '50vh', left: '50vw', width: 0, height: 0 }
   return (
     <>
-      {rect && !busy ? (
-        <div className="tour-hole" aria-hidden="true"
-          style={{ top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 }} />
-      ) : <div className="tour-dim" aria-hidden="true" />}
-      <section ref={cardRef} className={`tour-card ${cardPos ? '' : 'is-centered'}`} role="dialog" aria-modal="false"
+      {/* Nothing outside the highlight can be clicked during the tour (the mic, links, other cards); the highlighted
+          part stays usable, e.g. the presenter answering the question. Clicking elsewhere points back at Next. */}
+      <div className="tour-shield" aria-hidden="true" onPointerDown={() => nextRef.current?.focus({ preventScroll: true })}
+        style={settled ? { clipPath: `path(evenodd, 'M0 0H99999V99999H0Z M${holeStyle.left} ${holeStyle.top}h${holeStyle.width}v${holeStyle.height}h${-holeStyle.width}Z')` } : undefined} />
+      <div className={`tour-hole ${settled ? '' : 'is-waiting'}`} aria-hidden="true" style={holeStyle} />
+      <section key={landed} ref={cardRef} className={`tour-card ${cardPos ? '' : 'is-centered'}`} role="dialog" aria-modal="false"
         aria-labelledby="tour-title" style={cardPos ? { top: cardPos.top, left: cardPos.left } : undefined}>
         <div className="tour-head">
           <span className="label">Judge tour · {index === 0 ? 'start' : last ? 'end' : `${index} of ${total - 2}`}</span>
@@ -225,6 +263,7 @@ export function TourProvider({ children }) {
   }, [])
 
   const start = useCallback(() => {
+    unlockSound() // the Judge tour tap is the gesture browsers need before the Soundbox may speak (Mute still wins)
     routes.current = {}
     setMerchantId('M001')
     show(0, false)

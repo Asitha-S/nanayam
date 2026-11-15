@@ -1,14 +1,25 @@
 // Landing page (#/): the front door. One action: enter the app (#/home).
-// Payment chips come from GET /demo/script (synthetic demo day); nothing is typed or computed here.
+// Payment chips are Murugan's real recent payments (today, else the last day with payments); nothing is typed or computed.
 import { ArrowRight } from 'lucide-react'
 import { useApi } from '../api'
+import { useMerchant } from '../app/merchant'
+import { clockTime } from '../components/ui'
 import { Mark } from '../components/Shell'
 import '../styles/front.css'
 
 const HOME = '#/home'
-const ACTION = { AUTO_CLASSIFY: 'sorted as a sale', ASK_MERCHANT: 'asked in Tamil' }
-// which scripted payments float around the coin, and where (index into the script, position class)
-const PICKS = [[0, 'p1'], [11, 'p2'], [7, 'p3'], [14, 'p4'], [4, 'p5']]
+const ACTION = { SALE: 'sorted as a sale', FAMILY: 'family money', PENDING: 'asked in Tamil' }
+const SLOTS = ['p1', 'p2', 'p3', 'p4', 'p5']
+
+/** Five chips: the newest payment that was asked about (if any), then sales spread across the day. */
+function pick(items) {
+  const sorted = [...items].sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1))
+  const asked = [...sorted].reverse().find((p) => p.current_classification !== 'SALE')
+  const sales = sorted.filter((p) => p !== asked)
+  const step = Math.max(1, Math.floor(sales.length / 4))
+  const chosen = [0, 1, 2, 3].map((i) => sales[i * step]).filter(Boolean)
+  return asked ? [...chosen.slice(0, 3), asked, ...chosen.slice(3)] : chosen
+}
 
 function Coin({ items }) {
   return (
@@ -20,15 +31,14 @@ function Coin({ items }) {
         <circle cx="260" cy="260" r="78" fill="var(--ink)" />
         <text x="260" y="262" textAnchor="middle" dominantBaseline="middle" className="front-coin-ta">நா</text>
       </svg>
-      {items && PICKS.map(([i, pos]) => {
-        const it = items[i]
-        if (!it) return null
-        const ask = it.expected_action === 'ASK_MERCHANT'
+      {items && pick(items).map((it, i) => {
+        const pos = SLOTS[i]
+        const ask = it.current_classification === 'PENDING'
         return (
           <span key={it.transaction_id} className={`front-chip ${pos} ${ask ? 'is-ask' : ''}`}>
-            <b>{it.time}</b> {it.payer_name}
+            <b>{clockTime(it.timestamp)}</b> {it.payer_name}
             <strong>{it.amount_display}</strong>
-            <em>{ACTION[it.expected_action] || it.expected_action}</em>
+            <em>{ACTION[it.current_classification] || it.current_classification}</em>
           </span>
         )
       })}
@@ -37,7 +47,12 @@ function Coin({ items }) {
 }
 
 export default function Landing() {
-  const script = useApi('/demo/script?merchant_id=M001')
+  const { demoDate } = useMerchant()
+  const yesterday = demoDate && new Date(new Date(`${demoDate}T12:00:00Z`).getTime() - 864e5).toISOString().slice(0, 10)
+  const today = useApi(demoDate ? `/merchants/M001/payments?start_date=${demoDate}&end_date=${demoDate}&limit=500` : null)
+  const before = useApi(yesterday && today.data && today.data.items.length < 5
+    ? `/merchants/M001/payments?start_date=${yesterday}&end_date=${yesterday}&limit=500` : null)
+  const items = today.data && today.data.items.length >= 5 ? today.data.items : before.data?.items
   return (
     <div className="front">
       <header className="front-head">
@@ -63,7 +78,7 @@ export default function Landing() {
             <li><b>Three proofs, one ledger</b><span>For the merchant, the taxman and the lender.</span></li>
           </ol>
         </div>
-        <Coin items={script.data?.items} />
+        <Coin items={items} />
       </main>
 
       <footer className="front-foot">

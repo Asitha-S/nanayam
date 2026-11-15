@@ -1,9 +1,15 @@
-// Microphone recording for Talk (VOICE_AND_NOTICE 4.1): max 15 s, stops by itself after 1.5 s of silence once
-// speech was heard. The bytes go to POST /voice/transcribe as they are; nothing is transcribed in the browser.
+// Microphone recording for Talk (VOICE_AND_NOTICE 4.1): max 15 s. Stop ends it at once; otherwise it stops by itself
+// after 2.5 s of silence once speech was heard, never in the first 3 s, so a pause to think doesn't cut the sentence.
+// "Silence" is measured against this room: the quietest level heard so far (the mic's noise floor) times three,
+// so a soft voice still counts as speech and a fan doesn't. In a loud hall it may not hear silence: Stop, or 15 s.
+// The bytes go to POST /voice/transcribe as they are; nothing is transcribed in the browser.
 
 const MAX_MS = 15000
-const SILENCE_MS = 1500
-const LOUD_RMS = 0.02
+const SILENCE_MS = 2500
+const MIN_MS = 3000 // never stops by itself before this
+const SPEECH_MS = 400 // this much sound above the floor counts as having heard speech (a click doesn't)
+const LOUD_MIN = 0.006 // the speech threshold never drops below this (a silent mic)...
+const LOUD_MAX = 0.03 // ...or rises above this (a noisy room)
 const TYPES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/ogg']
 
 export function micSupported() {
@@ -57,7 +63,9 @@ export async function startRecording({ onDone, onLevel }) {
     analyser.fftSize = 2048
     ctx.createMediaStreamSource(stream).connect(analyser)
     const buf = new Float32Array(analyser.fftSize)
-    let heard = false
+    const started = Date.now()
+    let floor = Infinity // quietest level so far
+    let loudFor = 0 // ms of sound above the threshold, in total
     let lastLoud = Date.now()
     poll = setInterval(() => {
       analyser.getFloatTimeDomainData(buf)
@@ -65,10 +73,13 @@ export async function startRecording({ onDone, onLevel }) {
       for (let i = 0; i < buf.length; i += 1) sum += buf[i] * buf[i]
       const rms = Math.sqrt(sum / buf.length)
       onLevel?.(Math.min(1, rms * 8))
-      if (rms > LOUD_RMS) {
-        heard = true
-        lastLoud = Date.now()
-      } else if (heard && Date.now() - lastLoud > SILENCE_MS) {
+      if (rms > 0) floor = Math.min(floor, rms)
+      const threshold = Math.min(LOUD_MAX, Math.max(LOUD_MIN, (Number.isFinite(floor) ? floor : 0) * 3))
+      const now = Date.now()
+      if (rms > threshold) {
+        loudFor += 100
+        lastLoud = now
+      } else if (loudFor >= SPEECH_MS && now - started > MIN_MS && now - lastLoud > SILENCE_MS) {
         stop()
       }
     }, 100)

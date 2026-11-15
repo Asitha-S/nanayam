@@ -1,11 +1,13 @@
 // Hidden · Demo controls for the presenter (#/demo, not in the rail).
 // GET /health, POST /demo/reset, GET /demo/script, POST /demo/tamper; reads today's payments, ledger and verify.
+// Device voices: this browser's speechSynthesis voices (no backend call).
+// The scripted 15-payment day appears only here and in the judge tour.
 import '../styles/demopanel.css'
 import {
   ArrowRight, Check, CircleDashed, Construction, Radio, RefreshCw, RotateCcw, ShieldAlert, ShieldCheck,
-  TriangleAlert, X,
+  Smartphone, TriangleAlert, X,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { API_BASE, USING_FIXTURES, post, useApi } from '../api'
 import { useMerchant } from '../app/merchant'
 import { LoadState, Money, clockTime, count, longDate } from '../components/ui'
@@ -181,12 +183,15 @@ function Script({ merchantId, toolsOff }) {
     <section className="panel dp-script" aria-labelledby="dp-script-h">
       <div className="panel-head">
         <div>
-          <span className="label">Demo script · {merchantId} · GET /demo/script</span>
+          <span className="label">Scripted demo day (used by the judge tour)</span>
           <h3 id="dp-script-h">{items ? `${count(done)} of ${count(items.length)} sent.` : 'The scripted day.'}</h3>
         </div>
-        <a className="btn primary" href="#/soundbox"><Radio aria-hidden="true" /> Send from the Soundbox</a>
+        <a className="btn" href="#/soundbox"><Radio aria-hidden="true" /> Open the Soundbox</a>
       </div>
-      <p className="note">“Sent” means the payment is in today's payments list for {merchantId}. “Now” is its classification at this moment.</p>
+      <p className="note">
+        {merchantId} · GET /demo/script. The judge tour sends these payments one by one. “Sent” means the payment is in
+        today's payments list for {merchantId}. “Now” is its classification at this moment.
+      </p>
       {!items && !script.error && <LoadState state={script} what="the demo script" />}
       {script.error && (
         <p className="dp-off-note">
@@ -305,6 +310,108 @@ function Tamper({ merchantId, demoDate, toolsOff, tampered }) {
   )
 }
 
+/* ---------- device voices (speechSynthesis) ---------- */
+
+const isTamil = (v) => /^ta([-_]|$)/i.test(v.lang || '')
+const isTelugu = (v) => /^te([-_]|$)/i.test(v.lang || '')
+/** lang for a voice name written in Tamil or Telugu script (the 22px rule) */
+const scriptLang = (s) => (/[஀-௿]/.test(s) ? 'ta' : /[ఀ-౿]/.test(s) ? 'te' : undefined)
+
+/** This browser's voices. Chrome fills the list late, so wait for 'voiceschanged' (and give up waiting after 3 s). */
+function useVoices() {
+  const synth = typeof window !== 'undefined' ? window.speechSynthesis : undefined
+  const [voices, setVoices] = useState(() => (synth ? synth.getVoices() : []))
+  const [settled, setSettled] = useState(false)
+  const [round, setRound] = useState(0)
+  const refresh = useCallback(() => setRound((r) => r + 1), [])
+
+  useEffect(() => {
+    if (!synth) return undefined
+    setSettled(false)
+    const read = () => setVoices(synth.getVoices())
+    const changed = () => { read(); setSettled(true) }
+    read()
+    if (synth.addEventListener) synth.addEventListener('voiceschanged', changed)
+    else synth.onvoiceschanged = changed
+    const timer = setTimeout(changed, 3000)
+    return () => {
+      clearTimeout(timer)
+      if (synth.removeEventListener) synth.removeEventListener('voiceschanged', changed)
+      else synth.onvoiceschanged = null
+    }
+  }, [synth, round])
+
+  // the verdict waits for the event (or the timeout): network voices can arrive after the first list
+  return { supported: Boolean(synth), voices, settled, refresh }
+}
+
+function Verdict({ name, found, settled }) {
+  if (!settled) return <li className="is-wait"><CircleDashed aria-hidden="true" /><span><b>{name}:</b> checking…</span></li>
+  return (
+    <li className={found.length ? 'is-yes' : 'is-no'}>
+      {found.length ? <Check aria-hidden="true" /> : <X aria-hidden="true" />}
+      <span>
+        <b>{name}: {found.length ? 'installed.' : 'no voice installed.'}</b>{' '}
+        {found.length
+          ? found.map((v) => `${v.name} (${v.lang}, ${v.localService ? 'on this device' : 'network'})`).join('; ')
+          : `This device can't speak ${name} by itself.`}
+      </span>
+    </li>
+  )
+}
+
+function Voices() {
+  const { supported, voices, settled, refresh } = useVoices()
+  const ta = voices.filter(isTamil)
+  const te = voices.filter(isTelugu)
+  const rest = voices.filter((v) => !isTamil(v) && !isTelugu(v))
+  const ordered = [...ta, ...te, ...rest]
+
+  return (
+    <section className="panel dp-voices" aria-labelledby="dp-voices-h">
+      <div className="panel-head">
+        <div>
+          <span className="label">Device voices · speechSynthesis</span>
+          <h3 id="dp-voices-h">Can this device speak Tamil and Telugu?</h3>
+        </div>
+        <button type="button" className="btn dp-small" onClick={refresh} disabled={!supported}><RefreshCw aria-hidden="true" /> Check again</button>
+      </div>
+      <p className="note">The voices this browser on this device offers. Another laptop or phone can list different ones.</p>
+      {!supported && <p className="dp-off-note">This browser has no speech synthesis (window.speechSynthesis is missing), so it lists no voices.</p>}
+      {supported && (
+        <ul className="dp-verdict" aria-live="polite">
+          <Verdict name="Tamil" found={ta} settled={settled} />
+          <Verdict name="Telugu" found={te} settled={settled} />
+        </ul>
+      )}
+      {supported && settled && !voices.length && <p className="dp-off-note">This browser lists no voices at all.</p>}
+      {voices.length > 0 && (
+        <div className="dtable dp-vtable" role="table" aria-label="Device voices">
+          <div className="tr th" role="row">
+            <span role="columnheader">Name</span><span role="columnheader">Language</span>
+            <span role="columnheader">Local or network</span><span role="columnheader">Default</span>
+          </div>
+          {ordered.map((v, i) => {
+            const mark = isTamil(v) ? 'Tamil' : isTelugu(v) ? 'Telugu' : null
+            return (
+              <div key={`${v.voiceURI || v.name}-${i}`} role="row" className={`tr ${mark ? 'is-mark' : ''}`}>
+                <span role="cell" className="dp-vname" lang={scriptLang(v.name)}>{v.name}</span>
+                <span role="cell" className="dp-vlang">
+                  <span className="mono">{v.lang || '—'}</span>
+                  {mark && <span className="chip dp-vchip">{mark}</span>}
+                </span>
+                <span role="cell">{v.localService ? 'On this device' : 'Network'}</span>
+                <span role="cell">{v.default ? <span className="chip">Default</span> : <span className="dp-notyet">—</span>}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      {voices.length > 0 && <p className="note">{count(voices.length)} voices · {count(voices.filter((v) => v.localService).length)} on this device.</p>}
+    </section>
+  )
+}
+
 /* ---------- page ---------- */
 
 export default function DemoPanel() {
@@ -325,9 +432,17 @@ export default function DemoPanel() {
         <div>
           <span className="label">Demo · {merchant?.display_name || merchantId}</span>
           <h1>Demo controls.</h1>
-          <p className="lede">Health, reset, the scripted day and the tamper test. Hidden from the rail; open it at #/demo.</p>
+          <p className="lede">Health, reset, the tamper test, this device's voices and the scripted day. Hidden from the rail; open it at #/demo.</p>
         </div>
       </header>
+
+      <p className="dp-live" role="note">
+        <Smartphone aria-hidden="true" />
+        <span>
+          <b>Live mode.</b> Payments now also arrive on their own on the <a href="#/soundbox">Soundbox</a> screen, and
+          from phones on <a href="#/pay">#/pay</a>.
+        </span>
+      </p>
 
       {toolsOff && (
         <p className="error-banner dp-off" role="alert">
@@ -337,7 +452,10 @@ export default function DemoPanel() {
       )}
 
       <div className="dp-top">
-        <Health health={health} />
+        <div className="dp-stack dp-left">
+          <Health health={health} />
+          <Voices />
+        </div>
         <div className="dp-stack">
           <Reset toolsOff={toolsOff} />
           <Tamper key={`t-${merchantId}`} merchantId={merchantId} demoDate={demoDate} toolsOff={toolsOff} tampered={Boolean(h?.tampered)} />

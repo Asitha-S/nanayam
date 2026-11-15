@@ -19,7 +19,7 @@ const TA = {
   yes: 'சரி',
   change: 'மாற்று',
   cancel: 'ரத்து',
-  placeholder: 'இங்க எழுதுங்க. உதாரணம்: கோயம்பேடுல 3,100 ரூபாய்க்கு காய்கறி வாங்கினேன்',
+  placeholder: 'இங்க எழுதுங்க, இல்லன்னா பேசுங்க', // the example sentence is the Try chip below the box
   typeHere: 'இங்க எழுதுங்க',
   categories: {
     STOCK_PURCHASE: 'சரக்கு', TRANSPORT: 'வண்டி', PACKAGING: 'கவர்', RENT: 'வாடகை', WAGES: 'கூலி',
@@ -29,6 +29,11 @@ const TA = {
   examples: ['Koyambedu-la 3,100 rupees-ku kaaikari vaanginen', 'இன்னைக்கு எவ்வளவு லாபம்?'],
   answerExamples: ['வீட்டு பணம், அக்கா அனுப்பினாங்க', 'கடை வியாபாரம்'],
   rememberExamples: ['ஆமா, எப்பவும்'],
+  // Udhari (flag UDHARI only): the credit book, contract section 13
+  credit_saved: 'கடன் கணக்குல எழுதிட்டேன்.', // follows the amount written on the tab
+  credit_pick: 'யார் கணக்குல எழுதணும்? கீழ தட்டுங்க.',
+  clarify_credit: 'யாருக்கு, எவ்வளவு ரூபாய்னு இன்னொரு தடவை சொல்லுங்க.',
+  udhariExamples: ['ரமேஷ் 300 கடன்', 'யாரெல்லாம் பணம் தரணும்?'],
 }
 
 const TE = {
@@ -48,7 +53,7 @@ const TE = {
   yes: 'సరే',
   change: 'మార్చు',
   cancel: 'రద్దు',
-  placeholder: 'ఇక్కడ రాయండి. ఉదాహరణ: 4,200 రూపాయలకు పండ్లు కొన్నాను',
+  placeholder: 'ఇక్కడ రాయండి, లేదా మాట్లాడండి', // the example sentence is the Try chip below the box
   typeHere: 'ఇక్కడ రాయండి',
   categories: {
     STOCK_PURCHASE: 'సరుకు', TRANSPORT: 'బండి', PACKAGING: 'కవర్', RENT: 'అద్దె', WAGES: 'కూలి',
@@ -57,10 +62,15 @@ const TE = {
   examples: ['Koyambedu lo 4,200 rupayalaku pandlu konnanu', 'ఈరోజు లాభం ఎంత?'],
   answerExamples: ['ఇంటి డబ్బు, తమ్ముడు పంపాడు', 'షాప్ అమ్మకం'],
   rememberExamples: ['అవును, ఎప్పుడూ'],
+  // Udhari (flag UDHARI only)
+  credit_saved: 'అప్పు లెక్కలో రాశాను.',
+  credit_pick: 'ఎవరి లెక్కలో రాయాలి? కింద నొక్కండి.',
+  clarify_credit: 'ఎవరికి, ఎంత రూపాయలో మళ్ళీ ఒకసారి చెప్పండి.',
+  udhariExamples: [],
 }
 
-export const TAMIL_DRAFTS = ['placeholder', 'typeHere', 'start']
-export const TELUGU_DRAFTS = ['reversed', 'yes', 'change', 'cancel', 'placeholder', 'typeHere', 'start']
+export const TAMIL_DRAFTS = ['placeholder', 'typeHere', 'start', 'credit_saved', 'credit_pick', 'clarify_credit']
+export const TELUGU_DRAFTS = ['reversed', 'yes', 'change', 'cancel', 'placeholder', 'typeHere', 'start', 'credit_saved', 'credit_pick', 'clarify_credit']
 
 export const EXPENSE_CATEGORIES = ['STOCK_PURCHASE', 'TRANSPORT', 'PACKAGING', 'RENT', 'WAGES', 'UTILITIES', 'OTHER']
 

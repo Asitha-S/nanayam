@@ -36,12 +36,14 @@ export function MerchantProvider({ children }) {
       language: merchant?.preferred_language || (merchantId === 'M002' ? 'te' : 'ta'),
       demoDate: health.data?.demo_date || null,
       health: health.data,
+      // feature flag UDHARI (contract section 13): GET /health features.udhari; missing means off
+      udhari: health.data?.features?.udhari === true,
     }
   }, [merchantId, list.data, health.data])
   return <MerchantContext.Provider value={value}>{children}</MerchantContext.Provider>
 }
 
-/** { merchantId, setMerchantId, merchants, merchant, language, demoDate, health } */
+/** { merchantId, setMerchantId, merchants, merchant, language, demoDate, health, udhari } */
 export function useMerchant() {
   return useContext(MerchantContext)
 }

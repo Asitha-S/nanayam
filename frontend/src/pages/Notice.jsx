@@ -6,6 +6,7 @@ import {
   CircleAlert, Download, FileText, FileUp, Info, ListChecks, RotateCcw, Scale, ScanText, TriangleAlert,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import sampleNoticeUrl from '../../../assets/notice/sample_notice.png'
 import { USING_FIXTURES, apiUrl, get, post, useApi } from '../api'
 import { useMerchant } from '../app/merchant'
 import { go } from '../app/route'
@@ -124,6 +125,23 @@ function Reader({ merchantId, onRead }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [preview, setPreview] = useState(null)
+  const [loadingSample, setLoadingSample] = useState(false)
+
+  /** The committed sample (assets/notice/sample_notice.png), bundled with the app: no file dialog in the demo. */
+  async function pickSample() {
+    setLoadingSample(true)
+    setError(null)
+    try {
+      const res = await fetch(sampleNoticeUrl)
+      if (!res.ok) throw new Error(`The sample notice image didn't load (HTTP ${res.status})`)
+      setFile(new File([await res.blob()], 'sample_notice.png', { type: 'image/png' }))
+      setSample(true)
+    } catch (err) {
+      setError(err)
+    } finally {
+      setLoadingSample(false)
+    }
+  }
 
   useEffect(() => {
     if (!file || !file.type.startsWith('image/')) {
@@ -171,11 +189,14 @@ function Reader({ merchantId, onRead }) {
             <span className="nt-drop-empty">
               {file ? <FileText aria-hidden="true" /> : <FileUp aria-hidden="true" />}
               <b>{file ? file.name : 'Pick the notice image'}</b>
-              <small>{file ? 'PDF picked. Read it below.' : 'The sample is assets/notice/sample_notice.png'}</small>
+              <small>{file ? 'PDF picked. Read it below.' : 'PNG, JPG or PDF. Or use the sample below.'}</small>
             </span>
           )}
         </label>
         {file && preview && <p className="note nt-file">{file.name} · <span>click the image to pick another</span></p>}
+        <button type="button" className="btn nt-sample" onClick={pickSample} disabled={loadingSample || busy}>
+          <FileText aria-hidden="true" /> {loadingSample ? 'Loading the sample…' : 'Use the sample notice'}
+        </button>
 
         <label className="nt-check">
           <input type="checkbox" checked={sample} onChange={(e) => setSample(e.target.checked)} />

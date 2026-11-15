@@ -1,0 +1,98 @@
+/* The customer's payment form (components/PayForm.jsx: .pf, phone and panel variants) and the phone page (#/pay).
+   Tokens only. Big tap targets: nothing to tap is under 48px tall. */
+
+/* ---------- the form ---------- */
+.pf { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; min-width: 0; }
+.pf > * { min-width: 0; }
+.pf-set { display: grid; gap: 10px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.pf-legend { padding: 0; margin-bottom: 10px; font: 800 12px/1.2 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
+.pf-group { display: grid; gap: 8px; }
+.pf-group + .pf-group { margin-top: 6px; }
+.pf-group-h { font: 700 12.5px/1.2 var(--font-mono); letter-spacing: 0.06em; color: var(--ink-soft); }
+
+.pf-payers { display: grid; grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)); gap: 8px; }
+.pf-panel .pf-payers { grid-template-columns: 1fr; }
+.pf-payer {
+  position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px;
+  min-height: 60px; padding: 9px 12px; border: 1.5px solid var(--line-strong); border-radius: var(--r-md);
+  background: var(--card); cursor: pointer; transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
+}
+.pf-payer:hover { border-color: var(--ink); }
+.pf-payer.is-on { border-color: var(--ink); background: var(--sky); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.pf-payer input, .pf-method input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.pf-payer:has(input:focus-visible), .pf-method:has(input:focus-visible) { outline: 3px solid var(--violet); outline-offset: 2px; }
+.pf-avatar {
+  display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid var(--ink); background: var(--paper-2); font: 400 17px/1 var(--font-display);
+}
+.pf-payer.is-on .pf-avatar { background: var(--ink); color: var(--paper); }
+.pf-payer-new .pf-avatar { font-family: var(--font-mono); font-weight: 800; font-size: 20px; }
+.pf-payer-text { display: grid; gap: 2px; min-width: 0; }
+.pf-payer-text b { font-size: 16.5px; line-height: 1.25; overflow-wrap: anywhere; }
+.pf-payer-text small { font-size: 13.5px; line-height: 1.35; color: var(--ink-2); }
+
+.pf-field input { width: 100%; min-width: 0; font-size: 18px; }
+.pf-amount {
+  display: flex; align-items: center; min-height: 68px; padding: 0 16px; gap: 6px;
+  border: 1.5px solid var(--ink); border-radius: var(--r-md); background: var(--card);
+}
+.pf-amount:focus-within { outline: 3px solid var(--violet); outline-offset: 2px; }
+.pf-rupee { font: 800 30px/1 var(--font-mono); color: var(--ink-soft); }
+.field .pf-amount input {
+  flex: 1 1 auto; width: 0; min-width: 0; min-height: 0; padding: 8px 0; border: 0; border-radius: 0; background: none;
+  font: 800 34px/1 var(--font-mono); letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
+}
+.field .pf-amount input:focus-visible { outline: none; }
+.pf-help { font-size: 14px; color: var(--ink-soft); }
+.pf-err { font-size: 14.5px; font-weight: 700; color: var(--signal-deep); }
+
+.pf-methods { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pf-method {
+  position: relative; display: grid; justify-items: center; align-content: center; gap: 3px; min-height: 64px; padding: 8px;
+  border: 1.5px solid var(--ink); border-radius: var(--r-md); background: var(--card); cursor: pointer; text-align: center;
+}
+.pf-method b { font-size: 17px; }
+.pf-method small { font: 800 11.5px/1 var(--font-mono); letter-spacing: 0.1em; color: var(--ink-soft); }
+.pf-method.is-on { background: var(--ink); color: var(--paper); }
+.pf-method.is-on small { color: var(--lime); }
+
+.pf-sim {
+  padding: 12px 16px; border-radius: var(--r-md); border: 1.5px dashed var(--ink);
+  background: color-mix(in srgb, var(--sky) 70%, var(--card)); font-size: 15.5px; color: var(--ink);
+}
+.pf-pay, .pf-again { width: 100%; justify-content: center; }
+.pf-pay { min-height: 66px; font-size: 19px; }
+
+/* confirmation */
+.pf-done { gap: 18px; }
+.pf-done-head { display: flex; align-items: center; gap: 14px; }
+.pf-done-head:focus { outline: none; }
+.pf-done-head:focus-visible { outline: 3px solid var(--violet); }
+.pf-tick { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; border: 1.5px solid var(--ink); background: var(--lime); }
+.pf-tick svg { width: 26px; height: 26px; }
+.pf-h { font: 400 36px/1 var(--font-display); letter-spacing: -0.04em; }
+.pf-done-amt { justify-self: start; font-size: clamp(48px, 14vw, 64px); line-height: 1; letter-spacing: -0.05em; text-decoration-thickness: 3px; }
+.pf-kv { gap: 10px 16px; }
+.pf-kv dd { font-size: 16px; }
+.pf-kv .mono { font-size: 13.5px; }
+
+/* ---------- the phone page ---------- */
+.pay-page { width: 100%; max-width: 480px; min-height: 100vh; margin: 0 auto; padding: 16px 16px 40px; display: grid; gap: 16px; align-content: start; }
+.pay-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 2px; }
+.pay-brand { font: 400 22px/1 var(--font-display); letter-spacing: -0.03em; }
+.pay-tag {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border: 1.5px solid var(--ink); border-radius: 999px;
+  background: var(--sky); font: 800 11.5px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase;
+}
+.pay-tag svg { width: 14px; height: 14px; }
+.pay-card { display: grid; gap: 22px; padding: 22px 18px 24px; border: 1px solid var(--line-strong); border-radius: var(--r-lg); background: var(--card); }
+.pay-h { display: grid; gap: 6px; }
+.pay-h span { font: 800 12px/1.2 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
+.pay-h b { font: 400 clamp(28px, 8.4vw, 36px)/1 var(--font-display); letter-spacing: -0.04em; overflow-wrap: anywhere; }
+.pay-foot { padding: 0 4px; font-size: 14px; color: var(--ink-soft); }
+
+@media (max-width: 370px) {
+  .pay-page { padding-left: 12px; padding-right: 12px; }
+  .pay-card { padding: 18px 14px 20px; }
+  .pf-payers { grid-template-columns: 1fr 1fr; }
+}

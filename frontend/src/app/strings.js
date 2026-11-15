@@ -13,6 +13,8 @@ export const STRINGS = {
     rememberOnce: 'இந்த தடவை மட்டும்',
     addExpense: 'செலவு சேர்',
     todaysProfit: 'இன்னைக்கு லாபம்',
+    tabYes: 'சரி', // udhari (flag UDHARI): take a payment off the customer's tab
+    tabNo: 'வேண்டாம்',
   },
   te: {
     languageName: 'Telugu',
@@ -22,10 +24,13 @@ export const STRINGS = {
     rememberOnce: 'ఈ ఒక్కసారి మాత్రమే',
     addExpense: 'ఖర్చు చేర్చు',
     todaysProfit: 'ఈరోజు లాభం',
+    tabYes: 'సరే',
+    tabNo: 'వద్దు',
   },
 }
 
-export const TELUGU_DRAFTS = ['rememberAlways', 'rememberOnce', 'addExpense', 'todaysProfit']
+export const TELUGU_DRAFTS = ['rememberAlways', 'rememberOnce', 'addExpense', 'todaysProfit', 'tabYes', 'tabNo']
+export const TAMIL_DRAFTS = ['tabNo'] // no spec source yet (udhari)
 
 /** Strings for a language code ('ta' | 'te'), plus `lang` for the lang attribute. */
 export function stringsFor(lang) {

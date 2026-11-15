@@ -157,6 +157,7 @@
 }
 .talk .talk-inputrow textarea[lang='ta'], .talk .talk-inputrow textarea[lang='te'] { font-size: 24px; }
 .talk .talk-inputrow textarea::placeholder { color: var(--ink-soft); opacity: 0.75; font-size: 20px; }
+.talk .talk-inputrow textarea:placeholder-shown { overflow: hidden; } /* never a scrollbar for the hint */
 .talk .talk-inputrow textarea:focus-visible { outline: 3px solid var(--violet); outline-offset: 2px; background: var(--card); }
 .talk .talk-send { min-height: 76px; }
 .talk .talk-mic {

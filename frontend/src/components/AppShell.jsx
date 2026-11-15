@@ -1,6 +1,6 @@
 // Chrome for the app screens: live payment ticker, top bar with the merchant switch, numbered rail, tamper banner.
 import {
-  BookOpenCheck, FileWarning, Gauge, IdCard, LayoutGrid, ListChecks, MessageCircleQuestion, Mic, Radio, ShieldAlert,
+  BookOpenCheck, FileWarning, Gauge, HandCoins, IdCard, LayoutGrid, ListChecks, MessageCircleQuestion, Mic, Radio, ShieldAlert,
 } from 'lucide-react'
 import { useApi } from '../api'
 import { useMerchant } from '../app/merchant'
@@ -19,6 +19,8 @@ export const APP_ROUTES = [
   { id: 'notice', n: '08', label: 'Notice', Icon: FileWarning, href: '#/notice' },
   { id: 'passport', n: '09', label: 'Passport', Icon: IdCard, href: '#/passport' },
 ]
+// Shown only when the backend's UDHARI flag is on (GET /health features.udhari).
+export const UDHARI_ROUTE = { id: 'udhari', n: '10', label: 'Udhari', Icon: HandCoins, href: '#/udhari' }
 
 const CLASS_TEXT = { SALE: 'sale', FAMILY: 'family', PENDING: 'waiting' }
 
@@ -69,8 +71,9 @@ function MerchantSwitch() {
 
 /** Wrap an app screen. active: route id from APP_ROUTES. */
 export default function AppShell({ active, children }) {
-  const { merchantId, health } = useMerchant()
+  const { merchantId, health, udhari } = useMerchant()
   const verify = useApi(`/merchants/${merchantId}/ledger/verify`)
+  const routes = udhari ? [...APP_ROUTES, UDHARI_ROUTE] : APP_ROUTES
   return (
     <div className="app">
       <LiveTicker />
@@ -78,7 +81,7 @@ export default function AppShell({ active, children }) {
         action={<a className="btn primary" href="#/soundbox"><Radio aria-hidden="true" /> Soundbox</a>}>
         <MerchantSwitch />
       </TopBar>
-      <Rail items={APP_ROUTES} active={active} />
+      <Rail items={routes} active={active} />
       <main className="app-main">
         {health?.tampered && (
           <p className="tamper-banner" role="alert">
