@@ -199,7 +199,7 @@ def test_analyse_sample_then_evidence_end_to_end(real):
     assert (f["period_start"]["value"], f["period_end"]["value"]) == (NOTICE["period_start"], NOTICE["period_end"])
     assert f["amount_questioned_paise"] == {"value": NOTICE["amount_questioned_paise"], "origin": "EXTRACTED_FROM_NOTICE",
                                             "confidence": f["amount_questioned_paise"]["confidence"]}
-    assert a["explanation"] == {"language": "ta", "text": None, "audio_id": None}  # Tamil explanation: Charulatha
+    assert a["explanation"] == {"language": "ta", "text": None, "audio_id": None}  # Tamil explanation: not written yet
     assert "does not give legal advice" in a["disclaimer"]
     ev = real.get(f"/api/merchants/M001/notices/{a['notice_id']}/evidence").json()
     assert ev["amount_questioned"]["amount_display"] == "₹8,42,162" and ev["difference_vs_notice"]["amount_paise"] == 0

@@ -1,5 +1,5 @@
 """The committed sample notice and its demo key (shared helper; Asitha). Used by notice/analyse.py, and by
-Charulatha's real analyse() when it lands.
+the real analyse() when it lands.
 
 demo_key "sample_notice_v1" may only be used with the committed image assets/notice/sample_notice.png, checked by
 sha256 like the recorded demo clips (cache/sarvam_demo/demo_clips.json, written by

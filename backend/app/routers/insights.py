@@ -1,7 +1,8 @@
 """Learning, evaluation, tax summary, notices, passport (contract sections 8-10).
 
 REAL: learning, evaluation, tax summary, passport, notice evidence (Asitha).
-notice analyse: Charulatha's notice/analyse.py (fallback for the committed sample until her implementation lands).
+notice analyse: notice/analyse.py, the agreed fallback for the committed sample (Asitha); the real reader is not
+written yet.
 """
 import sqlite3
 import json
@@ -54,7 +55,7 @@ async def analyse_notice(
     demo_key: str | None = Form(None),
     conn: sqlite3.Connection = Depends(get_conn),
 ):
-    """Calls Charulatha's notice.analyse.analyse (currently the agreed fallback for the committed sample)."""
+    """Calls notice.analyse.analyse (currently the agreed fallback for the committed sample)."""
     data = await file.read()
     if not data:
         raise errors.validation_error("Empty file", field="file")

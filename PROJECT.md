@@ -44,17 +44,19 @@ Naanayam turns a small merchant's incoming UPI payments and voice-logged expense
 |---|---|---|
 | **P1 must work** | Synthetic payments and demo stream | Asitha |
 | P1 | Classification with confidence, AUTO vs ASK | Asitha |
-| P1 | Merchant confirmation (tap and voice) | Asitha (API; UI since 2026-11-14), Charulatha (Tamil voice) |
-| P1 | Voice expense logging in Tamil | Charulatha |
-| P1 | Daily profit calculated by backend, answered in Tamil | Asitha (numbers; answer composer + slot check + TTS call since 2026-11-14), Charulatha (Tamil templates, voice) |
+| P1 | Merchant confirmation (tap and voice) | Asitha (API; UI since 2026-11-14; rule-based voice reading), Charulatha (LLM interpreter) |
+| P1 | Voice expense logging in Tamil | Asitha (transcription, rule-based interpreter, UI), Charulatha (LLM interpreter, amount parsing) |
+| P1 | Daily profit calculated by backend, answered in Tamil | Asitha (numbers; answer composer + slot check + TTS call since 2026-11-14; minimal Tamil templates, drafted and checked by Asitha) |
 | P1 | Ledger view where every number links to its source entries | Asitha (API; UI since 2026-11-14) |
 | **P2 must demonstrate** | Feedback layer + held-out evaluation (precision AND coverage, before vs after) | Asitha |
-| P2 | Evaluation / learning screen for judges | Nagasai Sree |
+| P2 | Evaluation / learning screen for judges | Asitha (UI since 2026-11-14) |
 | **P3 strong additions** | Hash-chained audit trail + verify | Asitha |
-| P3 | Notice mode (one predefined sample notice) | Charulatha (reading the notice: analyse(), Tamil explanation), Asitha (evidence endpoint, since 2026-11-14), Nagasai Sree (screen) |
+| P3 | Notice mode (one predefined sample notice) | Asitha (agreed analyse() fallback for the committed sample; evidence endpoint and screen since 2026-11-14), Charulatha (notice parsing helpers). Real notice reading and the Tamil explanation, planned for Charulatha: not written yet |
 | P3 | CA export (CSV, then PDF) | Asitha (since 2026-11-14, taken over from Charulatha with her agreement) |
-| P3 | Telugu voice flow for the second merchant | Nagasai Sree |
-| **P4 show only** | Credit passport screen | Asitha (API), Nagasai Sree (UI) |
+| P3 | Telugu voice flow for the second merchant | Asitha (UI and rule-based Telugu reading; Telugu text drafted with Claude Code), Nagasai Sree (reviewed the Telugu text, recorded the Telugu demo clips) |
+| **P4 show only** | Credit passport screen | Asitha (API; UI since 2026-11-14) |
+
+Charulatha's real transcription and interpretation, Tamil demo recordings, sample notice and Tamil demo cache are in the private Naanayam repo and not merged here.
 
 ## 4. Non-negotiable engineering rules
 
@@ -95,27 +97,32 @@ naanayam/
 ├── backend/
 │   ├── app/
 │   │   ├── main.py, config.py, db.py, schemas.py     (Asitha)
-│   │   ├── routers/            (Asitha; voice + notice routers call Charulatha's modules)
+│   │   ├── routers/            (Asitha; /voice/interpret calls Charulatha's LLM interpreter)
 │   │   ├── ledger/, finance/, classifier/, feedback/, demo/   (Asitha)
 │   │   ├── export/             (Asitha since 2026-11-14: CSV + PDF, reads finance/ functions only)
-│   │   ├── sarvam/             (client + cache: Asitha writes the client wrapper; Charulatha owns prompts/models used)
-│   │   ├── voice/              (Charulatha: interpret.py (LLM), templates; answer.py, interpreter.py, rules.py: Asitha;
-│   │   │                        rules.py KEYWORDS: Tamil rows Charulatha, Telugu rows Nagasai Sree)
-│   │   │   └── templates/ta.json (Charulatha), templates/te.json (Nagasai Sree)
-│   │   ├── notice/             (Charulatha: extraction (analyse), Tamil explanation; evidence.py, store.py: Asitha since 2026-11-14)
-│   │   └── udhari/             (Asitha since 2026-11-15: credit book behind the UDHARI flag; texts.py Tamil for Charulatha, Telugu for Nagasai Sree to check)
-│   └── tests/                  (Asitha; Charulatha adds voice tests)
+│   │   ├── sarvam/             (client + cache: Asitha; Charulatha set the model constants and fixed the live integration)
+│   │   ├── voice/              (Charulatha: interpret.py (LLM interpreter), utils.py (amount parsing); answer.py,
+│   │   │                        interpreter.py, rules.py: Asitha; rules.py KEYWORDS: Tamil rows drafted and checked by
+│   │   │                        Asitha, Telugu rows drafted with Claude Code, reviewed by Nagasai Sree)
+│   │   │   └── templates/ta.json (minimal placeholder, drafted and checked by Asitha; the full file, planned for
+│   │   │                          Charulatha, is not written yet), templates/te.json (not written yet)
+│   │   ├── notice/             (Asitha: analyse.py (agreed fallback for the committed sample), sample.py; evidence.py,
+│   │   │                        store.py since 2026-11-14. Charulatha: parser.py. Real extraction and the Tamil
+│   │   │                        explanation, planned for Charulatha: not written yet)
+│   │   └── udhari/             (Asitha since 2026-11-15: credit book behind the UDHARI flag; texts.py: Tamil drafted and checked by Asitha, Telugu drafted with Claude Code, reviewed by Nagasai Sree)
+│   └── tests/                  (Asitha; Charulatha: test_amount_parser.py and part of test_slot_check.py)
 ├── data/
 │   ├── generator/              (Asitha)
 │   ├── generated/              (gitignored except demo/)
 │   ├── demo/                   (committed: demo-day fixtures, sample notice)
-│   └── voice_tests/ta.jsonl, te.jsonl   (Charulatha, Nagasai Sree)
+│   └── voice_tests/ta.jsonl, te.jsonl   (planned, not written yet)
 ├── ml/                         (Asitha: train, calibrate, evaluate)
 ├── frontend/                   (Asitha since 2026-11-14: all screens built on asitha/frontend, incl. learning, notice,
-│                               passport, demo panel and the Telugu flow; Telugu UI strings to be checked by Nagasai Sree)
+│                               passport, demo panel and the Telugu flow; Telugu UI strings drafted with Claude Code, reviewed by Nagasai Sree)
 ├── assets/
-│   ├── demo_audio/ta/, te/     (Charulatha, Nagasai Sree)
-│   └── notice/sample_notice.png (Charulatha)
+│   ├── demo_audio/ta/, te/     (not in this repo: Charulatha's Tamil recordings are in the private Naanayam repo;
+│   │                            Nagasai Sree recorded the Telugu clips)
+│   └── notice/sample_notice.png (Asitha, made by scripts/make_sample_notice.py; Charulatha's version is in the private Naanayam repo)
 └── cache/
     ├── sarvam_dev/             (gitignored)
     └── sarvam_demo/            (COMMITTED: cached responses for every scripted demo call)

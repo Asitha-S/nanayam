@@ -1,5 +1,5 @@
-"""Fixed sentences for udhari (no LLM). Amounts come from money.display through spoken_amount. Tamil: Asitha's draft for
-Charulatha to check; Telugu: draft for Nagasai Sree to check."""
+"""Fixed sentences for udhari (no LLM). Amounts come from money.display through spoken_amount. Tamil:
+drafted and checked by Asitha. Telugu: drafted with Claude Code, reviewed by Nagasai Sree."""
 from __future__ import annotations
 
 from .. import money

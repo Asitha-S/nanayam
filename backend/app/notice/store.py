@@ -1,4 +1,4 @@
-"""Stored notices (DATA_AND_LOGIC 1.1 `notices`). Shared contract between Charulatha's analyse() and evidence().
+"""Stored notices (DATA_AND_LOGIC 1.1 `notices`). Shared contract between analyse() and evidence().
 
 analyse() calls save_notice(...) with the `fields` object of its POST /notices/analyse response
 ({field: {"value", "origin", "confidence"}}); evidence() reads it back with load_notice().

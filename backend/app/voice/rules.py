@@ -1,5 +1,6 @@
-"""Deterministic voice interpretation (VOICE_AND_NOTICE 5.2, 5.3, 5.4). Owner: Asitha; keyword tables: Tamil by
-Charulatha, Telugu by Nagasai Sree (edit KEYWORDS below).
+"""Deterministic voice interpretation (VOICE_AND_NOTICE 5.2, 5.3, 5.4). Owner: Asitha. The Tamil
+keyword rows were drafted and checked by Asitha; the Telugu rows were drafted with Claude Code and
+reviewed by Nagasai Sree (edit KEYWORDS below).
 
 - parse_amount(span) -> whole rupees, from digits ("3,100", "3100", "3 100", "1,50,000"), "k" ("3k", "2.5k"),
   English words ("three thousand one hundred"), Tamil and Telugu number words, romanized forms, and fractions

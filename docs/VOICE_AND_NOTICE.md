@@ -1,6 +1,6 @@
 # Naanayam: Voice and Notice Spec
 
-> Owners: **M Charulatha** (Tamil voice, interpretation, template answers + slot check, notice reading and Tamil explanation), **Gummadi Nagasai Sree** (Telugu templates, Telugu test set, voice UI). Asitha owns the Sarvam client wrapper and cache.
+> Built by: **Asitha** (Sarvam client and cache, transcription and speech, the rule-based interpreter, answer composition + slot check since 2026-11-14, the notice fallback and evidence, every screen), **M Charulatha** (the LLM interpreter `voice/interpret.py`, amount parsing `voice/utils.py`, notice parsing helpers, the Sarvam model constants), **Gummadi Nagasai Sree** (reviewed the Telugu text, recorded the Telugu demo clips). Charulatha's real transcription and interpretation, Tamil demo recordings, sample notice and Tamil demo cache are in the private Naanayam repo and not merged here. Not written yet: the real notice reader and its Tamil explanation, the full `ta.json`, `te.json`, and the voice test sets.
 > Read `PROJECT.md` and `contract/API_CONTRACT.md` sections 6 and 9 first.
 
 > **All Tamil and Telugu text in this file was drafted by Claude and must be checked by Charulatha (Tamil) and Nagasai Sree (Telugu) before Friday night.** Fix anything that sounds unnatural for a Chennai vegetable seller or a Telugu fruit seller. Colloquial beats formal.
@@ -64,7 +64,7 @@ Pick one Tamil TTS voice and one Telugu TTS voice that sound like a friendly sho
 
 ## 4. Voice flows (Tamil shown; Telugu identical with te templates)
 
-### 4.1 Shared mic flow (frontend, Nagasai Sree)
+### 4.1 Shared mic flow (frontend, Asitha)
 
 ```
 [Mic tap] → record (max 15 s; Stop tap, or auto-stop after 2.5 s silence measured against the room's noise floor, never before 3 s)
@@ -165,7 +165,7 @@ If the utterance is neither (e.g. "theriyala") → `clarify_category` and keep t
 - Category: keyword table 5.4.
 - The fallback is also used to cross-check the LLM in tests.
 
-### 5.4 Keyword tables (`voice/keywords.py`; Tamil by Charulatha, Telugu by Nagasai Sree)
+### 5.4 Keyword tables (`voice/rules.py` KEYWORDS; Tamil rows drafted and checked by Asitha; Telugu rows drafted with Claude Code, reviewed by Nagasai Sree)
 
 | target | Tamil (script / romanized) | Telugu |
 |---|---|---|
@@ -184,7 +184,7 @@ If the utterance is neither (e.g. "theriyala") → `clarify_category` and keep t
 
 ---
 
-## 6. Answer composition and slot check (`voice/answer.py`, Charulatha)
+## 6. Answer composition and slot check (`voice/answer.py`, Asitha since 2026-11-14)
 
 ### 6.1 Facts
 `/voice/answer` gets `facts` from the finance layer (the same function behind `/summary`). Amounts are formatted with `money.display` and then turned into speech form `"4,820 ரூபாய்"` / `"4,820 రూపాయలు"`.
@@ -208,7 +208,7 @@ Test on Friday how Bulbul reads "4,820 ரூபாய்". If it reads well, se
 
 ## 7. Templates
 
-`backend/app/voice/templates/ta.json` (Charulatha) and `te.json` (Nagasai Sree). Placeholders in `{}`. Amount placeholders receive "4,820 ரூபாய்" style strings.
+`backend/app/voice/templates/ta.json` (a minimal placeholder, drafted and checked by Asitha; the full file, planned for Charulatha, is not written yet) and `te.json` (not written yet). Placeholders in `{}`. Amount placeholders receive "4,820 ரூபாய்" style strings.
 
 | key | Tamil draft | Telugu draft |
 |---|---|---|
@@ -317,7 +317,7 @@ Each has a `demo_key` = its path under `assets/demo_audio/` without extension, i
 - Naanayam reads it, explains it in Tamil, and builds an evidence summary from the ledger for a CA.
 - It does **not** give legal advice, does not say whether tax is due, does not draft a reply.
 
-### 11.2 Sample notice content (Charulatha creates; numbers from Asitha)
+### 11.2 Sample notice content (this repo's image: Asitha, `scripts/make_sample_notice.py`; Charulatha's version is in the private Naanayam repo; numbers from Asitha)
 | field | value |
 |---|---|
 | Title | Intimation regarding receipts through UPI (SAMPLE) |
@@ -352,12 +352,14 @@ Each has a `demo_key` = its path under `assets/demo_audio/` without extension, i
 ```
 Dates spoken as "ஆகஸ்ட் 1" style. Numbers from evidence (ledger) and extraction (notice) only; the slot check covers dates too. The explanation is only generated if all required fields were extracted; otherwise the screen shows the extraction error.
 
-### 11.5 Notice screen (Nagasai Sree)
+### 11.5 Notice screen (Asitha)
 Left: notice image. Right: extracted fields with badges → "Your ledger for this period" table (collections, business sales, family, refunds/reversals, unresolved, expenses) each with a link to the filtered ledger → family examples → warnings → "Download CA pack" (PDF + CSV) → play Tamil explanation. Footer: disclaimer from the API, always visible.
 
 ---
 
 ## 12. Checklist by owner
+
+> This is the original plan. For what was actually built and by whom, see `PROJECT.md` sections 3 and 5.
 
 **Charulatha (Tamil + notice)**
 - [ ] Fri: confirm Sarvam model IDs/params; test STT on 5 Tamil clips; pick TTS voice; test number reading.

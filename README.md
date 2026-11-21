@@ -4,11 +4,14 @@ From payment collections to financial proof. Paytm Build for India AI Hackathon,
 
 **Start here:** read [PROJECT.md](PROJECT.md), then [contract/API_CONTRACT.md](contract/API_CONTRACT.md), then the doc for your area:
 
-| Who | Read | Owns |
+| Who | Read | Built |
 |---|---|---|
-| Asitha | everything | backend core, data, ml, contract |
-| M Charulatha | [docs/VOICE_AND_NOTICE.md](docs/VOICE_AND_NOTICE.md), [docs/DATA_AND_LOGIC.md](docs/DATA_AND_LOGIC.md) §7.3 §9 | `backend/app/voice/`, `backend/app/notice/`, `backend/app/export/`, `templates/ta.json`, `data/voice_tests/ta*` |
-| Gummadi Nagasai Sree | [docs/VOICE_AND_NOTICE.md](docs/VOICE_AND_NOTICE.md) §4 §7 §8 §11.5 | `frontend/`, `templates/te.json`, `data/voice_tests/te*` |
+| Asitha Srithar | all docs | Backend, data, ML, API contract, frontend (every screen), exports (CSV, PDF), notice evidence |
+| M Charulatha | [docs/VOICE_AND_NOTICE.md](docs/VOICE_AND_NOTICE.md), [docs/DATA_AND_LOGIC.md](docs/DATA_AND_LOGIC.md) §7.3 §9 | Tamil voice: the LLM interpreter (`backend/app/voice/interpret.py`), amount parsing (`voice/utils.py`), notice parsing helpers (`notice/parser.py`), fixes to the live Sarvam integration |
+| Gummadi Nagasai Sree | [docs/VOICE_AND_NOTICE.md](docs/VOICE_AND_NOTICE.md) §4 §7 §8 §11.5 | Telugu voice: reviewed the Telugu text, recorded the Telugu demo clips |
+
+Charulatha's real transcription and interpretation, Tamil demo recordings, sample notice and Tamil demo cache are in the private Naanayam repo and not merged here.
+
 Plan and checkpoints: [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md). Contract change requests: [contract/CHANGES.md](contract/CHANGES.md). Example responses for every endpoint: [contract/fixtures/](contract/fixtures/).
 
 ## Status
@@ -19,7 +22,9 @@ Plan and checkpoints: [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md). Contract change 
 
 **Real since 2026-11-14 (Asitha):** `/voice/answer` (templates + slot check + TTS), `/export/csv`, `/export/pdf`, notice evidence.
 
-**Still fixture stubs**, owned by Charulatha: `/voice/transcribe`, `/voice/interpret`, `/voice/speak`. `/notices/analyse` is an agreed fallback until her reader lands: the committed sample (`demo_key=sample_notice_v1`) is stored and returned, anything else is 503.
+**Real since 2026-11-15 (Asitha):** `/voice/transcribe` and `/voice/speak` (through the Sarvam client: cache and DEMO_MODE apply), `/voice/interpret` (the rule-based interpreter reads first; Charulatha's LLM interpreter reads what the rules can't), `/payments/{id}/announcement`.
+
+**Still a fallback:** `/notices/analyse` (Asitha, agreed): the committed sample (`demo_key=sample_notice_v1`) is stored and returned, anything else is 503. The real notice reader and its Tamil explanation, planned for Charulatha, are not written yet.
 
 `GET /evaluation` serves `data/eval/latest.json` from the final holdout run (conditions A–E, never hand-edited). Robustness results: `data/eval/robustness.json`. Every evaluation execution is logged in `data/eval/experiment_log.jsonl`.
 

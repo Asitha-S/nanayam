@@ -1,13 +1,14 @@
-"""POST /notices/analyse (contract section 9). Owner: Charulatha.
+"""POST /notices/analyse (contract section 9). Owner: Asitha (this fallback). The real reader was planned for
+Charulatha and is not written yet.
 
-FALLBACK STUB (agreed 2026-11-14) until Charulatha's real analyse() lands; she replaces this function's body,
+FALLBACK STUB (agreed 2026-11-14) until a real analyse() lands; it replaces this function's body,
 keeping the signature, and the router needs no change:
 - demo_key "sample_notice_v1" with the committed sample image (sha256 checked by notice/sample.py; 422 for any
   other file once the image is committed): the sample notice's known fields (period and amount from
   data/demo/notice_numbers.json, the other fields from contract/fixtures/notice_analyse.json) are saved with
   notice.store.save_notice and returned, marked from_cache true (as the cached reading of the sample would be);
 - any other input: 503 SARVAM_UNAVAILABLE (reading arbitrary notices is not available yet).
-The Tamil explanation is Charulatha's; until then explanation.text is null.
+The Tamil explanation (planned for Charulatha) is not written yet; until then explanation.text is null.
 """
 from __future__ import annotations
 

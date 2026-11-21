@@ -1,5 +1,5 @@
 {
-  "_note": "MINIMAL placeholder by Asitha with only the profit keys of VOICE_AND_NOTICE section 7 (Claude-drafted Tamil). Charulatha owns this file: replace it with the full reviewed ta.json. threshold_* keys (GST threshold watch card, no slots) added 2026-11-15 by Asitha: Charulatha to check.",
+  "_note": "MINIMAL placeholder with only the profit keys of VOICE_AND_NOTICE section 7, drafted and checked by Asitha. The full ta.json, planned for Charulatha, is not written yet. threshold_* keys (GST threshold watch card, no slots) added 2026-11-15 by Asitha, also drafted and checked by Asitha.",
   "profit_answer": "இன்னைக்கு கடை வியாபாரம் {sales}. செலவு {expenses}. மீதம் {profit}.",
   "profit_answer_loss": "இன்னைக்கு கடை வியாபாரம் {sales}. செலவு {expenses}. இதுவரைக்கும் நஷ்டம் {loss}.",
   "profit_family_suffix": "வீட்டு பணம் {family} இதுல சேர்க்கல.",

@@ -250,7 +250,7 @@ The `rm` line removes only generated files: the demo seed database, its metadata
 
 ### 3.7 Sample notice numbers
 
-Sample notice period: 2026-08-01 to 2026-10-31. **Amount questioned = M001's gross UPI receipts for that period** (sum of all PAYMENT_IN, before refunds and reversals), taken from `seed.db` after seeding. Asitha publishes this number on Friday night in `data/demo/notice_numbers.json`; Charulatha puts it into the sample notice image. If the seed changes, the image must be regenerated (test checks the image's cached extraction against `notice_numbers.json`).
+Sample notice period: 2026-08-01 to 2026-10-31. **Amount questioned = M001's gross UPI receipts for that period** (sum of all PAYMENT_IN, before refunds and reversals), taken from `seed.db` after seeding. Asitha publishes this number on Friday night in `data/demo/notice_numbers.json`; `scripts/make_sample_notice.py` (Asitha) puts it into the sample notice image. If the seed changes, the image must be regenerated (test checks the image's cached extraction against `notice_numbers.json`).
 
 ---
 
@@ -602,7 +602,7 @@ Every condition starts test merchants with empty memory and no configured family
 Also: label mix (`label_mix.count_share`, `label_mix.value_share`), number of test payments, answer error rate.
 
 ### 11.5 Output
-`data/eval/runs/{run_id}.json` and `data/eval/latest.json`: the contract shape, where `baseline` = condition C and `with_feedback` = condition E, plus a `conditions` object with all five (A–E) and every metric above, `seed`, `git_commit`, `threshold`. Nagasai Sree's screen shows A, C, E side by side and the curve.
+`data/eval/runs/{run_id}.json` and `data/eval/latest.json`: the contract shape, where `baseline` = condition C and `with_feedback` = condition E, plus a `conditions` object with all five (A–E) and every metric above, `seed`, `git_commit`, `threshold`. The Learning screen (Asitha) shows A, C, E side by side and the curve.
 
 ### 11.6 What we are allowed to say
 - "On synthetic data from 110 merchants the model never saw, over a later 30-day period: the full system decided X% of payments without asking at Y% precision, silently removed income in Z cases, and questions per day fell from A to B over four weeks."

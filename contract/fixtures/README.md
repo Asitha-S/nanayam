@@ -21,7 +21,7 @@ Example responses for every endpoint, used by:
 - `learning_M001.json`: `payers` lists both instruction lists (`FAMILY_INSTRUCTION`, `CUSTOMER_INSTRUCTION`) with `source` (`SETUP` / `CONFIRMATION` / `ANSWERS`), plus `MIXED` and `MEMORY`; new `customer_payers_configured`. Numbers are placeholders.
 - `merchant_M001.json` has `customer_payers`.
 
-## Confidence display (Nagasai Sree)
+## Confidence display (frontend: Asitha)
 The API sends the real number (`0.9971`). Show a confidence ≥ 0.995 as **">99%"**, never "100%". `null` (`confidence_kind: NONE`) shows **"Your instruction"**, never a percentage.
 
 ## Summary states for the Today screen

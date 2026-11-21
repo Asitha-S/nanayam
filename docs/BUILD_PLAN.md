@@ -13,6 +13,8 @@
 
 ## 1. Who owns what
 
+> This is the original plan. For what was actually built and by whom, see `PROJECT.md` sections 3 and 5.
+
 | | Asitha (Claude Code) | M Charulatha (Tamil, Antigravity) | Gummadi Nagasai Sree (Telugu, Antigravity) |
 |---|---|---|---|
 | Core | Repo, stubs, Sarvam client + cache, generator, classifier, evaluation, feedback, ledger + hash, finance functions, payment/question/confirm/expense/summary/ledger/demo routers, preview, learning, passport API (last), seed DB, merges | Tamil voice: parse_amount, interpret, template answers + slot check, ta templates, Tamil test set, demo clips (ta). Notice: extraction, Tamil explanation, **evidence endpoint**. **CSV + PDF export.** (Notice and export only call Asitha's `finance` functions.) | Frontend: all screens, text + mic input, cards with binding rules, Soundbox simulator, demo panel UI; Telugu templates, Telugu test set, demo clips (te) |

@@ -747,7 +747,7 @@ Query: `months` (default 3, max 3; uses complete calendar months before `DEMO_DA
 
 ---
 
-## 12. Frontend → endpoint map (Nagasai Sree)
+## 12. Frontend → endpoint map (frontend: Asitha)
 
 | Screen | Calls |
 |---|---|

@@ -1,7 +1,8 @@
-"""Voice endpoints (contract section 6). Routers are Asitha's; the logic behind them is
-Charulatha's backend/app/voice/ module.
+"""Voice endpoints (contract section 6). Routers and most of backend/app/voice/ are Asitha's; the LLM interpreter
+(voice/interpret.py, with amount parsing in voice/utils.py) is Charulatha's.
 
-REAL: /voice/answer, /voice/interpret (Charulatha's LLM interpreter when Sarvam answers, else voice/rules.py),
+REAL: /voice/answer, /voice/interpret (voice/rules.py reads first; Charulatha's LLM interpreter reads what the
+rules can't),
 /voice/speak and /voice/transcribe (through the Sarvam client: cache and DEMO_MODE apply; a miss is 503, never a
 canned answer), /payments/{id}/announcement (fixed template). Nothing here returns a fixture.
 The demo-clip hash check is already real: a demo_key with the wrong bytes is a 422.
@@ -93,7 +94,7 @@ def announcement(transaction_id: str, language: VoiceLanguage = Query("ta"), con
 
 @router.post("/voice/interpret")
 def interpret(body: InterpretIn, conn: sqlite3.Connection = Depends(get_conn)):
-    """REAL (Asitha): reads the actual text. LLM (Charulatha's interpreter) when available, else rules."""
+    """REAL (Asitha): reads the actual text. Rules first; Charulatha's LLM interpreter for what the rules can't read."""
     require_merchant_422(body.merchant_id)
     return interpreter.interpret(conn, merchant_id=body.merchant_id, language=body.language, text=body.text,
                                  open_question_id=body.open_question_id)
